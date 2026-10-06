@@ -1,0 +1,11 @@
+{
+  "title": "Login",
+  "screens": [
+    {
+      "id": "login",
+      "name": "Login",
+      "file": "01-s.html",
+      "device": "mobile"
+    }
+  ]
+}

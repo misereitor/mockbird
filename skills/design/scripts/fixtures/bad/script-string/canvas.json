@@ -1,0 +1,11 @@
+{
+  "title": "Script string",
+  "screens": [
+    {
+      "id": "script-string",
+      "name": "Script string",
+      "file": "01-s.html",
+      "device": "mobile"
+    }
+  ]
+}

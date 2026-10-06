@@ -1,0 +1,11 @@
+{
+  "title": "Alt",
+  "screens": [
+    {
+      "id": "alt",
+      "name": "Alt",
+      "file": "01-s.html",
+      "device": "mobile"
+    }
+  ]
+}
