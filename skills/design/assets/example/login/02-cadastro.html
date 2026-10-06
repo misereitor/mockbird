@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadastro</title>
+  <link rel="stylesheet" href="../design-system.css">
+  <style>
+    main { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: var(--space-6); gap: var(--space-6); }
+    h1 { margin: 0; font-size: var(--font-size-xl); }
+    p { margin: 0; color: var(--color-text-muted); }
+    form { display: flex; flex-direction: column; gap: var(--space-4); }
+    label { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--font-size-sm); }
+    input { height: 48px; padding: 0 var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; }
+    input:focus-visible, button:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+    button { height: 48px; border: 0; border-radius: var(--radius-md); background: var(--color-primary); color: var(--color-primary-contrast); font: inherit; font-weight: 600; }
+    a { color: var(--color-primary); font-size: var(--font-size-sm); text-align: center; }
+  </style>
+</head>
+<body>
+  <main>
+    <div>
+      <h1>Criar conta</h1>
+      <p>Cadastre-se para controlar seu estoque.</p>
+    </div>
+    <form>
+      <label>Nome completo<input type="text" placeholder="Maria da Silva" autocomplete="name"></label>
+      <label>E-mail<input type="email" placeholder="voce@empresa.com.br" autocomplete="email"></label>
+      <label>Senha<input type="password" placeholder="Mínimo de 8 caracteres" autocomplete="new-password"></label>
+      <label>Confirmar senha<input type="password" placeholder="Repita a senha" autocomplete="new-password"></label>
+      <button type="submit">Criar conta</button>
+      <a href="#">Já tenho uma conta</a>
+    </form>
+  </main>
+  <script src="../mock.js"></script>
+  <script>
+    document.querySelector('form').addEventListener('submit', (event) => {
+      event.preventDefault()
+      const nome = document.querySelector('input[type=text]').value.trim()
+      const email = document.querySelector('input[type=email]').value.trim()
+      Mock.state.set('user', { name: nome || 'Visitante', email, role: 'Estoquista' })
+      Mock.toast('Conta criada com sucesso')
+      Mock.go('../dashboard/01-overview.html')
+    })
+  </script>
+</body>
+</html>

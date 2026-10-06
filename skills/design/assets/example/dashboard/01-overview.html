@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visão geral</title>
+  <link rel="stylesheet" href="../design-system.css">
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
+    header h1 { margin: 0; font-size: var(--font-size-lg); }
+    header p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
+    .sair { height: 36px; padding: 0 var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; }
+    main { flex: 1; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); max-width: 720px; width: 100%; margin: 0 auto; }
+    .card { border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); padding: var(--space-4) var(--space-6); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+    .card strong { display: block; }
+    .card small { color: var(--color-text-muted); font-size: var(--font-size-sm); }
+    .badge { min-width: 64px; text-align: center; padding: 4px 10px; border-radius: var(--radius-sm); font-size: var(--font-size-sm); font-weight: 600; background: var(--color-bg); color: var(--color-text); }
+    .badge.baixo { background: var(--color-danger); color: #fff; }
+    form { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+    input { flex: 1; min-width: 120px; height: 44px; padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; }
+    input:focus-visible, .sair:focus-visible, button:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+    button[type=submit] { height: 44px; padding: 0 var(--space-6); border: 0; border-radius: var(--radius-md); background: var(--color-primary); color: var(--color-primary-contrast); font: inherit; font-weight: 600; }
+    button:active { transform: scale(0.97); }
+    .vazio { color: var(--color-text-muted); text-align: center; padding: var(--space-8) 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Estoque</h1>
+      <p id="quem"></p>
+    </div>
+    <button class="sair" type="button" id="sair">Sair</button>
+  </header>
+  <main>
+    <form id="novo">
+      <label hidden for="nome">Nome do item</label>
+      <input id="nome" placeholder="Nome do item" required>
+      <label hidden for="sku">SKU</label>
+      <input id="sku" placeholder="SKU" required>
+      <label hidden for="qtd">Quantidade</label>
+      <input id="qtd" type="number" min="0" placeholder="Qtd" required>
+      <button type="submit">Adicionar</button>
+    </form>
+    <div id="lista"></div>
+  </main>
+  <script src="../mock.js"></script>
+  <script>
+    const lista = document.getElementById('lista')
+    let proximoId = 1000
+
+    function cartao(item) {
+      const baixo = item.qty < item.min
+      return `<div class="card">
+        <div><strong>${item.name}</strong><small>SKU ${item.sku} · mínimo ${item.min}</small></div>
+        <span class="badge${baixo ? ' baixo' : ''}">${item.qty} em estoque${baixo ? ' · repor' : ''}</span>
+      </div>`
+    }
+
+    function renderizar(itens) {
+      lista.innerHTML = itens.length
+        ? itens.map(cartao).join('')
+        : '<p class="vazio">Nenhum item cadastrado ainda.</p>'
+    }
+
+    async function iniciar() {
+      const usuario = Mock.state.get('user') ?? (await Mock.data('users'))?.[0]
+      document.getElementById('quem').textContent = `${usuario?.name ?? 'Visitante'} · ${usuario?.role ?? ''}`.trim()
+      const base = (await Mock.data('items')) ?? []
+      renderizar([...base, ...(Mock.state.get('extraItems') ?? [])])
+    }
+
+    document.getElementById('novo').addEventListener('submit', async (event) => {
+      event.preventDefault()
+      const nome = document.getElementById('nome').value.trim()
+      const sku = document.getElementById('sku').value.trim().toUpperCase()
+      const qty = Number(document.getElementById('qtd').value)
+      if (!nome || !sku) return
+      const extras = Mock.state.get('extraItems') ?? []
+      extras.push({ id: ++proximoId, name: nome, sku, qty, min: 10 })
+      Mock.state.set('extraItems', extras)
+      event.target.reset()
+      renderizar([...((await Mock.data('items')) ?? []), ...extras])
+      Mock.toast(`${nome} adicionado ao estoque`)
+    })
+
+    document.getElementById('sair').addEventListener('click', () => {
+      Mock.state.clear()
+      Mock.go("../login/01-login.html")
+    })
+
+    iniciar()
+  </script>
+</body>
+</html>

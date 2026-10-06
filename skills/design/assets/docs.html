@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design canvas — documentação de utilização</title>
+<style>
+  :root, [data-theme="light"] {
+    --bg: #f8fafc; --surface: #ffffff; --text: #0f172a; --muted: #64748b;
+    --border: #e2e8f0; --accent: #0f766e; --accent-contrast: #ffffff; --code-bg: #f1f5f9;
+  }
+  [data-theme="dark"] {
+    --bg: #0b1220; --surface: #111827; --text: #e5e7eb; --muted: #94a3b8;
+    --border: #1f2937; --accent: #2dd4bf; --accent-contrast: #042f2e; --code-bg: #1e293b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 32px 24px 96px; }
+  header.top {
+    position: sticky; top: 0; z-index: 5; background: var(--surface);
+    border-bottom: 1px solid var(--border); padding: 12px 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  header.top strong { font-size: 15px; }
+  header.top .links { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  a { color: var(--accent); }
+  h1 { font-size: 30px; margin: 8px 0 4px; letter-spacing: -0.02em; }
+  .lead { color: var(--muted); font-size: 17px; margin: 0 0 28px; }
+  h2 { font-size: 21px; margin: 44px 0 10px; padding-top: 18px; border-top: 1px solid var(--border); }
+  h3 { font-size: 16px; margin: 26px 0 6px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 5px 0; }
+  code {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px;
+    padding: 1px 6px; font: 13px ui-monospace, Consolas, monospace;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font: 13px/1.55 ui-monospace, Consolas, monospace;
+  }
+  pre code { background: none; border: 0; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); }
+  kbd {
+    background: var(--surface); border: 1px solid var(--border); border-bottom-width: 2px;
+    border-radius: 5px; padding: 1px 6px; font: 12px ui-monospace, Consolas, monospace;
+  }
+  .btn {
+    display: inline-block; height: 32px; line-height: 30px; padding: 0 12px;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+    color: var(--text); text-decoration: none; font-size: 13px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .tag {
+    display: inline-block; background: var(--accent); color: var(--accent-contrast);
+    border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 600; vertical-align: middle;
+  }
+  .dica {
+    border-left: 3px solid var(--accent); background: var(--surface);
+    border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 14px 0; font-size: 14.5px;
+  }
+  .dica strong { color: var(--accent); }
+  .toc { columns: 2; gap: 24px; font-size: 14.5px; margin: 18px 0 0; padding: 0; list-style-position: inside; }
+  .toc li { margin: 4px 0; break-inside: avoid; }
+  @media (max-width: 640px) { .toc { columns: 1; } }
+  #toggle { margin-left: auto; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <strong>📘 Design canvas</strong>
+  <div class="links">
+    <button class="btn" id="toggle">🌙 Tema</button>
+    <a class="btn" href="viewer.html">↗ Abrir o visualizador</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h1>Design canvas</h1>
+  <p class="lead">Telas reais em HTML, um preview funcional do sistema no navegador e revisão comentada — sem Figma, sem Penpot, tudo offline dentro do projeto.</p>
+
+  <ul class="toc">
+    <li><a href="#comecando">Começando (fluxo com o agente)</a></li>
+    <li><a href="#visualizador">O visualizador, controle por controle</a></li>
+    <li><a href="#revisao">Comentar e iterar (o ciclo de revisão)</a></li>
+    <li><a href="#fluxo">Modo fluxo (testar o sistema de verdade)</a></li>
+    <li><a href="#cenarios">Cenários de dados</a></li>
+    <li><a href="#exportar">Exportar: PNG e vídeo</a></li>
+    <li><a href="#interativo">Como as telas ficam interativas</a></li>
+    <li><a href="#estrutura">Estrutura de arquivos</a></li>
+    <li><a href="#problemas">Solução de problemas</a></li>
+  </ul>
+
+  <h2 id="comecando">Começando (fluxo com o agente)</h2>
+  <p>Você não cria nada à mão — descreve, o agente constrói:</p>
+  <ol>
+    <li>Na sessão do agente, <strong>dentro da pasta do projeto</strong>, peça as telas: <em>"quero as telas de login e cadastro do meu sistema, que abre num dashboard com lista de produtos"</em> (ou digite <code>/design</code>).</li>
+    <li>Na primeira vez o agente <strong>pergunta a marca</strong> (cor primária, estilo de fonte, tom) e cria o <code>design/design-system.css</code> + <code>design-system.md</code>. Todos os canvases seguintes reutilizam.</li>
+    <li>O agente cria um <strong>canvas por fluxo</strong> (ex.: <code>login/</code>, <code>dashboard/</code>), valida tudo e devolve o link: <code>http://localhost:8765/viewer.html?canvas=login</code>.</li>
+    <li>Abra o link, teste o sistema funcionando e comente o que quiser mudar (próxima seção). O agente ajusta e o visualizador recarrega sozinho.</li>
+  </ol>
+  <div class="dica"><strong>Dica:</strong> comece por um fluxo pequeno e concreto. O ciclo inteiro (gerar → testar → comentar → ajustar) fica visível em minutos.</div>
+
+  <h2 id="visualizador">O visualizador, controle por controle</h2>
+  <table>
+    <tr><th>Controle</th><th>O que faz</th></tr>
+    <tr><td><strong>Canvas</strong></td><td>Pula entre os fluxos do projeto (aparece com 2+ canvases). Cada canvas lembra suas próprias preferências.</td></tr>
+    <tr><td><strong>Cenário</strong></td><td>Troca os dados fictícios (ex.: <code>vazio</code>, <code>critico</code>). A escolha sobrevive à navegação e fica lembrada por canvas.</td></tr>
+    <tr><td><strong>Dispositivo</strong></td><td><code>Original</code> respeita o tamanho de cada tela; <code>Celular</code>/<code>Tablet</code>/<code>Desktop</code> força todas para o mesmo tamanho.</td></tr>
+    <tr><td><strong>🌙 Tema</strong></td><td>Claro/escuro aplicado dentro de todas as telas (elas usam os tokens do design system).</td></tr>
+    <tr><td><strong>Zoom</strong></td><td>Botões <kbd>−</kbd>/<kbd>+</kbd>/<kbd>Ajustar</kbd>, <kbd>Ctrl</kbd> + roda do mouse, teclas <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Arraste o fundo para mover.</td></tr>
+    <tr><td><strong>⟳ Recarregar</strong></td><td>Relê os arquivos na hora (o visualizador também detecta mudanças sozinho a cada 2,5&nbsp;s).</td></tr>
+    <tr><td><strong>⟲ Reset fluxo</strong></td><td>Limpa todo o estado do sistema (login, itens criados…) e traz todas as telas de volta ao início.</td></tr>
+    <tr><td><strong>Seleção</strong></td><td>Um clique na tela a seleciona (habilita comentário e PNG da tela). Duplo clique abre o modo fluxo.</td></tr>
+  </table>
+
+  <h2 id="revisao">Comentar e iterar (o ciclo de revisão)</h2>
+  <h3>Comentário na tela inteira</h3>
+  <ol>
+    <li>Selecione a tela (um clique) e clique <strong>💬 Comentar esta tela</strong>.</li>
+    <li>Escreva o pedido. O visualizador copia uma mensagem formatada — <strong>cole no chat do agente</strong>:</li>
+  </ol>
+  <pre><code>[Design: design/login › Login (01-login.html)] aumentar o espaçamento do formulário</code></pre>
+  <h3>Comentário em um elemento específico <span class="tag">🎯</span></h3>
+  <ol>
+    <li>Clique <strong>🎯 Elemento</strong> (o cursor vira mira; <kbd>Esc</kbd> sai).</li>
+    <li>Passe o mouse: cada elemento ganha destaque com o seletor e um trecho do texto.</li>
+    <li>Clique no elemento e escreva o ajuste. Ele vira um <strong>alfinete numerado</strong> na tela.</li>
+    <li>Marque quantos quiser e mande tudo de uma vez com <strong>⧉ Comentários (n)</strong>:</li>
+  </ol>
+  <pre><code>[Design: design/login › Login (01-login.html) › body &gt; main &gt; form &gt; button "Entrar"] deixar este botão em largura total</code></pre>
+  <p>O agente localiza pelo seletor (depois pelo trecho) e edita <strong>só aquele ponto</strong>. Alfinetes têm <kbd>×</kbd> para remover e não aparecem no PNG exportado.</p>
+  <div class="dica"><strong>Ciclo completo:</strong> comente → cole no chat → agente edita → o visualizador atualiza sozinho. Sem sair do navegador.</div>
+
+  <h2 id="fluxo">Modo fluxo (testar o sistema de verdade)</h2>
+  <p><strong>Duplo clique</strong> em uma tela abre o modo fluxo: a tela em tamanho real, <strong>interativa</strong> — você loga, navega, cadastra. A barra flutua no topo e <strong>sai da frente sozinha</strong> depois de alguns segundos sem mouse; qualquer movimento sobre a tela traz ela de volta. Na barra:</p>
+  <ul>
+    <li><strong>◀ ▶</strong> — volta e avança pelo histórico de navegação do fluxo.</li>
+    <li><strong>⟲</strong> — reinicia o fluxo do começo (por tela).</li>
+    <li><strong>🎯 Elemento</strong> — liga o modo de comentar elemento <em>dentro do modo fluxo</em>, com a tela em tamanho cheio (o melhor lugar para isso).</li>
+    <li><strong>🌙</strong> — alterna claro/escuro sem sair do fluxo.</li>
+    <li><strong>← Voltar</strong> — fecha o modo fluxo.</li>
+  </ul>
+  <p>Um canvas pode navegar para outro (login → dashboard): o sistema inteiro é navegável, e o estado (quem logou, o que foi criado) atravessa os canvases. O botão <strong>⟲ Reset fluxo</strong> da barra zera tudo.</p>
+
+  <h2 id="cenarios">Cenários de dados</h2>
+  <p>O <code>data.json</code> de cada canvas pode ter cenários nomeados que sobrepõem os dados base — é como você valida estados sem tocar em código:</p>
+  <pre><code>{
+  "items": [ …dados padrão… ],
+  "scenarios": {
+    "vazio":   { "items": [] },
+    "critico": { "items": [ { "qty": 0, … } ] }
+  }
+}</code></pre>
+  <p>Selecione no visualizador e confira se cada cenário compõe bem (lista vazia, tudo abaixo do mínimo, falha de API). Trocar de cenário limpa o estado do fluxo — cada rodada começa limpa.</p>
+
+  <h2 id="exportar">Exportar: PNG e vídeo</h2>
+  <table>
+    <tr><th>Botão</th><th>O que gera</th></tr>
+    <tr><td><strong>⬇ PNG da tela</strong></td><td>A tela selecionada, estilizada (tema atual), com fundo — baixa e mostra prévia.</td></tr>
+    <tr><td><strong>⬇ PNG do canvas</strong></td><td>Todas as telas lado a lado, com nome e tamanho de cada uma.</td></tr>
+    <tr><td><strong>⏺ Gravar fluxo</strong></td><td>Vídeo <code>.webm</code> do fluxo: o navegador pede para compartilhar a aba — aceite, interaja, e clique de novo (ou pare o compartilhamento) para baixar. Ideal para mandar a demonstração para o cliente.</td></tr>
+  </table>
+
+  <h2 id="interativo">Como as telas ficam interativas</h2>
+  <p>As telas incluem um runtime minúsculo e offline, o <code>mock.js</code>, e dados fictícios em <code>data.json</code>:</p>
+  <table>
+    <tr><th>API</th><th>O que faz</th></tr>
+    <tr><td><code>await Mock.data('items')</code></td><td>Lê os dados do <code>data.json</code> do canvas (com o cenário escolhido aplicado).</td></tr>
+    <tr><td><code>Mock.go('03-detalhe.html')</code></td><td>Navega para outra tela do fluxo — inclusive de outro canvas: <code>Mock.go('../dashboard/01-overview.html')</code>.</td></tr>
+    <tr><td><code>Mock.state.set('user', …)</code> / <code>.get('user')</code></td><td>Estado do fluxo compartilhado no projeto inteiro (login de um canvas, leitura em outro).</td></tr>
+    <tr><td><code>Mock.toast('Salvo!')</code></td><td>Feedback visual de ação simulada.</td></tr>
+    <tr><td><code>Mock.scenario()</code></td><td>Nome do cenário ativo (<code>''</code> para o padrão).</td></tr>
+  </table>
+  <p>Regras que o agente respeita: nada de CDN ou URL remota (ícones SVG inline, fontes do sistema), tokens do design system para toda cor/espaçamento, os dois temas sempre funcionando, e a tela continua compondo mesmo se o JavaScript falhar.</p>
+
+  <h2 id="estrutura">Estrutura de arquivos</h2>
+  <pre><code>design/
+  design-system.css      tokens do design system (claro e escuro)
+  design-system.md       decisões de marca em palavras
+  viewer.html            o visualizador (esta ferramenta)
+  docs.html              esta documentação
+  serve.mjs              servidor local (node design/serve.mjs [porta])
+  validate.mjs           validador (node design/validate.mjs design/&lt;canvas&gt;)
+  mock.js                runtime de interatividade
+  vendor/html-to-image.js  export de PNG (vendado, sem CDN)
+  index.json             lista de canvases {"canvases": ["login", …]}
+  &lt;canvas&gt;/              um fluxo por pasta (login, dashboard, …)
+    canvas.json          título + telas em ordem
+    data.json            dados fictícios + cenários (opcional)
+    01-&lt;tela&gt;.html       um documento HTML completo por tela</code></pre>
+  <p><code>canvas.json</code> define a ordem e o tamanho: <code>device</code> é <code>mobile</code> (390×844), <code>tablet</code> (834×1112) ou <code>desktop</code> (1440×900), com <code>width</code>/<code>height</code> opcionais.</p>
+
+  <h2 id="problemas">Solução de problemas</h2>
+  <ul>
+    <li><strong>"O canvas X ainda não existe aqui"</strong> — o canvas é criado pelo agente junto com as telas: peça as telas na sessão do projeto. Confira também se o servidor está rodando na pasta <code>design/</code> do projeto e se o nome na URL (<code>?canvas=…</code>) está certo.</li>
+    <li><strong>Porta 8765 ocupada</strong> — suba em outra: <code>node design/serve.mjs 8766</code> e ajuste o link.</li>
+    <li><strong>A barra não mostra 🎯 / ⟲ / ⏺</strong> — o <code>viewer.html</code> do projeto está desatualizado; copie a versão atual da skill (pedir ao agente: "atualize os arquivos do design/ com a versão da skill").</li>
+    <li><strong>Banner vermelho de problemas</strong> — clique para expandir: cada linha diz o código e o arquivo. Corrija (ou mande o agente corrigir) e recarregue.</li>
+    <li><strong>Preferências esquisitas</strong> — cenário/tema/dispositivo ficam por canvas no navegador; limpar os dados do site reseta.</li>
+  </ul>
+
+  <p style="margin-top:48px; color: var(--muted); font-size: 13px;">Design canvas · tudo roda local, offline, sem dependências além do Node para o servidor e o validador.</p>
+
+</div>
+
+<script>
+  document.getElementById('toggle').addEventListener('click', () => {
+    const root = document.documentElement
+    root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark')
+  })
+</script>
+</body>
+</html>

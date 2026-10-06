@@ -1,0 +1,1518 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design canvas</title>
+<script src="vendor/html-to-image.js"></script>
+<style>
+  :root {
+    --ui-bg: #f8fafc; --ui-surface: #ffffff; --ui-text: #0f172a; --ui-muted: #64748b;
+    --ui-border: #e2e8f0; --ui-accent: #0f766e; --ui-danger: #b91c1c; --ui-dot: #cbd5e1;
+  }
+  body.dark {
+    --ui-bg: #0b1220; --ui-surface: #111827; --ui-text: #e5e7eb; --ui-muted: #94a3b8;
+    --ui-border: #1f2937; --ui-accent: #2dd4bf; --ui-danger: #f87171; --ui-dot: #263447;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; display: flex; flex-direction: column;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px; color: var(--ui-text); background: var(--ui-bg);
+  }
+  button, select, input, textarea { font: inherit; color: inherit; }
+  button {
+    height: 34px; padding: 0 12px; border: 1px solid var(--ui-border); border-radius: 8px;
+    background: var(--ui-surface); cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--ui-accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--ui-accent); border-color: var(--ui-accent); color: #fff; }
+  body.dark button.primary { color: #042f2e; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 10px 16px; background: var(--ui-surface); border-bottom: 1px solid var(--ui-border);
+    flex-wrap: wrap; z-index: 5;
+  }
+  #crumbs { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  #crumbs strong { font-size: 16px; }
+  #crumbs span { color: var(--ui-muted); font-size: 12px; }
+  #controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #controls label { display: flex; align-items: center; gap: 6px; color: var(--ui-muted); font-size: 12px; }
+  select, #manualInput {
+    height: 34px; padding: 0 8px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-surface);
+  }
+  .zoomgrp { display: flex; align-items: center; gap: 4px; }
+  .zoomgrp span { min-width: 44px; text-align: center; color: var(--ui-muted); font-variant-numeric: tabular-nums; }
+
+  #problems { z-index: 4; }
+  #problems[open] { background: #fef2f2; }
+  body.dark #problems[open] { background: #450a0a; }
+  #problems summary {
+    padding: 8px 16px; cursor: pointer; color: var(--ui-danger); font-weight: 600; list-style: none;
+    border-bottom: 1px solid var(--ui-border);
+  }
+  #problems summary::before { content: "⚠ "; }
+  #problems[open] summary { border-bottom: 0; }
+  #problems ul { margin: 0; padding: 4px 16px 12px 40px; color: var(--ui-danger); }
+  #problems li { margin: 2px 0; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+
+  main#viewport {
+    flex: 1; overflow: hidden; position: relative; cursor: grab;
+    background-image: radial-gradient(var(--ui-dot) 1px, transparent 1.5px);
+    background-size: 22px 22px;
+  }
+  main#viewport.dragging { cursor: grabbing; }
+  #world { position: absolute; top: 0; left: 0; transform-origin: 0 0; width: max-content; }
+  #strip { display: flex; align-items: flex-start; gap: 48px; padding: 48px; }
+
+  .card { display: flex; flex-direction: column; gap: 8px; }
+  .card-head { display: flex; align-items: baseline; gap: 10px; }
+  .card-name { font-weight: 600; }
+  .card-size { color: var(--ui-muted); font-size: 12px; }
+  .card-frame {
+    position: relative; background: var(--ui-surface);
+    border: 1px solid var(--ui-border); border-radius: 4px; overflow: hidden;
+    box-shadow: 0 10px 24px rgb(15 23 42 / .12);
+  }
+  .card.selected .card-frame { outline: 3px solid var(--ui-accent); outline-offset: 2px; }
+  .card-frame iframe { display: block; width: 100%; height: 100%; border: 0; background: #fff; }
+  .card-reset {
+    height: 22px; min-height: 0; padding: 0 8px;
+    border: 1px solid var(--ui-border); border-radius: 6px;
+    background: var(--ui-surface); color: var(--ui-muted);
+    font-size: 12px; line-height: 1; cursor: pointer;
+  }
+  .card-reset:hover { border-color: var(--ui-accent); color: var(--ui-accent); }
+  #recordBtn.recording { background: var(--ui-danger); border-color: var(--ui-danger); color: #fff; }
+  .card-overlay { position: absolute; inset: 0; cursor: pointer; }
+  .card-frame .broken {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 12px; text-align: center; color: var(--ui-danger); background: var(--ui-surface);
+  }
+  #empty {
+    position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px;
+    align-items: center; justify-content: center; color: var(--ui-muted);
+  }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgb(15 23 42 / .55);
+    display: flex; align-items: center; justify-content: center; z-index: 20; padding: 24px;
+  }
+  .box {
+    background: var(--ui-surface); border: 1px solid var(--ui-border); border-radius: 12px;
+    box-shadow: 0 24px 60px rgb(0 0 0 / .35); max-width: 640px; width: 100%; padding: 20px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .box h2 { margin: 0; font-size: 16px; }
+  .box textarea {
+    min-height: 90px; resize: vertical; padding: 10px; border: 1px solid var(--ui-border);
+    border-radius: 8px; background: var(--ui-bg);
+  }
+  .box .msg-code {
+    margin: 0; padding: 10px; border-radius: 8px; background: var(--ui-bg);
+    border: 1px dashed var(--ui-border); font-family: ui-monospace, Consolas, monospace;
+    font-size: 13px; white-space: pre-wrap; word-break: break-word;
+  }
+  .box .row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+  .box .hint { color: var(--ui-muted); font-size: 12px; }
+  .box img { max-width: 100%; max-height: 55vh; border: 1px solid var(--ui-border); border-radius: 8px; }
+
+  #fullscreen { position: fixed; inset: 0; z-index: 15; background: var(--ui-bg); }
+  #fsTop {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+    display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+    background: var(--ui-surface); border-bottom: 1px solid var(--ui-border);
+    transition: opacity .25s, transform .25s;
+  }
+  #fsTop.hidden-bar { opacity: 0; pointer-events: none; transform: translateY(-10px); }
+  #fsTop strong { font-size: 15px; }
+  #fsStage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  #fsFrame { border: 0; background: #fff; }
+  #fsOverlay { position: absolute; z-index: 2; cursor: crosshair; }
+  .highlight {
+    position: absolute; display: none; pointer-events: none; z-index: 3;
+    outline: 2px solid var(--ui-accent); outline-offset: -1px;
+    background: rgb(13 148 136 / .14);
+  }
+  .highlight::after {
+    content: attr(data-info);
+    position: absolute; left: 0; top: 100%; margin-top: 2px; max-width: 100%;
+    padding: 2px 6px; border-radius: 4px; background: var(--ui-accent); color: #fff;
+    font-family: ui-monospace, Consolas, monospace; font-size: 10px; line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  body.dark .highlight::after { color: #042f2e; }
+
+  #selector { max-width: 560px; margin: 8vh auto; padding: 0 24px; display: flex; flex-direction: column; gap: 16px; }
+  #selector h1 { font-size: 22px; margin: 0; }
+  #selector p { color: var(--ui-muted); margin: 0; }
+  #canvasList { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  #canvasList button { height: 40px; padding: 0 16px; }
+  #manualForm { display: flex; gap: 8px; }
+  #manualInput { flex: 1; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
+    background: var(--ui-text); color: var(--ui-bg); padding: 10px 18px; border-radius: 10px;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 40; max-width: 80vw;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .card-overlay.inspecting { cursor: crosshair; }
+  .pins { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .pin { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; display: flex; }
+  .pin-badge {
+    display: flex; align-items: center; justify-content: center;
+    min-width: 22px; height: 22px; padding: 0 7px; border-radius: 11px;
+    background: var(--ui-accent); color: #fff; font-size: 12px; font-weight: 700; line-height: 1;
+    box-shadow: 0 2px 6px rgb(15 23 42 / .35);
+  }
+  body.dark .pin-badge { color: #042f2e; }
+  .pin .pin-del {
+    display: none; height: 22px; min-height: 22px; width: 20px; padding: 0;
+    border: 0; border-radius: 0 11px 11px 0; background: var(--ui-surface);
+    color: var(--ui-muted); cursor: pointer; font-size: 12px; line-height: 1;
+  }
+  .pin:hover .pin-del { display: block; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<header id="bar" hidden>
+  <div id="crumbs"><strong id="canvasTitle"></strong><span id="canvasPath"></span></div>
+  <div id="controls">
+    <label id="canvasLabel" hidden>Canvas
+      <select id="canvasSelect"></select>
+    </label>
+    <label id="scenarioLabel" hidden>Cenário
+      <select id="scenarioSelect"></select>
+    </label>
+    <label>Dispositivo
+      <select id="deviceSelect">
+        <option value="original">Original</option>
+        <option value="mobile">Celular</option>
+        <option value="tablet">Tablet</option>
+        <option value="desktop">Desktop</option>
+      </select>
+    </label>
+    <button id="themeBtn" title="Alternar tema claro/escuro">🌙 Escuro</button>
+    <span class="zoomgrp">
+      <button id="zoomOut" title="Diminuir zoom">−</button>
+      <span id="zoomLabel">100%</span>
+      <button id="zoomIn" title="Aumentar zoom">+</button>
+      <button id="zoomFit" title="Ajustar à janela">Ajustar</button>
+    </span>
+    <button id="reloadBtn" title="Reler canvas.json e as telas">⟳ Recarregar</button>
+    <button id="resetFlowBtn" title="Voltar todas as telas ao início e limpar os dados do fluxo">⟲ Reset fluxo</button>
+    <button id="recordBtn" title="Gravar o fluxo como vídeo .webm — o navegador pede para compartilhar esta aba; clique de novo para parar e baixar">⏺ Gravar fluxo</button>
+    <button id="docsBtn" title="Abrir a documentação de utilização">📘 Docs</button>
+    <button id="inspectBtn" title="Comentar um elemento específico da tela (Esc sai do modo)">🎯 Elemento</button>
+    <button id="commentBtn" disabled>💬 Comentar esta tela</button>
+    <button id="copyAllBtn" title="Ver/copiar todos os comentários de elemento">⧉ Comentários (0)</button>
+    <button id="exportBtn" disabled>⬇ PNG da tela</button>
+    <button id="exportAllBtn">⬇ PNG do canvas</button>
+  </div>
+</header>
+
+<details id="problems" hidden>
+  <summary><span id="problemsCount"></span> problema(s) no canvas — clique para ver</summary>
+  <ul id="problemsList"></ul>
+</details>
+
+<main id="viewport" hidden>
+  <div id="world"><div id="strip"></div></div>
+</main>
+
+<section id="selector" hidden>
+  <h1>Design canvas</h1>
+  <p>Escolha um canvas para visualizar. Eles ficam em pastas com <code>canvas.json</code> ao lado deste visualizador.</p>
+  <ul id="canvasList"></ul>
+  <form id="manualForm">
+    <input id="manualInput" placeholder="nome do canvas (ex.: login)" autocomplete="off">
+    <button class="primary" type="submit">Abrir</button>
+  </form>
+</section>
+
+<div id="fullscreen" hidden>
+  <div id="fsTop">
+    <button id="fsBack">← Voltar</button>
+    <button id="fsPrev" title="Tela anterior do fluxo">◀</button>
+    <button id="fsNext" title="Tela seguinte do fluxo">▶</button>
+    <button id="fsRestart" title="Reiniciar o fluxo do começo">⟲</button>
+    <button id="fsInspect" title="Comentar um elemento da tela (Esc sai do modo)">🎯 Elemento</button>
+    <button id="fsTheme" title="Alternar tema claro/escuro">🌙</button>
+    <strong id="fsTitle"></strong>
+    <span id="fsSize" style="color: var(--ui-muted); font-size: 12px;"></span>
+  </div>
+  <div id="fsStage">
+    <iframe id="fsFrame" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+    <div id="fsOverlay" class="card-overlay" hidden></div>
+    <div id="fsHighlight" class="highlight"></div>
+  </div>
+</div>
+
+<div id="dialog" class="overlay" hidden>
+  <form class="box" id="commentForm">
+    <h2 id="commentTitle">Comentar tela</h2>
+    <p class="hint" id="commentHint">Descreva o ajuste desejado. Ao enviar, a mensagem formatada vai para a área de transferência — cole no chat do agente.</p>
+    <textarea id="commentText" placeholder="Ex.: aumentar o espaçamento do formulário e deixar o botão em tela cheia" required></textarea>
+    <div class="row">
+      <button type="button" data-close>Cancelar</button>
+      <button type="submit" class="primary">Enviar comentário</button>
+    </div>
+  </form>
+</div>
+
+<div id="elementDialog" class="overlay" hidden>
+  <form class="box" id="elementForm">
+    <h2>Comentar elemento</h2>
+    <p class="msg-code" id="elementTarget"></p>
+    <p class="hint">Descreva a mudança só neste elemento. O comentário vira um alfinete na tela — copie um ou todos e cole no chat do agente.</p>
+    <textarea id="elementText" placeholder="Ex.: deixar este botão em largura total" required></textarea>
+    <div class="row">
+      <button type="button" data-close>Cancelar</button>
+      <button type="submit" class="primary">Comentar elemento</button>
+    </div>
+  </form>
+</div>
+
+<div id="clipboard" class="overlay" hidden>
+  <div class="box">
+    <h2>Mensagem copiada</h2>
+    <p class="hint">Cole no chat do agente para ajustar apenas esta tela:</p>
+    <p class="msg-code" id="clipboardMsg"></p>
+    <div class="row">
+      <button id="copyAgain" type="button">Copiar de novo</button>
+      <button class="primary" data-close>Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div id="preview" class="overlay" hidden>
+  <div class="box">
+    <h2>PNG exportado</h2>
+    <img id="previewImg" alt="Prévia do PNG exportado">
+    <div class="row">
+      <button id="previewDownload" type="button">Baixar de novo</button>
+      <button class="primary" data-close>Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict'
+
+const DEVICES = { mobile: [390, 844], tablet: [834, 1112], desktop: [1440, 900] }
+const DEVICE_LABEL = { mobile: 'celular', tablet: 'tablet', desktop: 'desktop' }
+const MIN_SIZE = 100
+const MAX_SIZE = 10000
+
+const $ = (id) => document.getElementById(id)
+const params = new URLSearchParams(location.search)
+const canvasParam = params.get('canvas') ?? ''
+
+const state = {
+  canvas: '', theme: 'light', device: 'original',
+  zoom: 1, x: 0, y: 0,
+  screens: [], selectedId: null, bust: 0,
+  inspect: false, annotations: [], pinSeq: 0,
+  scenario: '', problems: [],
+}
+
+/* --------------------------------------------- per-canvas preferences */
+
+function prefsKey() {
+  return `design.viewer.${state.canvas}`
+}
+
+function loadPrefs() {
+  try {
+    return JSON.parse(localStorage.getItem(prefsKey()) ?? '{}') ?? {}
+  } catch {
+    return {}
+  }
+}
+
+function savePrefs() {
+  if (!state.canvas) return
+  try {
+    localStorage.setItem(prefsKey(), JSON.stringify({
+      scenario: state.scenario, theme: state.theme, device: state.device,
+      annotations: state.annotations, pinSeq: state.pinSeq,
+    }))
+  } catch { /* storage unavailable; prefs stay per-session */ }
+}
+
+/* ---------------------------------------------------------------- canvas */
+
+async function fetchText(url) {
+  const response = await fetch(url, { cache: 'no-store' })
+  if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`)
+  return response.text()
+}
+
+async function loadCanvas() {
+  const result = await validate()
+  renderProblems(result.problems)
+  state.problems = result.problems
+  state.screens = result.screens
+  $('canvasTitle').textContent = result.title || state.canvas
+  $('canvasPath').textContent = `design/${state.canvas}`
+  await loadScenarioSelect()
+  await loadCanvasSelect()
+  renderStrip()
+}
+
+/** Scenario picker: populated from data.json's optional "scenarios" object. */
+async function loadScenarioSelect() {
+  const label = $('scenarioLabel')
+  const select = $('scenarioSelect')
+  select.innerHTML = ''
+  let names = null
+  try {
+    const data = JSON.parse(await fetchText(`${state.canvas}/data.json`))
+    if (data && typeof data === 'object' && data.scenarios && typeof data.scenarios === 'object' && !Array.isArray(data.scenarios)) {
+      names = Object.keys(data.scenarios)
+    }
+  } catch { /* no data.json or no scenarios */ }
+  if (!names || names.length === 0) {
+    label.hidden = true
+    state.scenario = ''
+    return
+  }
+  label.hidden = false
+  for (const name of ['', ...names]) {
+    const option = document.createElement('option')
+    option.value = name
+    option.textContent = name === '' ? 'padrão' : name
+    select.appendChild(option)
+  }
+  if (!names.includes(state.scenario)) state.scenario = ''
+  select.value = state.scenario
+}
+
+/** URL for a screen, carrying the cache buster and the chosen scenario. */
+function screenUrl(screen) {
+  const sep = screen.file.includes('?') ? '&' : '?'
+  const scenario = state.scenario ? `&scenario=${encodeURIComponent(state.scenario)}` : ''
+  return `${state.canvas}/${screen.file}${sep}_=${state.bust}${scenario}`
+}
+
+/** Same rules as design/validate.mjs, minus the filesystem checks (fetch instead). */
+async function validate() {
+  const problems = []
+  const screens = []
+  let title = ''
+  let raw
+  try {
+    raw = await fetchText(`${state.canvas}/canvas.json`)
+  } catch {
+    problems.push(`missing-manifest: ${state.canvas}/canvas.json not found`)
+    return { problems, screens, title }
+  }
+  let manifest
+  try {
+    manifest = JSON.parse(raw)
+  } catch (error) {
+    const message = String(error.message)
+    const line = jsonErrorLine(message, raw)
+    problems.push(`invalid-json: canvas.json${line ? `: line ${line}` : ''}: ${message}`)
+    return { problems, screens, title }
+  }
+  if (typeof manifest !== 'object' || manifest === null || Array.isArray(manifest)) {
+    problems.push('invalid-shape: canvas.json: the root must be an object')
+    return { problems, screens, title }
+  }
+  title = typeof manifest.title === 'string' ? manifest.title : ''
+  if (!Array.isArray(manifest.screens)) {
+    problems.push('invalid-shape: canvas.json: "screens" must be a list of screen objects')
+    return { problems, screens, title }
+  }
+  const seen = new Map()
+  for (const [index, screen] of manifest.screens.entries()) {
+    const bad = (message) => problems.push(`invalid-shape: screen #${index + 1}: ${message}`)
+    if (typeof screen !== 'object' || screen === null || Array.isArray(screen)) {
+      bad('must be an object with "id", "name" and "file"')
+      continue
+    }
+    if (typeof screen.id !== 'string' || !screen.id) bad('"id" must be a non-empty string')
+    if (typeof screen.name !== 'string' || !screen.name) bad('"name" must be a non-empty string')
+    if (typeof screen.file !== 'string' || !screen.file) { bad('"file" must be a non-empty string'); continue }
+
+    if (seen.has(screen.id)) problems.push(`duplicate-id: screen "${screen.id}" is repeated`)
+    else seen.set(screen.id, index)
+
+    let widthOk = Number.isInteger(screen.width) && screen.width >= MIN_SIZE && screen.width <= MAX_SIZE
+    let heightOk = Number.isInteger(screen.height) && screen.height >= MIN_SIZE && screen.height <= MAX_SIZE
+    if ((screen.width !== undefined && !widthOk) || (screen.height !== undefined && !heightOk)) {
+      bad(`"width"/"height" must be integers from ${MIN_SIZE} to ${MAX_SIZE}`)
+    }
+    const unknownDevice = typeof screen.device === 'string' && screen.device && !(screen.device in DEVICES)
+    if (unknownDevice && !(widthOk && heightOk && screen.width !== undefined && screen.height !== undefined)) {
+      problems.push(`unknown-device: screen "${screen.id}": device "${screen.device}" is not mobile/tablet/desktop and no width+height override exists`)
+    }
+    const escapes = screen.file.startsWith('/') || screen.file.includes('\\') || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(screen.file) || screen.file.split('/').includes('..')
+    if (escapes) {
+      problems.push(`file-outside: screen "${screen.id}" → ${screen.file} escapes the canvas folder`)
+      continue
+    }
+    try {
+      await fetchText(`${state.canvas}/${screen.file.split('?')[0]}`)
+    } catch {
+      problems.push(`missing-file: screen "${screen.id}" → ${screen.file} not found`)
+    }
+    screens.push(screen)
+  }
+  return { problems, screens, title }
+}
+
+function lineOf(text, position) {
+  return text.slice(0, position).split('\n').length
+}
+
+/** Best-effort line number from a JSON.parse message (mirrors validate.mjs). */
+function jsonErrorLine(message, raw) {
+  const v8line = /\(line (\d+)/.exec(message)?.[1]
+  if (v8line) return v8line
+  const at = /at position (\d+)/.exec(message)
+  if (at) return lineOf(raw, +at[1])
+  // Modern V8 embeds a quoted context snippet instead of a position.
+  const context = /\.\.\.\s*"?(.*?)"?\s*is not valid JSON\s*$/s.exec(message)?.[1]
+  if (!context) return null
+  const anchor = Math.max(0, raw.lastIndexOf(context))
+  const token = /Unexpected token '(.*)'/.exec(message)?.[1]
+  const offset = token && context.includes(token) ? context.indexOf(token) + 1 : context.length
+  return lineOf(raw, anchor + offset)
+}
+
+function renderProblems(problems) {
+  $('problems').hidden = problems.length === 0
+  $('problemsCount').textContent = String(problems.length)
+  $('problemsList').innerHTML = ''
+  for (const problem of problems) {
+    const li = document.createElement('li')
+    li.textContent = problem
+    $('problemsList').appendChild(li)
+  }
+}
+
+/* ----------------------------------------------------------------- strip */
+
+function screenSize(screen) {
+  if (state.device !== 'original' && DEVICES[state.device]) return [...DEVICES[state.device]]
+  if (Number.isInteger(screen.width) && Number.isInteger(screen.height)) return [screen.width, screen.height]
+  return [...(DEVICES[screen.device] ?? DEVICES.mobile)]
+}
+
+function renderStrip() {
+  const strip = $('strip')
+  strip.innerHTML = ''
+  if (state.screens.length === 0) {
+    const empty = document.createElement('div')
+    empty.id = 'empty'
+    const missing = state.problems.some((problem) => problem.startsWith('missing-manifest'))
+    empty.innerHTML = missing
+      ? `<strong>O canvas "${state.canvas}" ainda não existe aqui</strong>` +
+        '<span>Peça ao agente para criar as telas (ex.: /design) — o canvas é criado junto com elas —' +
+        ' ou confira o nome na URL (?canvas=…) e se o servidor está rodando na pasta design/ do projeto.</span>'
+      : '<strong>Nenhuma tela para mostrar</strong><span>Corrija os problemas acima e recarregue.</span>'
+    strip.appendChild(empty)
+    select(null)
+    return
+  }
+  for (const screen of state.screens) {
+    strip.appendChild(cardFor(screen))
+  }
+  renderAllPins()
+  if (!state.screens.some((s) => s.id === state.selectedId)) select(null)
+  else applySelection()
+}
+
+function cardFor(screen) {
+  const [width, height] = screenSize(screen)
+  const card = document.createElement('div')
+  card.className = 'card'
+  card.dataset.id = screen.id
+
+  const head = document.createElement('div')
+  head.className = 'card-head'
+  const name = document.createElement('span')
+  name.className = 'card-name'
+  name.textContent = screen.name
+  const size = document.createElement('span')
+  size.className = 'card-size'
+  size.textContent = sizeLabel(screen, width, height)
+  const reset = document.createElement('button')
+  reset.className = 'card-reset'
+  reset.type = 'button'
+  reset.textContent = '↺ início'
+  reset.title = 'Esta tela navegou dentro do fluxo — clique para voltar ao início'
+  reset.hidden = true
+  reset.addEventListener('click', () => { iframe.src = origSrc })
+  head.append(name, size, reset)
+
+  const frame = document.createElement('div')
+  frame.className = 'card-frame'
+  frame.style.width = `${width}px`
+  frame.style.height = `${height}px`
+  const iframe = document.createElement('iframe')
+  iframe.sandbox = 'allow-scripts allow-same-origin allow-forms'
+  iframe.title = screen.name
+  const origSrc = screenUrl(screen)
+  iframe.src = origSrc
+  iframe.addEventListener('load', () => {
+    applyThemeToFrame(iframe)
+    let navigated = false
+    try {
+      navigated = !iframe.contentWindow.location.pathname.endsWith(`/${state.canvas}/${screen.file}`)
+    } catch { /* opaque origin; treat as in place */ }
+    reset.hidden = !navigated
+  })
+  iframe.addEventListener('error', () => showBroken(frame, screen))
+  const overlay = document.createElement('div')
+  overlay.className = 'card-overlay'
+  if (state.inspect) overlay.classList.add('inspecting')
+  overlay.title = state.inspect ? 'Clique em um elemento para comentar' : 'Clique para selecionar · duplo clique para tela cheia'
+  const highlight = document.createElement("div")
+  highlight.className = "highlight"
+  const pins = document.createElement('div')
+  pins.className = 'pins'
+  overlay.addEventListener('click', (event) => {
+    select(screen.id)
+    if (state.inspect) {
+      const target = elementAt(overlay, event)
+      if (target) openElementDialog(screen, target)
+    }
+  })
+  overlay.addEventListener('dblclick', () => openFullscreen(screen))
+  overlay.addEventListener('mousemove', (event) => {
+    if (!state.inspect) return
+    const target = elementAt(overlay, event)
+    if (!target) { highlight.style.display = 'none'; return }
+    const rect = target.el.getBoundingClientRect()
+    Object.assign(highlight.style, {
+      display: 'block',
+      left: `${rect.x}px`, top: `${rect.y}px`,
+      width: `${rect.width}px`, height: `${rect.height}px`,
+    })
+    highlight.dataset.info = `${target.selector}${target.snippet ? ` — "${target.snippet}"` : ''}`
+  })
+  overlay.addEventListener('mouseleave', () => { highlight.style.display = 'none' })
+  frame.append(iframe, overlay, highlight, pins)
+
+  card.append(head, frame)
+  return card
+}
+
+/* -------------------------------------------------- element inspection */
+
+/** The element under the cursor, in the iframe's own coordinate space. */
+function elementAt(overlay, event) {
+  const iframe = overlay.parentElement.querySelector('iframe')
+  const doc = iframe?.contentDocument
+  if (!doc) return null
+  const rect = overlay.getBoundingClientRect()
+  const x = (event.clientX - rect.left) / state.zoom
+  const y = (event.clientY - rect.top) / state.zoom
+  const el = doc.elementFromPoint(x, y)
+  if (!el) return null
+  return { el, selector: cssSelector(doc, el), snippet: elementSnippet(el) }
+}
+
+function cssSelector(doc, el) {
+  if (el.dataset?.testid) return `[data-testid="${el.dataset.testid}"]`
+  const parts = []
+  let cur = el
+  for (let depth = 0; cur && cur.nodeType === 1 && depth < 4 && cur !== doc.documentElement; depth++) {
+    let part = cur.tagName.toLowerCase()
+    if (cur.id) { parts.unshift(`#${CSS.escape(cur.id)}`); break }
+    for (const cls of [...cur.classList].slice(0, 2)) part += `.${CSS.escape(cls)}`
+    const parent = cur.parentElement
+    if (parent) {
+      const sameTag = [...parent.children].filter((c) => c.tagName === cur.tagName)
+      if (sameTag.length > 1) part += `:nth-of-type(${sameTag.indexOf(cur) + 1})`
+    }
+    parts.unshift(part)
+    cur = parent
+  }
+  return parts.join(' > ') || el.tagName.toLowerCase()
+}
+
+function elementSnippet(el) {
+  const raw = el.getAttribute('aria-label') || el.getAttribute('placeholder')
+    || (typeof el.value === 'string' && el.value) || el.textContent || ''
+  return raw.trim().replace(/\s+/g, ' ').slice(0, 48)
+}
+
+let elementTarget = null
+function openElementDialog(screen, target) {
+  elementTarget = { screen, ...target }
+  $('elementTarget').textContent = `${target.selector}${target.snippet ? ` — "${target.snippet}"` : ''}`
+  $('elementText').value = ''
+  $('elementDialog').hidden = false
+  $('elementText').focus()
+}
+
+$('elementForm').addEventListener('submit', async (event) => {
+  event.preventDefault()
+  const text = $('elementText').value.trim()
+  if (!elementTarget || !text) return
+  const { screen, selector, snippet, el } = elementTarget
+  const rect = el?.getBoundingClientRect?.()
+  const annotation = {
+    id: `pin${++state.pinSeq}`,
+    screenId: screen.id,
+    selector, snippet, text,
+    rect: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
+  }
+  state.annotations.push(annotation)
+  savePrefs()
+  renderPins(screen.id)
+  updateCopyAll()
+  $('elementDialog').hidden = true
+  const message = annotationMessage(annotation)
+  $('clipboardMsg').textContent = message
+  $('clipboard').hidden = false
+  await copyToClipboard(message)
+})
+
+function annotationMessage(a) {
+  const screen = state.screens.find((s) => s.id === a.screenId)
+  const name = screen?.name ?? a.screenId
+  const file = screen?.file ?? ''
+  const element = a.selector ? ` › ${a.selector}${a.snippet ? ` "${a.snippet}"` : ''}` : ''
+  return `[Design: design/${state.canvas} › ${name} (${file})${element}] ${a.text}`
+}
+
+function renderPins(screenId) {
+  const card = $('strip').querySelector(`.card[data-id="${CSS.escape(screenId)}"]`)
+  const layer = card?.querySelector('.pins')
+  if (!layer) return
+  layer.innerHTML = ''
+  const mine = state.annotations.filter((a) => a.screenId === screenId)
+  mine.forEach((annotation, index) => {
+    const pin = document.createElement('div')
+    pin.className = 'pin'
+    if (annotation.rect) {
+      pin.style.left = `${annotation.rect.x + annotation.rect.width / 2}px`
+      pin.style.top = `${annotation.rect.y}px`
+    } else {
+      pin.style.left = '50%'
+      pin.style.top = '24px'
+    }
+    pin.title = `${annotation.selector}\n${annotation.text}`
+    const badge = document.createElement('span')
+    badge.className = 'pin-badge'
+    badge.textContent = String(index + 1)
+    const del = document.createElement('button')
+    del.className = 'pin-del'
+    del.type = 'button'
+    del.textContent = '×'
+    del.title = 'Remover comentário'
+    del.addEventListener('click', (event) => {
+      event.stopPropagation()
+      state.annotations = state.annotations.filter((x) => x.id !== annotation.id)
+      savePrefs()
+      renderPins(screenId)
+      updateCopyAll()
+    })
+    pin.append(badge, del)
+    layer.appendChild(pin)
+  })
+}
+
+function renderAllPins() {
+  for (const screen of state.screens) renderPins(screen.id)
+}
+
+function updateCopyAll() {
+  const btn = $('copyAllBtn')
+  btn.hidden = false
+  btn.textContent = `⧉ Comentários (${state.annotations.length})`
+}
+
+$('copyAllBtn').addEventListener('click', async () => {
+  if (state.annotations.length === 0) {
+    toast('Nenhum comentário de elemento ainda — ative 🎯 Elemento e clique no alvo')
+    return
+  }
+  const message = state.annotations.map(annotationMessage).join('\n')
+  $('clipboardMsg').textContent = message
+  $('clipboard').hidden = false
+  await copyToClipboard(message)
+})
+
+$('inspectBtn').addEventListener('click', () => {
+  state.inspect = !state.inspect
+  $('inspectBtn').classList.toggle('primary', state.inspect)
+  $('fsInspect').classList.toggle('primary', state.inspect)
+  for (const overlay of document.querySelectorAll('.card-overlay')) {
+    overlay.classList.toggle('inspecting', state.inspect)
+    overlay.title = state.inspect ? 'Clique em um elemento para comentar' : 'Clique para selecionar · duplo clique para tela cheia'
+  }
+  if (!state.inspect) {
+    for (const highlight of document.querySelectorAll(".highlight")) highlight.style.display = 'none'
+  }
+  if (!$('fullscreen').hidden) layoutFullscreen()
+})
+
+function showBroken(frame, screen) {
+  const broken = document.createElement('div')
+  broken.className = 'broken'
+  broken.textContent = `Não foi possível carregar ${screen.file}`
+  frame.appendChild(broken)
+}
+
+function sizeLabel(screen, width, height) {
+  const device = state.device !== 'original'
+    ? DEVICE_LABEL[state.device]
+    : (screen.device in DEVICES ? DEVICE_LABEL[screen.device] : (Number.isInteger(screen.width) ? 'personalizado' : 'celular'))
+  return `${width}×${height} · ${device}`
+}
+
+function select(id) {
+  state.selectedId = id
+  applySelection()
+}
+
+function applySelection() {
+  for (const card of $('strip').querySelectorAll('.card')) {
+    card.classList.toggle('selected', card.dataset.id === state.selectedId)
+  }
+  $('commentBtn').disabled = $('exportBtn').disabled = state.selectedId === null
+}
+
+function selectedScreen() {
+  return state.screens.find((s) => s.id === state.selectedId) ?? null
+}
+
+/* ------------------------------------------------------------- pan/zoom */
+
+function applyView() {
+  $('world').style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.zoom})`
+  $('zoomLabel').textContent = `${Math.round(state.zoom * 100)}%`
+}
+
+function zoomBy(factor, cx, cy) {
+  const rect = $('viewport').getBoundingClientRect()
+  cx ??= rect.left + rect.width / 2
+  cy ??= rect.top + rect.height / 2
+  const next = Math.min(3, Math.max(0.1, state.zoom * factor))
+  const wx = (cx - rect.left - state.x) / state.zoom
+  const wy = (cy - rect.top - state.y) / state.zoom
+  state.zoom = next
+  state.x = cx - rect.left - wx * next
+  state.y = cy - rect.top - wy * next
+  applyView()
+}
+
+function fitView() {
+  const strip = $('strip')
+  if (!strip || state.screens.length === 0) return
+  const rect = $('viewport').getBoundingClientRect()
+  // fit by HEIGHT so many-screens canvases stay readable; pan horizontally
+  const height = strip.offsetHeight
+  state.zoom = Math.max(0.1, Math.min((rect.height - 32) / height, 1))
+  state.x = 24
+  state.y = Math.max(16, (rect.height - height * state.zoom) / 2)
+  applyView()
+}
+
+$('viewport').addEventListener('wheel', (event) => {
+  event.preventDefault()
+  if (event.ctrlKey || event.metaKey) zoomBy(Math.exp(-event.deltaY * 0.0022), event.clientX, event.clientY)
+  else { state.x -= event.deltaX; state.y -= event.deltaY; applyView() }
+}, { passive: false })
+
+$('viewport').addEventListener('pointerdown', (event) => {
+  if (event.target.closest('.card-overlay')) return
+  const start = { x: event.clientX - state.x, y: event.clientY - state.y }
+  $('viewport').classList.add('dragging')
+  const move = (e) => { state.x = e.clientX - start.x; state.y = e.clientY - start.y; applyView() }
+  const up = () => {
+    $('viewport').classList.remove('dragging')
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', up)
+  }
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', up)
+})
+
+$('zoomIn').addEventListener('click', () => zoomBy(1.2))
+$('zoomOut').addEventListener('click', () => zoomBy(1 / 1.2))
+$('zoomFit').addEventListener('click', fitView)
+
+/* ----------------------------------------------------------------- theme */
+
+function applyTheme() {
+  document.body.classList.toggle('dark', state.theme === 'dark')
+  $('themeBtn').textContent = state.theme === 'dark' ? '☀️ Claro' : '🌙 Escuro'
+  for (const iframe of document.querySelectorAll('#strip iframe, #fsFrame')) applyThemeToFrame(iframe)
+}
+
+function applyThemeToFrame(iframe) {
+  try {
+    iframe.contentDocument.documentElement.setAttribute('data-theme', state.theme)
+  } catch { /* frame not ready or opaque; ignore */ }
+}
+
+$('themeBtn').addEventListener('click', () => {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark'
+  applyTheme()
+  savePrefs()
+})
+
+/* ---------------------------------------------------------------- device */
+
+$('deviceSelect').addEventListener('change', () => {
+  state.device = $('deviceSelect').value
+  savePrefs()
+  renderStrip()
+  requestAnimationFrame(fitView)
+})
+
+/* ------------------------------------------------------------- fullscreen */
+
+/* ------------------------------------------------------- fullscreen flow */
+
+const fsHistory = { entries: [], index: -1, navigating: false }
+let fsScreen = null
+
+function openFullscreen(screen) {
+  fsScreen = screen
+  const [width, height] = screenSize(screen)
+  $('fsTitle').textContent = screen.name
+  $('fsSize').textContent = `${width}×${height}`
+  const frame = $('fsFrame')
+  fsHistory.entries = [screenUrl(screen)]
+  fsHistory.index = 0
+  fsHistory.navigating = true
+  frame.src = screenUrl(screen)
+  frame.onload = () => {
+    applyThemeToFrame(frame)
+    // the iframe swallows mouse events: the auto-hide bar must listen inside it
+    try {
+      frame.contentDocument.addEventListener('mousemove', showFsBar)
+      frame.contentDocument.addEventListener('click', showFsBar)
+    } catch { /* opaque frame */ }
+    // sandboxed iframes can't traverse their own history — track it here
+    if (fsHistory.navigating) {
+      fsHistory.navigating = false
+    } else {
+      try {
+        const url = frame.contentWindow.location.href.split('#')[0]
+        if (url !== fsHistory.entries[fsHistory.index]) {
+          fsHistory.entries = fsHistory.entries.slice(0, fsHistory.index + 1)
+          fsHistory.entries.push(url)
+          fsHistory.index++
+        }
+      } catch { /* opaque frame; no history */ }
+    }
+    updateFsNavButtons()
+  }
+  $('fullscreen').hidden = false
+  $('fsInspect').classList.toggle('primary', state.inspect)
+  layoutFullscreen()
+  showFsBar()
+  updateFsNavButtons()
+}
+
+/** Size the frame to the viewport and place the inspect overlay over it. */
+function layoutFullscreen() {
+  if (!fsScreen || $('fullscreen').hidden) return
+  const [width, height] = screenSize(fsScreen)
+  const frame = $('fsFrame')
+  frame.style.width = `${width}px`
+  frame.style.height = `${height}px`
+  const stage = $('fsStage').getBoundingClientRect()
+  const scale = Math.max(0.1, Math.min((stage.width - 24) / width, (stage.height - 24) / height, 1.25))
+  frame.style.transform = `scale(${scale})`
+  frame.style.transformOrigin = 'center'
+  const frameRect = frame.getBoundingClientRect()
+  const overlay = $('fsOverlay')
+  Object.assign(overlay.style, {
+    left: `${frameRect.left - stage.left}px`,
+    top: `${frameRect.top - stage.top}px`,
+    width: `${frameRect.width}px`,
+    height: `${frameRect.height}px`,
+  })
+  overlay.hidden = !state.inspect
+  $('fsHighlight').hidden = true
+}
+
+/* The floating bar hides while you interact and reappears on mouse move. */
+let fsBarTimer = null
+function showFsBar() {
+  $('fsTop').classList.remove('hidden-bar')
+  clearTimeout(fsBarTimer)
+  fsBarTimer = setTimeout(() => $('fsTop').classList.add('hidden-bar'), 2600)
+}
+
+$('fsStage').addEventListener('mousemove', () => showFsBar())
+
+window.addEventListener('resize', () => layoutFullscreen())
+
+/* Element inspection inside the flow mode — the screen is at full size here. */
+function fsElementAt(event) {
+  const frame = $('fsFrame')
+  const doc = frame.contentDocument
+  if (!doc) return null
+  const rect = frame.getBoundingClientRect()
+  const scale = rect.width / frame.clientWidth || 1
+  const x = (event.clientX - rect.left) / scale
+  const y = (event.clientY - rect.top) / scale
+  const el = doc.elementFromPoint(x, y)
+  if (!el) return null
+  return { el, selector: cssSelector(doc, el), snippet: elementSnippet(el) }
+}
+
+$('fsOverlay').addEventListener('mousemove', (event) => {
+  showFsBar()
+  const target = fsElementAt(event)
+  const highlight = $('fsHighlight')
+  if (!target) { highlight.hidden = true; return }
+  const elRect = target.el.getBoundingClientRect()
+  const stage = $('fsStage').getBoundingClientRect()
+  Object.assign(highlight.style, {
+    left: `${elRect.left - stage.left}px`,
+    top: `${elRect.top - stage.top}px`,
+    width: `${elRect.width}px`,
+    height: `${elRect.height}px`,
+  })
+  highlight.hidden = false
+  highlight.dataset.info = `${target.selector}${target.snippet ? ` — "${target.snippet}"` : ''}`
+})
+
+$('fsOverlay').addEventListener('mouseleave', () => { $('fsHighlight').hidden = true })
+
+$('fsOverlay').addEventListener('click', (event) => {
+  if (!fsScreen) return
+  const target = fsElementAt(event)
+  if (target) openElementDialog(fsScreen, target)
+})
+
+function updateFsNavButtons() {
+  $('fsPrev').disabled = fsHistory.index <= 0
+  $('fsNext').disabled = fsHistory.index >= fsHistory.entries.length - 1
+}
+
+function closeFullscreen() {
+  $('fsFrame').src = 'about:blank'
+  $('fsOverlay').hidden = true
+  $('fsHighlight').hidden = true
+  $('fullscreen').hidden = true
+}
+
+$('fsBack').addEventListener('click', closeFullscreen)
+
+$('fsPrev').addEventListener('click', () => {
+  if (fsHistory.index > 0) {
+    fsHistory.index--
+    fsHistory.navigating = true
+    updateFsNavButtons()
+    try { $('fsFrame').contentWindow.location.href = fsHistory.entries[fsHistory.index] } catch { /* opaque */ }
+  }
+})
+
+$('fsNext').addEventListener('click', () => {
+  if (fsHistory.index < fsHistory.entries.length - 1) {
+    fsHistory.index++
+    fsHistory.navigating = true
+    updateFsNavButtons()
+    try { $('fsFrame').contentWindow.location.href = fsHistory.entries[fsHistory.index] } catch { /* opaque */ }
+  }
+})
+
+$('fsRestart').addEventListener('click', () => {
+  if (!fsScreen) return
+  fsHistory.entries = [screenUrl(fsScreen)]
+  fsHistory.index = 0
+  fsHistory.navigating = true
+  updateFsNavButtons()
+  $('fsFrame').src = fsHistory.entries[0]
+})
+
+$('fsInspect').addEventListener('click', () => {
+  $('inspectBtn').click()
+  showFsBar()
+})
+
+$('fsTheme').addEventListener('click', () => {
+  $('themeBtn').click()
+  showFsBar()
+})
+
+$('scenarioSelect').addEventListener('change', () => {
+  state.scenario = $('scenarioSelect').value
+  clearFlowState() // state made under the previous scenario must not leak in
+  state.bust = Date.now()
+  savePrefs()
+  renderStrip()
+  toast(state.scenario ? `Cenário: ${state.scenario}` : 'Cenário: padrão')
+})
+
+/* --------------------------------------------------------------- record */
+
+let recorder = null
+let recordChunks = []
+let recordStream = null
+
+$('recordBtn').addEventListener('click', async () => {
+  if (recorder) {
+    recorder.stop()
+    return
+  }
+  if (!navigator.mediaDevices?.getDisplayMedia) {
+    toast('Este navegador não suporta gravação de tela')
+    return
+  }
+  try {
+    recordStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { displaySurface: 'browser' },
+      audio: false,
+      preferCurrentTab: true,
+    })
+  } catch {
+    toast('Gravação cancelada')
+    return
+  }
+  const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+    .find((type) => MediaRecorder.isTypeSupported(type)) ?? ''
+  recordChunks = []
+  recorder = new MediaRecorder(recordStream, mime ? { mimeType: mime } : undefined)
+  recorder.ondataavailable = (event) => {
+    if (event.data.size > 0) recordChunks.push(event.data)
+  }
+  recorder.onstop = () => {
+    recordStream?.getTracks().forEach((track) => track.stop())
+    recordStream = null
+    const blob = new Blob(recordChunks, { type: recorder.mimeType || 'video/webm' })
+    recorder = null
+    updateRecordBtn()
+    if (blob.size === 0) {
+      toast('Nada foi gravado')
+      return
+    }
+    const url = URL.createObjectURL(blob)
+    download(url, `${state.canvas}-fluxo.webm`, false)
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+    toast('Vídeo do fluxo baixado (.webm)')
+  }
+  recordStream.getVideoTracks()[0].addEventListener('ended', () => {
+    if (recorder?.state === 'recording') recorder.stop()
+  })
+  recorder.start()
+  updateRecordBtn()
+  toast('Gravando… interaja com o fluxo e clique de novo para parar e baixar', 60000)
+})
+
+function updateRecordBtn() {
+  const btn = $('recordBtn')
+  const recording = !!recorder
+  btn.textContent = recording ? '⏹ Parar gravação' : '⏺ Gravar fluxo'
+  btn.classList.toggle('recording', recording)
+}
+
+/* --------------------------------------------------------------- comment */
+
+$('commentBtn').addEventListener('click', () => {
+  const screen = selectedScreen()
+  if (!screen) return
+  $('commentTitle').textContent = `Comentar: ${screen.name}`
+  $('commentText').value = ''
+  $('dialog').hidden = false
+  $('commentText').focus()
+})
+
+$('commentForm').addEventListener('submit', async (event) => {
+  event.preventDefault()
+  const screen = selectedScreen()
+  const text = $('commentText').value.trim()
+  if (!screen || !text) return
+  const message = `[Design: design/${state.canvas} › ${screen.name} (${screen.file})] ${text}`
+  $('dialog').hidden = true
+  $('clipboardMsg').textContent = message
+  $('clipboard').hidden = false
+  await copyToClipboard(message)
+})
+
+$('copyAgain').addEventListener('click', () => copyToClipboard($('clipboardMsg').textContent))
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text)
+    toast('Comentário copiado para a área de transferência')
+  } catch {
+    toast('Não consegui copiar automaticamente — copie o texto exibido')
+  }
+}
+
+/* ---------------------------------------------------------------- export */
+
+$('exportBtn').addEventListener('click', () => {
+  const screen = selectedScreen()
+  if (screen) withBusyToast('Gerando PNG…', () => exportScreen(screen))
+})
+
+$('exportAllBtn').addEventListener('click', () => {
+  if (state.screens.length > 0) withBusyToast('Gerando PNG do canvas…', exportCanvasPng)
+})
+
+async function withBusyToast(message, task) {
+  toast(message, 60000)
+  try {
+    await task()
+  } catch (error) {
+    console.error(error)
+    toast(`Falha ao exportar: ${error?.message ?? error}`)
+  }
+}
+
+function frameOf(screenId) {
+  const card = $('strip').querySelector(`.card[data-id="${CSS.escape(screenId)}"]`)
+  return card?.querySelector('iframe') ?? null
+}
+
+/**
+ * html-to-image does not inline <link rel="stylesheet"> into its clone, and the
+ * rasterized SVG cannot fetch it either — so linked CSS is swapped for inline
+ * <style> (fetched same-origin) around the capture and restored afterwards.
+ */
+async function withInlineStyles(iframe, task) {
+  const doc = iframe.contentDocument
+  const swaps = []
+  for (const link of [...doc.querySelectorAll('link[rel="stylesheet"]')]) {
+    try {
+      const href = new URL(link.getAttribute('href'), doc.baseURI).href
+      const css = await (await fetch(href, { cache: 'no-store' })).text()
+      const style = doc.createElement('style')
+      style.setAttribute('data-restored-link', link.getAttribute('href'))
+      style.textContent = css
+      link.replaceWith(style)
+      swaps.push({ style, link })
+    } catch (error) {
+      console.error('could not inline stylesheet', link.getAttribute('href'), error)
+    }
+  }
+  try {
+    return await task()
+  } finally {
+    for (const { style, link } of swaps) style.replaceWith(link)
+  }
+}
+
+function frameBackgroundColor(doc) {
+  for (const element of [doc.body, doc.documentElement]) {
+    const color = getComputedStyle(element).backgroundColor
+    if (color && color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent') return color
+  }
+  return '#ffffff'
+}
+
+async function captureScreen(iframe) {
+  const doc = iframe.contentDocument
+  const width = iframe.clientWidth
+  const height = iframe.clientHeight
+  return withInlineStyles(iframe, () =>
+    htmlToImage.toPng(doc.documentElement, {
+      width, height, pixelRatio: 2, cacheBust: true,
+      backgroundColor: frameBackgroundColor(doc),
+    }))
+}
+
+async function exportScreen(screen) {
+  const iframe = frameOf(screen.id)
+  if (!iframe?.contentDocument) throw new Error('tela não carregada')
+  const dataUrl = await captureScreen(iframe)
+  const filename = `${state.canvas}-${screen.id}.png`
+  download(dataUrl, filename)
+  showPreview(dataUrl, filename)
+  toast('PNG da tela exportado')
+}
+
+async function exportCanvasPng() {
+  const captures = []
+  for (const screen of state.screens) {
+    const iframe = frameOf(screen.id)
+    if (!iframe?.contentDocument) throw new Error(`tela "${screen.name}" não carregada`)
+    const [width, height] = screenSize(screen)
+    captures.push({ screen, width, height, dataUrl: await captureScreen(iframe) })
+  }
+  const scale = 2
+  const margin = 48 * scale
+  const gap = 48 * scale
+  const titleBlock = 64 * scale
+  const totalWidth = margin * 2 + captures.reduce((sum, c) => sum + c.width * scale, 0) + gap * (captures.length - 1)
+  const maxHeight = Math.max(...captures.map((c) => c.height * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = totalWidth
+  canvas.height = margin + titleBlock + maxHeight + margin
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#f1f5f9'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  let x = margin
+  for (const capture of captures) {
+    ctx.fillStyle = '#0f172a'
+    ctx.font = `600 ${18 * scale}px system-ui, sans-serif`
+    ctx.fillText(capture.screen.name, x, margin + 24 * scale)
+    ctx.fillStyle = '#64748b'
+    ctx.font = `${12 * scale}px system-ui, sans-serif`
+    ctx.fillText(`${capture.width}×${capture.height}`, x, margin + 44 * scale)
+    const image = new Image()
+    await new Promise((resolve, reject) => {
+      image.onload = resolve
+      image.onerror = () => reject(new Error('falha ao compor a imagem do canvas'))
+      image.src = capture.dataUrl
+    })
+    ctx.drawImage(image, x, margin + titleBlock, capture.width * scale, capture.height * scale)
+    x += capture.width * scale + gap
+  }
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+  const url = URL.createObjectURL(blob)
+  const filename = `${state.canvas}-canvas.png`
+  download(url, filename, false)
+  showPreview(canvas.toDataURL('image/png'), filename)
+  setTimeout(() => URL.revokeObjectURL(url), 30000)
+  toast('PNG do canvas exportado')
+}
+
+function download(url, filename, revoke = true) {
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  if (revoke) setTimeout(() => URL.revokeObjectURL(url), 30000)
+}
+
+let previewUrl = null
+let previewName = 'design.png'
+function showPreview(dataUrl, filename) {
+  if (previewUrl?.startsWith('blob:')) URL.revokeObjectURL(previewUrl)
+  previewUrl = dataUrl
+  previewName = filename ?? previewName
+  $('previewImg').src = dataUrl
+  $('preview').hidden = false
+}
+
+$('previewDownload').addEventListener('click', () => {
+  if (previewUrl) download(previewUrl, previewName)
+})
+
+/* ----------------------------------------------------------------- misc */
+
+$('docsBtn').addEventListener('click', () => {
+  window.open('docs.html', '_blank')
+})
+
+$('reloadBtn').addEventListener('click', () => {
+  state.bust = Date.now()
+  loadCanvas().then(fitSoon)
+})
+
+function clearFlowState() {
+  // flow state is shared project-wide (mock.* keys), so this resets it all
+  try {
+    const keys = []
+    for (let i = 0; i < sessionStorage.length; i++) keys.push(sessionStorage.key(i))
+    for (const key of keys) {
+      if (key.startsWith('mock.')) sessionStorage.removeItem(key)
+    }
+  } catch { /* storage unavailable; reload still resets the screens */ }
+}
+
+$('resetFlowBtn').addEventListener('click', () => {
+  clearFlowState()
+  state.bust = Date.now()
+  renderStrip()
+  toast('Fluxo reiniciado do início')
+})
+
+function fitSoon() { requestAnimationFrame(fitView) }
+
+let toastTimer = null
+function toast(message, ms = 2600) {
+  const el = $('toast')
+  el.textContent = message
+  el.classList.add('show')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms)
+}
+
+for (const closer of document.querySelectorAll('[data-close]')) {
+  closer.addEventListener('click', () => closer.closest('.overlay').hidden = true)
+}
+
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    for (const overlay of document.querySelectorAll('.overlay')) overlay.hidden = true
+    if (!$('fullscreen').hidden) closeFullscreen()
+    if (state.inspect) $('inspectBtn').click()
+    return
+  }
+  if (event.target.matches('input, textarea, select')) return
+  if (event.key === '+' || event.key === '=') zoomBy(1.2)
+  if (event.key === '-') zoomBy(1 / 1.2)
+  if (event.key === '0') fitView()
+})
+
+/* ------------------------------------------------------- light polling */
+
+let lastManifestText = null
+setInterval(async () => {
+  if (!state.canvas || document.hidden) return
+  try {
+    const text = await fetchText(`${state.canvas}/canvas.json`)
+    if (lastManifestText !== null && text !== lastManifestText) {
+      state.bust = Date.now()
+      await loadCanvas()
+      toast('Canvas atualizado')
+    }
+    lastManifestText = text
+  } catch { /* server or manifest gone; the banner already reports it */ }
+}, 2500)
+
+/* --------------------------------------------------------------- boot */
+
+async function boot() {
+  if (location.protocol === 'file:') {
+    document.body.innerHTML = (
+      '<div id="selector"><h1>Design canvas</h1>' +
+      '<p>O visualizador precisa de um servidor local (navegadores bloqueiam <code>fetch</code> em ' +
+      '<code>file://</code>). Rode <code>node design/serve.mjs</code> e abra ' +
+      '<code>http://localhost:8765/viewer.html?canvas=&lt;nome&gt;</code>.</p></div>')
+    return
+  }
+  if (!canvasParam) {
+    $('bar').hidden = true
+    $('viewport').hidden = true
+    $('selector').hidden = false
+    await listCanvases()
+    return
+  }
+  if (!/^[\w.-]+$/u.test(canvasParam) || canvasParam.includes('..')) {
+    renderProblems([`invalid-canvas: "${canvasParam}" is not a valid canvas folder name`])
+    $('bar').hidden = true
+    $('viewport').hidden = true
+    return
+  }
+  state.canvas = canvasParam
+  const prefs = loadPrefs()
+  state.scenario = prefs.scenario ?? ''
+  state.theme = prefs.theme ?? 'light'
+  state.device = prefs.device ?? 'original'
+  // element comments persist per canvas (survive F5)
+  state.annotations = Array.isArray(prefs.annotations) ? prefs.annotations : []
+  state.pinSeq = Number(prefs.pinSeq) || 0
+  if (![...$('deviceSelect').options].some((option) => option.value === state.device)) state.device = 'original'
+  $('deviceSelect').value = state.device
+  $('bar').hidden = false
+  $('viewport').hidden = false
+  applyTheme()
+  await loadCanvas()
+  updateCopyAll()
+  fitSoon()
+}
+
+/** Canvas discovery: design/index.json first, then a directory listing. */
+async function discoverCanvases() {
+  const names = new Set()
+  try {
+    const index = JSON.parse(await fetchText('index.json'))
+    for (const name of Array.isArray(index) ? index : index.canvases ?? []) {
+      if (typeof name === 'string') names.add(name.replace(/\/+$/, ''))
+    }
+  } catch { /* no index.json; fall through to the directory listing */ }
+  if (names.size === 0) {
+    try {
+      const listing = await fetchText('./')
+      for (const [, folder] of listing.matchAll(/href="([^"?]+\/)"/g)) {
+        if (folder === '../' || folder === './') continue
+        names.add(decodeURIComponent(folder.replace(/\/+$/, '')))
+      }
+      for (const name of [...names]) {
+        try {
+          await fetchText(`${encodeURIComponent(name)}/canvas.json`)
+        } catch {
+          names.delete(name)
+        }
+      }
+    } catch { /* static server without listing; manual input still works */ }
+  }
+  return [...names].sort()
+}
+
+/** Screen count of a canvas, or null when its manifest is unreadable. */
+async function screenCount(name) {
+  try {
+    const manifest = JSON.parse(await fetchText(`${encodeURIComponent(name)}/canvas.json`))
+    return Array.isArray(manifest.screens) ? manifest.screens.length : null
+  } catch {
+    return null
+  }
+}
+
+/** Header canvas switcher (hidden when the project has a single canvas). */
+async function loadCanvasSelect() {
+  const label = $('canvasLabel')
+  const select = $('canvasSelect')
+  const names = await discoverCanvases()
+  select.innerHTML = ''
+  if (names.length <= 1) {
+    label.hidden = true
+    return
+  }
+  label.hidden = false
+  for (const name of names) {
+    const option = document.createElement('option')
+    option.value = name
+    option.textContent = name
+    option.selected = name === state.canvas
+    select.appendChild(option)
+  }
+}
+
+$('canvasSelect').addEventListener('change', () => {
+  const name = $('canvasSelect').value
+  if (name && name !== state.canvas) location.search = `?canvas=${encodeURIComponent(name)}`
+})
+
+/** Picker page: one button per canvas, with screen counts. */
+async function listCanvases() {
+  const names = await discoverCanvases()
+  const list = $('canvasList')
+  list.innerHTML = ''
+  for (const name of names) {
+    const count = await screenCount(name)
+    const li = document.createElement('li')
+    const button = document.createElement('button')
+    button.className = 'primary'
+    button.textContent = count === null ? name : `${name} · ${count} tela${count === 1 ? '' : 's'}`
+    button.addEventListener('click', () => { location.search = `?canvas=${encodeURIComponent(name)}` })
+    li.appendChild(button)
+    list.appendChild(li)
+  }
+  if (names.length === 0) {
+    const li = document.createElement('li')
+    li.style.color = 'var(--ui-muted)'
+    li.textContent = 'Nenhum canvas encontrado — digite o nome abaixo.'
+    list.appendChild(li)
+  }
+}
+
+$('manualForm').addEventListener('submit', (event) => {
+  event.preventDefault()
+  const name = $('manualInput').value.trim().replace(/\/+$/, '')
+  if (name) location.search = `?canvas=${encodeURIComponent(name)}`
+})
+
+boot()
+</script>
+</body>
+</html>

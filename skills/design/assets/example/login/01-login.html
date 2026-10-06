@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login</title>
+  <link rel="stylesheet" href="../design-system.css">
+  <style>
+    main { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: var(--space-6); gap: var(--space-6); }
+    h1 { margin: 0; font-size: var(--font-size-xl); }
+    p { margin: 0; color: var(--color-text-muted); }
+    form { display: flex; flex-direction: column; gap: var(--space-4); }
+    label { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--font-size-sm); }
+    input { height: 48px; padding: 0 var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; }
+    input:focus-visible, button:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+    button { height: 48px; border: 0; border-radius: var(--radius-md); background: var(--color-primary); color: var(--color-primary-contrast); font: inherit; font-weight: 600; }
+    a { color: var(--color-primary); font-size: var(--font-size-sm); }
+  </style>
+</head>
+<body>
+  <main>
+    <div>
+      <h1>Entrar</h1>
+      <p>Acesse sua conta para continuar.</p>
+    </div>
+    <form>
+      <label>E-mail<input type="email" placeholder="voce@empresa.com.br" autocomplete="email"></label>
+      <label>Senha<input type="password" placeholder="Sua senha" autocomplete="current-password"></label>
+      <button type="submit">Entrar</button>
+      <a href="#">Esqueci minha senha</a>
+    </form>
+  </main>
+  <script src="../mock.js"></script>
+  <script>
+    document.querySelector('form').addEventListener('submit', async (event) => {
+      event.preventDefault()
+      const email = document.querySelector('input[type=email]').value.trim()
+      const users = (await Mock.data('users')) ?? []
+      const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase())
+        ?? { name: email.split('@')[0] || 'Visitante', email, role: 'Estoquista' }
+      Mock.state.set('user', user)
+      Mock.toast(`Bem-vindo, ${user.name.split(' ')[0]}!`)
+      Mock.go('../dashboard/01-overview.html')
+    })
+  </script>
+</body>
+</html>

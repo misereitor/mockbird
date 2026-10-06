@@ -1,0 +1,17 @@
+{
+  "items": [
+    { "id": 1, "name": "Teclado mecânico", "sku": "TEC-011", "qty": 12, "min": 5 },
+    { "id": 2, "name": "Monitor 24 polegadas", "sku": "MON-024", "qty": 3, "min": 5 },
+    { "id": 3, "name": "Cabo HDMI 2m", "sku": "CAB-481", "qty": 27, "min": 10 },
+    { "id": 4, "name": "Mouse sem fio", "sku": "MOU-002", "qty": 8, "min": 10 }
+  ],
+  "scenarios": {
+    "vazio": { "items": [] },
+    "critico": {
+      "items": [
+        { "id": 1, "name": "Teclado mecânico", "sku": "TEC-011", "qty": 0, "min": 5 },
+        { "id": 2, "name": "Monitor 24 polegadas", "sku": "MON-024", "qty": 1, "min": 5 }
+      ]
+    }
+  }
+}
