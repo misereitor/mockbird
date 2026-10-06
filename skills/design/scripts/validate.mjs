@@ -226,17 +226,20 @@ function checkBans(full, label) {
   for (const m of content.matchAll(REMOTE_URL)) {
     fail('remote-url', `${label}: remote URL "${m[0]}" is banned`)
   }
-  // hard-coded-color: hex/rgb literals inside <style> blocks, style="" attrs,
-  // SVG fill=/stroke= attrs (a .css file is scanned whole)
+  // hard-coded-color: hex/rgb literals in VALUE position only - declaration
+  // values inside <style> blocks and .css files; style="" attrs and SVG
+  // fill=/stroke= attrs are value contexts (any hex/rgb there = flag)
   const ext = extname(full).toLowerCase()
-  for (const [where, region] of colorRegions(content, ext)) {
-    for (const m of region.matchAll(HEX_COLOR)) {
-      fail('hard-coded-color', `${label}: literal color "${m[0]}" in ${where}`)
+  for (const [where, targets] of colorRegions(content, ext)) {
+    for (const target of targets) {
+      for (const m of target.matchAll(HEX_COLOR)) {
+        fail('hard-coded-color', `${label}: literal color "${m[0]}" in ${where}`)
+      }
+      if (RGB_COLOR.test(target)) {
+        fail('hard-coded-color', `${label}: literal rgb() color in ${where}`)
+      }
+      RGB_COLOR.lastIndex = 0
     }
-    if (RGB_COLOR.test(region)) {
-      fail('hard-coded-color', `${label}: literal rgb() color in ${where}`)
-    }
-    RGB_COLOR.lastIndex = 0
   }
   // banned-class: palette utility classes and arbitrary values (-[...])
   for (const m of content.matchAll(/(?<![A-Za-z0-9_-])(?:className|class)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
@@ -251,18 +254,75 @@ function checkBans(full, label) {
 }
 
 function colorRegions(content, ext) {
-  if (ext === '.css') return [['the CSS file', content]]
+  if (ext === '.css') return [['the CSS file', declarationValues(content)]]
   const regions = []
   for (const m of content.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) {
-    regions.push(['a <style> block', m[1]])
+    regions.push(['a <style> block', declarationValues(m[1])])
   }
   for (const m of content.matchAll(/(?<![A-Za-z0-9_-])style\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)) {
-    regions.push(['a style attribute', m[1] ?? m[2] ?? ''])
+    regions.push(['a style attribute', [m[1] ?? m[2] ?? '']]) // value context: whole value
   }
   for (const m of content.matchAll(/(?<![A-Za-z0-9_-])(?:fill|stroke)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)) {
-    regions.push(['an SVG fill/stroke attribute', m[1] ?? m[2] ?? ''])
+    regions.push(['an SVG fill/stroke attribute', [m[1] ?? m[2] ?? '']]) // value context: whole value
   }
   return regions
+}
+
+// Strip CSS block comments so comment text never influences parsing or scans.
+function stripCssComments(css) {
+  return css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+}
+
+/** CSS declaration VALUES in value position: `property: <value>` inside { ... }
+ * bodies (shorthand and multi-value included). Selectors, at-rule preludes,
+ * pseudo-classes and property names are never scanned. */
+function declarationValues(css) {
+  const source = stripCssComments(css)
+  const values = []
+  let depth = 0
+  let parens = 0
+  let quote = null
+  let colon = -1
+  for (let i = 0; i < source.length; i++) {
+    const c = source[i]
+    if (quote) {
+      if (c === '\\') i += 1
+      else if (c === quote) quote = null
+      continue
+    }
+    if (c === '"' || c === "'") {
+      quote = c
+      continue
+    }
+    if (c === '(') {
+      parens += 1
+      continue
+    }
+    if (c === ')') {
+      parens = Math.max(0, parens - 1)
+      continue
+    }
+    if (parens > 0) continue // colon/semicolon inside url()/media queries/etc.
+    if (c === '{') {
+      depth += 1
+      colon = -1 // everything before the brace was a prelude (selector/at-rule)
+      continue
+    }
+    if (c === '}') {
+      if (depth > 0 && colon >= 0) values.push(source.slice(colon + 1, i))
+      depth = Math.max(0, depth - 1)
+      colon = -1
+      continue
+    }
+    if (depth === 0) continue // outside any block: selectors and at-rule preludes
+    if (c === ';') {
+      if (colon >= 0) values.push(source.slice(colon + 1, i))
+      colon = -1
+      continue
+    }
+    if (c === ':' && colon < 0) colon = i // first colon = property separator
+  }
+  return values
 }
 
 // ---------------------------------------------------------------------------
