@@ -38,7 +38,12 @@
  *
  * The viewer gets the token via in-memory response rewrite: the placeholder
  * `window.__DESIGN_TOKEN__ = null` inside viewer.html is substituted at serve
- * time. The file on disk stays intact.
+ * time. The file on disk stays intact. In --share mode the same rewrite also
+ * injects `window.__DESIGN_READONLY = true` alongside the token placeholder
+ * (the token value stays null there — /api refuses everything anyway), so the
+ * served viewer degrades itself: write actions and every /api-fed resource
+ * hide behind `data-share-hide` (syncShareDegradation) with a read-only
+ * banner. Static routes keep serving normally to the LAN.
  */
 import { createServer } from 'node:http'
 import { randomBytes } from 'node:crypto'
@@ -72,6 +77,11 @@ const MAX_BODY = 256 * 1024
 const SAFE_ID = /^[a-z0-9-]+$/
 const TOKEN_PLACEHOLDER = 'window.__DESIGN_TOKEN__ = null'
 const TOKEN_INJECTED = `window.__DESIGN_TOKEN__ = "${token}"`
+// share mode: the token stays null (writes are refused by /api anyway) and the
+// readonly flag rides the same in-memory rewrite — disk file keeps both false.
+const TOKEN_SHARE = 'window.__DESIGN_TOKEN__ = null'
+const READONLY_PLACEHOLDER = 'window.__DESIGN_READONLY = false'
+const READONLY_INJECTED = 'window.__DESIGN_READONLY = true'
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1'])
 
 const TYPES = {
@@ -511,7 +521,10 @@ const server = createServer(async (req, res) => {
       const type = TYPES[extname(file).toLowerCase()] ?? 'application/octet-stream'
       if (basename(file) === 'viewer.html') {
         // in-memory rewrite: the disk file keeps window.__DESIGN_TOKEN__ = null
-        const html = readFileSync(file, 'utf8').split(TOKEN_PLACEHOLDER).join(TOKEN_INJECTED)
+        // and window.__DESIGN_READONLY = false; share flips the readonly flag.
+        const html = readFileSync(file, 'utf8')
+          .split(TOKEN_PLACEHOLDER).join(share ? TOKEN_SHARE : TOKEN_INJECTED)
+          .split(READONLY_PLACEHOLDER).join(share ? READONLY_INJECTED : READONLY_PLACEHOLDER)
         res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store' })
         if (req.method === 'HEAD') return res.end()
         return res.end(html)

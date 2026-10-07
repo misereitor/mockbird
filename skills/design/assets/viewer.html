@@ -54,6 +54,10 @@
     padding: 8px 16px; color: var(--ui-danger); font-weight: 600;
     border-bottom: 1px solid var(--ui-border);
   }
+  #shareBanner {
+    padding: 8px 16px; color: var(--ui-muted); font-weight: 600;
+    border-bottom: 1px solid var(--ui-border); background: var(--ui-surface);
+  }
   #problems summary {
     padding: 8px 16px; cursor: pointer; color: var(--ui-danger); font-weight: 600; list-style: none;
     border-bottom: 1px solid var(--ui-border);
@@ -293,11 +297,11 @@
     <button id="resetFlowBtn" title="Voltar todas as telas ao início e limpar os dados do fluxo">⟲ Reset fluxo</button>
     <button id="recordBtn" title="Gravar o fluxo como vídeo .webm — o navegador pede para compartilhar esta aba; clique de novo para parar e baixar">⏺ Gravar fluxo</button>
     <button id="docsBtn" title="Abrir a documentação de utilização">📘 Docs</button>
-    <button id="inspectBtn" title="Comentar um elemento específico da tela (Esc sai do modo)">🎯 Elemento</button>
+    <button id="inspectBtn" data-share-hide title="Comentar um elemento específico da tela (Esc sai do modo)">🎯 Elemento</button>
     <button id="chipBtn" title="Mostrar chips de id/variante sobre cada componente (inspetor)">🧩 Componentes</button>
-    <button id="commentBtn" disabled>💬 Comentar esta tela</button>
-    <button id="copyAllBtn" title="Ver/copiar todos os comentários de elemento">⧉ Comentários (0)</button>
-    <button id="pendingBtn" title="Abrir o painel de comentários pendentes (todos os canvases)">💬 Pendentes <span id="pendingBadge">0</span></button>
+    <button id="commentBtn" data-share-hide disabled>💬 Comentar esta tela</button>
+    <button id="copyAllBtn" data-share-hide title="Ver/copiar todos os comentários de elemento">⧉ Comentários (0)</button>
+    <button id="pendingBtn" data-share-hide title="Abrir o painel de comentários pendentes (todos os canvases)">💬 Pendentes <span id="pendingBadge">0</span></button>
     <button id="exportBtn" disabled>⬇ PNG da tela</button>
     <button id="exportAllBtn">⬇ PNG do canvas</button>
   </div>
@@ -309,6 +313,8 @@
 </details>
 
 <div id="commentsAlert" role="alert" hidden></div>
+
+<div id="shareBanner" role="status" hidden>modo leitura — comentários e snapshots indisponíveis</div>
 
 <main id="viewport" hidden>
   <div id="world"><div id="strip"></div></div>
@@ -330,7 +336,7 @@
     <button id="fsPrev" title="Tela anterior do fluxo">◀</button>
     <button id="fsNext" title="Tela seguinte do fluxo">▶</button>
     <button id="fsRestart" title="Reiniciar o fluxo do começo">⟲</button>
-    <button id="fsInspect" title="Comentar um elemento da tela (Esc sai do modo)">🎯 Elemento</button>
+    <button id="fsInspect" data-share-hide title="Comentar um elemento da tela (Esc sai do modo)">🎯 Elemento</button>
     <button id="fsChip" title="Mostrar chips de id/variante sobre cada componente (inspetor)">🧩 Componentes</button>
     <button id="fsTheme" title="Alternar tema claro/escuro">🌙</button>
     <strong id="fsTitle"></strong>
@@ -405,7 +411,7 @@
 
 <div id="toast"></div>
 
-<aside id="pendingPanel" hidden>
+<aside id="pendingPanel" data-share-hide hidden>
   <div class="pending-top">
     <strong>Comentários pendentes</strong>
     <div class="pending-sweep">
@@ -427,6 +433,11 @@
 // em disco mantém sempre `window.__DESIGN_TOKEN__ = null`.
 window.__DESIGN_TOKEN__ = null
 
+// Modo share (serve.mjs --share): o mesmo rewrite em memória troca o valor
+// abaixo por true e o viewer se degrada (syncShareDegradation); o arquivo em
+// disco mantém sempre false.
+window.__DESIGN_READONLY = false
+
 const DEVICES = { mobile: [390, 844], tablet: [834, 1112], desktop: [1440, 900] }
 const DEVICE_LABEL = { mobile: 'celular', tablet: 'tablet', desktop: 'desktop' }
 const MIN_SIZE = 100
@@ -444,6 +455,25 @@ const state = {
   chips: false,
   scenario: '', problems: [],
   allComments: [], sweepIndex: -1,
+}
+
+/* ------------------------------------------ share-mode degradation (w4-20) */
+
+/** True when serve.mjs runs with --share: the in-memory rewrite flips the
+ * readonly placeholder above to true (token fica null — /api recusa tudo). */
+function isReadonly() {
+  return window.__DESIGN_READONLY === true
+}
+
+/** Degradação declarada (share): o banner diz o que sumiu e toda ação de
+ * escrita / recurso alimentado por /api some via [data-share-hide]. UIs
+ * futuras (lista de snapshots, todo 22) só se marcam com data-share-hide —
+ * este sync já as cobre. Fora do share nada muda. */
+function syncShareDegradation() {
+  const banner = $('shareBanner')
+  if (banner) banner.hidden = !isReadonly()
+  if (!isReadonly()) return
+  for (const el of document.querySelectorAll('[data-share-hide]')) el.hidden = true
 }
 
 /* --------------------------------------------- per-canvas preferences */
@@ -676,6 +706,14 @@ function resolveAnchor(doc, pin) {
 /** GET /api/comments -> pins of this canvas. Corrupt comments.json answers 400:
  * the guard banner warns and pins are disabled until the file is fixed. */
 async function loadComments() {
+  if (isReadonly()) {
+    // share: /api responde 403 — nem faz fetch (sem alerta espúrio); o banner
+    // de modo leitura já explica a ausência.
+    state.comments = []
+    state.allComments = []
+    renderPendingPanel()
+    return
+  }
   let response
   try {
     response = await fetch(COMMENTS_API, { cache: 'no-store', headers: apiHeaders() })
@@ -723,6 +761,7 @@ async function loadComments() {
  * is written solely by validate.mjs --mark-stale). Failures never block the
  * chat channel: the clipboard message still goes out (dual-channel). */
 async function persistPin(body) {
+  if (isReadonly()) return false // share: nenhuma escrita — /api recusaria 403
   try {
     const response = await fetch(COMMENTS_API, {
       method: 'POST',
@@ -981,6 +1020,7 @@ function renderStrip() {
     strip.appendChild(cardFor(screen))
   }
   renderAllPins()
+  syncShareDegradation() // share: camadas de pins criadas agora também somem
   if (!state.screens.some((s) => s.id === state.selectedId)) select(null)
   else applySelection()
 }
@@ -1035,6 +1075,7 @@ function cardFor(screen) {
   highlight.className = "highlight"
   const pins = document.createElement('div')
   pins.className = 'pins'
+  pins.setAttribute('data-share-hide', '') // share: camada de pins some (syncShareDegradation)
   overlay.addEventListener('click', (event) => {
     select(screen.id)
     if (state.inspect) {
@@ -1177,6 +1218,7 @@ function renderPins(screenId) {
   const layer = card?.querySelector('.pins')
   if (!layer) return
   layer.innerHTML = ''
+  if (isReadonly()) return // share: pins são recurso de /api — nunca renderizam
   const screen = state.screens.find((s) => s.id === screenId)
   if (!screen) return
   const file = String(screen.file).split('?')[0]
@@ -1215,6 +1257,7 @@ function renderAllPins() {
 
 function updateCopyAll() {
   const btn = $('copyAllBtn')
+  if (isReadonly()) { btn.hidden = true; return } // share: recurso de /api some
   btn.hidden = false
   btn.textContent = `⧉ Comentários (${state.comments.length})`
 }
@@ -1936,6 +1979,7 @@ setInterval(async () => {
 /* --------------------------------------------------------------- boot */
 
 async function boot() {
+  syncShareDegradation() // share: degradação declarada antes de qualquer render
   if (location.protocol === 'file:') {
     document.body.innerHTML = (
       '<div id="selector"><h1>Design canvas</h1>' +

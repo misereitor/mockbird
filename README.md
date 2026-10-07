@@ -68,6 +68,24 @@ Os comandos que ficam no `design/` do projeto são `node design/validate.mjs`,
 `node design/serve.mjs`, `node design/scripts/gen-tokens.mjs` e `node
 design/scripts/sync-components.mjs` (instalado).
 
+## Changelog
+
+- **Bind padrão `127.0.0.1`** (mudança de comportamento): `node design/serve.mjs`
+  só atende a própria máquina — a API de escrita (`/api/*`) nunca fica exposta
+  na rede.
+- **`--share` — caminho de migração para teste em celular/LAN**:
+  `node design/serve.mjs 8766 --share` faz bind em `0.0.0.0` para abrir
+  `http://<ip-da-máquina>:8766/viewer.html?canvas=…` no celular. É
+  **somente-leitura com degradação declarada**: toda rota `/api/*` responde
+  **403** (leituras incluídas — nada vaza) e o visualizador esconde as ações de
+  escrita **e** os recursos alimentados por `/api` (pins, painel de pendências,
+  responder/resolver) com o banner "modo leitura — comentários e snapshots
+  indisponíveis".
+- **Contrato de degradação (futuro)**: as UIs de snapshots/comparação que
+  chegarem depois também precisam ficar ocultas em `--share` — basta marcá-las
+  com `data-share-hide` no HTML que o `syncShareDegradation()` do visualizador
+  as esconde.
+
 ## Solução de problemas
 
 - **OpenCode não detectou as skills**: algumas versões leem `skill/` (singular)
