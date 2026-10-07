@@ -21,6 +21,11 @@
  *   GET  /api/snapshots  -> { snapshots: [{canvas,label,date}] }
  *   POST /api/snapshot   -> { snapshot: {canvas,label,date} }
  *                          writes design/snapshots/<canvas>/<label>/{src,render,manifest.json}
+ *                          src/    = whole canvas dir + design-root tokens.json
+ *                                    (root wins) + FULL design-root components/
+ *                          render/ = one FLAT self-contained HTML per top-level
+ *                                    screen (css/js/data inline, local refs
+ *                                    copied beside — zero href="../ or src="../)
  *   POST /api/revert     -> 501 {error:"not-implemented"} (pipeline: passo 24)
  *
  * Hardening (ONLY on /api/* — static routes are never intercepted, so LAN
@@ -46,7 +51,7 @@
  * banner. Static routes keep serving normally to the LAN.
  */
 import { createServer } from 'node:http'
-import { randomBytes } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import {
   createReadStream,
   cpSync,
@@ -58,7 +63,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, extname, join, normalize, relative, resolve, sep } from 'node:path'
+import { basename, dirname, extname, join, normalize, relative, resolve, sep } from 'node:path'
 
 const argv = process.argv.slice(2)
 const share = argv.includes('--share')
@@ -298,18 +303,31 @@ function snapDirFor(canvas, label) {
   return join(root, 'snapshots', canvas, label)
 }
 
-function listFilesDeep(dir) {
+/** Files under `dir`, `{file}` relative to the SNAPSHOT DIR using the manifest
+ * convention (`src/01-login.html`, `render/01-login.html`). manifest.json lives
+ * at the snapshot root and is therefore never part of any inventory. */
+function listFilesDeep(dir, prefix) {
   const out = []
-  const walk = (current, prefix) => {
+  const walk = (current, rel) => {
     for (const entry of readdirSync(current, { withFileTypes: true })) {
       const abs = join(current, entry.name)
-      const rel = prefix ? `${prefix}/${entry.name}` : entry.name
-      if (entry.isDirectory()) walk(abs, rel)
-      else if (entry.isFile()) out.push({ file: rel, size: statSync(abs).size })
+      const next = rel ? `${rel}/${entry.name}` : entry.name
+      if (entry.isDirectory()) walk(abs, next)
+      else if (entry.isFile()) out.push({ file: `${prefix}${next}`, size: statSync(abs).size })
     }
   }
   if (existsSync(dir)) walk(dir, '')
   return out.sort((a, b) => a.file.localeCompare(b.file))
+}
+
+/** tokensHash = sha256 hex of the \r-stripped bytes of tokens.json (the
+ * snapshot's src/tokens.json; line endings never change the hash). */
+function tokensHashOf(file) {
+  const hash = createHash('sha256')
+  if (existsSync(file)) {
+    hash.update(readFileSync(file, 'utf8').split('\r').join(''))
+  }
+  return hash.digest('hex')
 }
 
 /** Reads manifest.json; schema-invalid -> 400 (ApiError). Missing -> null. */
@@ -328,6 +346,7 @@ function readManifest(snapDir) {
     typeof manifest !== 'object' ||
     typeof manifest.label !== 'string' ||
     typeof manifest.date !== 'string' ||
+    typeof manifest.tokensHash !== 'string' ||
     !inventory ||
     typeof inventory !== 'object' ||
     !Array.isArray(inventory.src) ||
@@ -338,15 +357,16 @@ function readManifest(snapDir) {
   return manifest
 }
 
-/** True when the manifest inventory no longer matches the files on disk. */
+/** True when the manifest no longer matches the snapshot on disk: the same
+ * snapshot-dir-relative inventory convention as listFilesDeep(.., 'src/'|'render/'),
+ * checked bidirectionally (manifest <-> disk), plus the tokensHash. */
 function manifestDesynced(snapDir, manifest, label) {
   try {
     if (manifest.label !== label) return true
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b)
-    return (
-      !eq(listFilesDeep(join(snapDir, 'src')), manifest.inventory.src) ||
-      !eq(listFilesDeep(join(snapDir, 'render')), manifest.inventory.render)
-    )
+    if (!eq(listFilesDeep(join(snapDir, 'src'), 'src/'), manifest.inventory.src)) return true
+    if (!eq(listFilesDeep(join(snapDir, 'render'), 'render/'), manifest.inventory.render)) return true
+    return tokensHashOf(join(snapDir, 'src', 'tokens.json')) !== manifest.tokensHash
   } catch {
     return true
   }
@@ -377,7 +397,277 @@ function listSnapshots() {
   return out
 }
 
-/** POST /api/snapshot — writes the Scope layout with a provisional render/. */
+// ---------- render/ flattening (flat, self-contained, file://-ready) ----------
+//
+// One output HTML per top-level screen (name-stable). Local css/js is inlined
+// (`<style data-inline>` / `<script data-inline>` with `</style` -> `<\/style`,
+// `</script` -> `<\/script` escapes); before an inlined mock.js a prelude ships
+// data.json/canvas.json as globals plus a fetch shim so Mock.data() works on
+// file://. Every other local ref (href/src, both quote styles) is copied beside
+// at basename (collision -> preserved path -> numeric suffix) and rewritten;
+// local HTML pulled that way is flattened too (recursive, seen-set). The whole
+// render/ tree ends with ZERO `href="../` and `src="../`.
+
+const FETCH_SHIM =
+  '(function(){var of=window.fetch;window.fetch=function(i){' +
+  'var u=String((i&&i.url)||i||"");var b=u.split(/[?#]/)[0].split("/").pop();' +
+  'if(b==="data.json")return Promise.resolve({ok:true,json:function(){return Promise.resolve(window.__MOCK_DATA__)}});' +
+  'if(b==="canvas.json")return Promise.resolve({ok:true,json:function(){return Promise.resolve(window.__MOCK_CANVAS__)}});' +
+  'return of.apply(this,arguments);};})()'
+
+const ATTR_RE = /\b(href|src)(\s*=\s*)("([^"]*)"|'([^']*)')/gi
+
+function splitSuffix(ref) {
+  const at = ref.search(/[?#]/)
+  return at === -1 ? { path: ref, suffix: '' } : { path: ref.slice(0, at), suffix: ref.slice(at) }
+}
+
+function isExternalRef(path) {
+  return path === '' || path.startsWith('//') || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path)
+}
+
+function refKind(path) {
+  const ext = extname(path).toLowerCase()
+  if (ext === '.css') return 'style'
+  if (ext === '.js' || ext === '.mjs') return 'script'
+  if (ext === '.html' || ext === '.htm') return 'html'
+  return 'copy'
+}
+
+function toPosix(p) {
+  return p.split(sep).join('/').split('\\').join('/')
+}
+
+/** Escapes the tag-terminating sequence inside inlined css/js (mock.js has one
+ * `</script>` in a comment — mandatory). */
+function escapeClose(text, kind) {
+  return kind === 'style'
+    ? text.replace(/<\/(style)/gi, '<\\/$1')
+    : text.replace(/<\/(script)/gi, '<\\/$1')
+}
+
+/** Snapshot data prelude: frozen data.json/canvas.json + fetch shim (file://). */
+function mockPrelude(sourceDir) {
+  const readJson = (name) => {
+    try {
+      return JSON.parse(readFileSync(join(sourceDir, name), 'utf8'))
+    } catch {
+      return {}
+    }
+  }
+  const enc = (value) => JSON.stringify(value).split('<').join('\\u003c')
+  return (
+    `<script>window.__MOCK_DATA__=${enc(readJson('data.json'))};window.__MOCK_CANVAS__=${enc(readJson('canvas.json'))};</script>\n` +
+    `<script>${FETCH_SHIM}</script>\n`
+  )
+}
+
+function tagAttr(tag, name) {
+  const m = new RegExp(`\\b${name}(\\s*=\\s*)("([^"]*)"|'([^']*)')`, 'i').exec(tag)
+  if (!m) return null
+  return m[3] !== undefined ? m[3] : m[4]
+}
+
+/** Invariant sweep: no `href="../` / `src="../` survives anywhere in render/. */
+function neutralizeRefs(text) {
+  return text.replace(/\b(href|src)(=["'])(?:\.\.?\/)+/gi, '$1$2')
+}
+
+const TEXT_REF_RE = /\.(js|mjs|css|json|txt|svg|xml|md|html?|cjs|ts)$/i
+
+/** Allocation chain for a render/ output name: basename -> preserved path
+ * (source path relative to the design root) -> numeric suffix. Returns the
+ * render-root-relative POSIX out path. */
+function allocName(ctx, outDir, sourceAbs) {
+  const base = basename(sourceAbs) || 'ref'
+  const safeBase = /^\.+$/.test(base) ? 'ref' : base
+  const dot = safeBase.lastIndexOf('.')
+  const stem = dot > 0 ? safeBase.slice(0, dot) : safeBase
+  const ext = dot > 0 ? safeBase.slice(dot) : ''
+  const candidates = [`${outDir ? `${outDir}/` : ''}${safeBase}`]
+  const relRoot = toPosix(relative(root, sourceAbs))
+  if (relRoot && !relRoot.startsWith('..') && !relRoot.startsWith('/')) {
+    candidates.push(`${outDir ? `${outDir}/` : ''}${relRoot}`)
+  }
+  for (let n = 2; n < 1000; n++) {
+    candidates.push(`${outDir ? `${outDir}/` : ''}${stem}-${n}${ext}`)
+  }
+  for (const candidate of candidates) {
+    if (!ctx.used.has(candidate)) {
+      ctx.used.add(candidate)
+      return candidate
+    }
+  }
+  throw new Error(`render name allocation failed for ${sourceAbs}`)
+}
+
+function outDirOf(outRel) {
+  const at = outRel.lastIndexOf('/')
+  return at === -1 ? '' : outRel.slice(0, at)
+}
+
+/** Duplicate an already-produced render file beside the page (per-dir) so the
+ * attr never needs to walk up with `../`. */
+function dupBeside(fromDir, targetOutRel, ctx) {
+  const name = allocName(ctx, fromDir, join(ctx.renderDir, targetOutRel))
+  const dest = join(ctx.renderDir, name)
+  mkdirSync(dirname(dest), { recursive: true })
+  cpSync(join(ctx.renderDir, targetOutRel), dest)
+  return outDirOf(name) === fromDir ? name.slice(fromDir ? fromDir.length + 1 : 0) : name
+}
+
+/** Attr value pointing at `toOutRel` from the page at `outRel` — `..`-free. */
+function attrRel(outRel, toOutRel, ctx) {
+  const fromDir = outDirOf(outRel)
+  const rel = toPosix(relative(join(ctx.renderDir, fromDir), join(ctx.renderDir, toOutRel)))
+  if (rel && !rel.startsWith('..') && !rel.startsWith('/')) return rel
+  return dupBeside(fromDir, toOutRel, ctx)
+}
+
+/**
+ * Resolves one href/src ref (both quote styles reach here).
+ * Returns { keep } | { style: text } | { script: text, isMock } | { attr: value }.
+ * `inlineEligible` is 'style' on <link href>, 'script' on <script src> — the
+ * only tags where local css/js becomes an inline block; everywhere else css/js
+ * refs keep their tag shape and are copied beside.
+ */
+function resolveRef(ref, sourceDir, outRel, ctx, inlineEligible) {
+  const { path, suffix } = splitSuffix(ref)
+  if (isExternalRef(path)) return { keep: true }
+  const abs = resolve(sourceDir, path)
+  const inside = abs === root || abs.startsWith(root + sep)
+  const isFile = inside && existsSync(abs) && statSync(abs).isFile()
+  const kind = refKind(path)
+
+  if (inlineEligible === 'style' && kind === 'style') {
+    return { style: isFile ? readFileSync(abs, 'utf8') : '' }
+  }
+  if (inlineEligible === 'script' && kind === 'script') {
+    return {
+      script: isFile ? readFileSync(abs, 'utf8') : '',
+      isMock: splitSuffix(path).path.split(/[\\/]/).pop().toLowerCase() === 'mock.js',
+    }
+  }
+
+  let target = ctx.seen.get(abs)
+  if (!target) {
+    if (kind === 'html' && isFile) {
+      // HTML pulled by attr: flattened too (recursive, seen-set)
+      target = allocName(ctx, outDirOf(outRel), abs)
+      ctx.seen.set(abs, target)
+      buildFlatPage(abs, target, ctx)
+    } else {
+      // any other local ref: copy beside at basename (collision -> preserved
+      // path -> numeric suffix); missing/outside files only reserve the name
+      target = allocName(ctx, outDirOf(outRel), abs)
+      ctx.seen.set(abs, target)
+      if (isFile) {
+        const dest = join(ctx.renderDir, target)
+        mkdirSync(dirname(dest), { recursive: true })
+        if (TEXT_REF_RE.test(path)) {
+          writeFileSync(dest, neutralizeRefs(readFileSync(abs, 'utf8')))
+        } else {
+          cpSync(abs, dest)
+        }
+      }
+    }
+  }
+  return { attr: attrRel(outRel, target, ctx) + suffix }
+}
+
+function transformChunk(chunk, sourceAbs, outRel, ctx) {
+  if (chunk.startsWith('<!--') || chunk.startsWith('<![CDATA')) return chunk
+  const sourceDir = dirname(sourceAbs)
+  const lower = chunk.toLowerCase()
+
+  if (lower.startsWith('<script')) {
+    const openTag = chunk.slice(0, chunk.indexOf('>') + 1)
+    const src = tagAttr(openTag, 'src')
+    if (src === null) return chunk // inline script: untouched (Mock.go strings safe)
+    const res = resolveRef(src, sourceDir, outRel, ctx, 'script')
+    if (res.keep) return chunk
+    if (res.script !== undefined) {
+      const body = `<script data-inline>${escapeClose(res.script, 'script')}</script>`
+      return res.isMock ? `${mockPrelude(sourceDir)}${body}` : body
+    }
+    return rewriteTagAttrs(openTag, (value) => (value === src ? res.attr : value)) + chunk.slice(openTag.length)
+  }
+
+  if (lower.startsWith('<link')) {
+    const href = tagAttr(chunk, 'href')
+    if (href !== null) {
+      const res = resolveRef(href, sourceDir, outRel, ctx, 'style')
+      if (res.style !== undefined) {
+        return `<style data-inline>${escapeClose(res.style, 'style')}</style>`
+      }
+      if (res.attr !== undefined) {
+        return rewriteTagAttrs(chunk, (value) => (value === href ? res.attr : value))
+      }
+    }
+    return chunk
+  }
+
+  if (lower.startsWith('<style') || chunk.startsWith('<!')) return chunk
+
+  return rewriteTagAttrs(chunk, (value) => {
+    const res = resolveRef(value, sourceDir, outRel, ctx, null)
+    return res.attr !== undefined ? res.attr : value
+  })
+}
+
+function rewriteTagAttrs(tag, map) {
+  return tag.replace(ATTR_RE, (whole, name, eq, quoted, dq, sq) => {
+    const value = dq !== undefined ? dq : sq
+    const next = map(value)
+    if (next === value) return whole
+    const quote = dq !== undefined ? '"' : "'"
+    return `${name}${eq}${quote}${next}${quote}`
+  })
+}
+
+/** One flat self-contained page; writes it to render/<outRel>. */
+function buildFlatPage(sourceAbs, outRel, ctx) {
+  const html = transformHtml(readFileSync(sourceAbs, 'utf8'), sourceAbs, outRel, ctx)
+  const dest = join(ctx.renderDir, outRel)
+  mkdirSync(dirname(dest), { recursive: true })
+  writeFileSync(dest, html)
+}
+
+const SCAN_RE =
+  /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<script\b[^>]*>[\s\S]*?<\/script\s*>|<style\b[^>]*>[\s\S]*?<\/style\s*>|<[a-zA-Z][^>]*>/g
+
+function transformHtml(html, sourceAbs, outRel, ctx) {
+  let out = ''
+  let last = 0
+  for (const m of html.matchAll(SCAN_RE)) {
+    out += html.slice(last, m.index)
+    last = m.index + m[0].length
+    out += transformChunk(m[0], sourceAbs, outRel, ctx)
+  }
+  out += html.slice(last)
+  // invariant sweep (interiors too): the tree never contains `href="../`/`src="../`
+  return neutralizeRefs(out)
+}
+
+/** render/ = one flat HTML per top-level screen of the canvas dir. */
+function flattenCanvas(canvasDir, renderDir) {
+  const ctx = { renderDir, used: new Set(), seen: new Map() }
+  const screens = readdirSync(canvasDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /\.html?$/i.test(entry.name))
+    .map((entry) => entry.name)
+    .sort()
+  // top-level screens are name-stable in render/ — pre-registered so sibling
+  // refs keep pointing at the same flat names
+  for (const name of screens) {
+    ctx.used.add(name)
+    ctx.seen.set(join(canvasDir, name), name)
+  }
+  for (const name of screens) {
+    buildFlatPage(join(canvasDir, name), name, ctx)
+  }
+}
+
+/** POST /api/snapshot — writes the full snapshot layout (flat render/). */
 function handleSnapshot(body) {
   const { canvas, label } = body
   if (typeof canvas !== 'string' || !SAFE_ID.test(canvas)) throw new ApiError(400, 'invalid')
@@ -391,20 +681,30 @@ function handleSnapshot(body) {
   try {
     mkdirSync(join(snapDir, 'src'), { recursive: true })
     mkdirSync(join(snapDir, 'render'), { recursive: true })
+    // src/ = the whole canvas dir (screens stay byte-identical, markers intact)
     for (const entry of readdirSync(canvasDir, { withFileTypes: true })) {
       cpSync(join(canvasDir, entry.name), join(snapDir, 'src', entry.name), { recursive: true })
-      if (entry.isFile() && extname(entry.name).toLowerCase() === '.html') {
-        // PROVISIONAL render/ = simple screen copies (real flat comes at passo 22)
-        cpSync(join(canvasDir, entry.name), join(snapDir, 'render', entry.name))
-      }
     }
+    // src/tokens.json + src/components/ = design-root ones (root wins);
+    // components/ is always the COMPLETE set (registry + every partial)
+    const rootTokens = join(root, 'tokens.json')
+    if (existsSync(rootTokens) && statSync(rootTokens).isFile()) {
+      cpSync(rootTokens, join(snapDir, 'src', 'tokens.json'))
+    }
+    const rootComponents = join(root, 'components')
+    if (existsSync(rootComponents) && statSync(rootComponents).isDirectory()) {
+      rmSync(join(snapDir, 'src', 'components'), { recursive: true, force: true })
+      cpSync(rootComponents, join(snapDir, 'src', 'components'), { recursive: true })
+    }
+    flattenCanvas(canvasDir, join(snapDir, 'render'))
     const manifest = {
       label,
       date,
       inventory: {
-        src: listFilesDeep(join(snapDir, 'src')),
-        render: listFilesDeep(join(snapDir, 'render')),
+        src: listFilesDeep(join(snapDir, 'src'), 'src/'),
+        render: listFilesDeep(join(snapDir, 'render'), 'render/'),
       },
+      tokensHash: tokensHashOf(join(snapDir, 'src', 'tokens.json')),
     }
     writeFileSync(join(snapDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
     const reread = readManifest(snapDir)

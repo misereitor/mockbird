@@ -249,6 +249,25 @@
     background: var(--ui-accent); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px;
   }
   body.dark #pendingBtn #pendingBadge { color: #042f2e; }
+
+  /* -- snapshots (w5-22) -- */
+  #snapshotPanel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 340px; z-index: 8;
+    display: flex; flex-direction: column;
+    background: var(--ui-surface); border-left: 1px solid var(--ui-border);
+    box-shadow: -12px 0 32px rgb(15 23 42 / .18);
+  }
+  #snapshotForm { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--ui-border); }
+  #snapshotLabel { flex: 1; }
+  #snapshotList {
+    flex: 1; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 16px;
+  }
+  .snap-item {
+    display: flex; flex-direction: column; gap: 2px; padding: 8px 10px;
+    border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-bg);
+  }
+  .snap-item strong { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+  .snap-item span { color: var(--ui-muted); font-size: 11px; word-break: break-all; }
 </style>
 <style id="chipCss">
   /* 🧩 inspector chips — cloned into each screen iframe by renderCompChips */
@@ -302,6 +321,7 @@
     <button id="commentBtn" data-share-hide disabled>💬 Comentar esta tela</button>
     <button id="copyAllBtn" data-share-hide title="Ver/copiar todos os comentários de elemento">⧉ Comentários (0)</button>
     <button id="pendingBtn" data-share-hide title="Abrir o painel de comentários pendentes (todos os canvases)">💬 Pendentes <span id="pendingBadge">0</span></button>
+    <button id="snapshotBtn" data-share-hide title="Salvar um snapshot deste canvas (src/ + render/ flat) e ver os snapshots salvos">Salvar snapshot</button>
     <button id="exportBtn" disabled>⬇ PNG da tela</button>
     <button id="exportAllBtn">⬇ PNG do canvas</button>
   </div>
@@ -423,6 +443,18 @@
     <button id="pendingClose" type="button" title="Fechar painel">×</button>
   </div>
   <div id="pendingBody"></div>
+</aside>
+
+<aside id="snapshotPanel" data-share-hide hidden>
+  <div class="pending-top">
+    <strong>Snapshots</strong>
+    <button id="snapshotClose" type="button" title="Fechar painel">×</button>
+  </div>
+  <form id="snapshotForm" data-share-hide>
+    <input id="snapshotLabel" placeholder="label (a-z, 0-9, -)" pattern="[a-z0-9-]+" title="Use apenas letras minúsculas, números e hífen" required autocomplete="off">
+    <button type="submit" class="primary" id="snapshotSave">Salvar snapshot</button>
+  </form>
+  <div id="snapshotList" data-share-hide></div>
 </aside>
 
 <script>
@@ -972,6 +1004,112 @@ $('pendingBtn').addEventListener('click', () => {
 
 $('pendingClose').addEventListener('click', () => {
   $('pendingPanel').hidden = true
+})
+
+/* ------------------------------------------------- snapshots (w5-22) */
+
+const SNAPSHOTS_API = 'api/snapshots'
+const SNAPSHOT_API = 'api/snapshot'
+
+/** Per-canvas snapshot list (GET /api/snapshots -> {snapshots:[{canvas,label,date}]}). */
+async function loadSnapshotList() {
+  const list = $('snapshotList')
+  if (!list) return
+  if (isReadonly()) {
+    // share: /api responde 403 — o data-share-hide já escondeu a UI
+    list.innerHTML = ''
+    return
+  }
+  let payload
+  try {
+    const response = await fetch(SNAPSHOTS_API, { cache: 'no-store', headers: apiHeaders() })
+    if (!response.ok) throw new Error(`GET /api/snapshots ${response.status}`)
+    payload = await response.json()
+  } catch {
+    list.innerHTML = ''
+    const warn = document.createElement('p')
+    warn.className = 'pending-empty'
+    warn.textContent = 'Snapshots indisponíveis.'
+    list.appendChild(warn)
+    return
+  }
+  const snapshots = Array.isArray(payload?.snapshots) ? payload.snapshots : []
+  list.innerHTML = ''
+  if (snapshots.length === 0) {
+    const empty = document.createElement('p')
+    empty.className = 'pending-empty'
+    empty.textContent = 'Nenhum snapshot salvo ainda.'
+    list.appendChild(empty)
+    return
+  }
+  const byCanvas = new Map()
+  for (const snap of snapshots) {
+    const key = String(snap?.canvas ?? '')
+    if (!byCanvas.has(key)) byCanvas.set(key, [])
+    byCanvas.get(key).push(snap)
+  }
+  for (const [canvas, items] of byCanvas) {
+    const section = document.createElement('section')
+    section.className = 'pending-section'
+    const heading = document.createElement('h3')
+    heading.textContent = canvas
+    section.appendChild(heading)
+    const ul = document.createElement('ul')
+    ul.className = 'pending-list'
+    for (const snap of items) {
+      const li = document.createElement('li')
+      li.className = 'snap-item'
+      const name = document.createElement('strong')
+      name.textContent = String(snap?.label ?? '')
+      const when = document.createElement('span')
+      when.textContent = String(snap?.date ?? '')
+      li.appendChild(name)
+      li.appendChild(when)
+      ul.appendChild(li)
+    }
+    section.appendChild(ul)
+    list.appendChild(section)
+  }
+}
+
+$('snapshotBtn').addEventListener('click', () => {
+  const panel = $('snapshotPanel')
+  panel.hidden = !panel.hidden
+  if (!panel.hidden) {
+    loadSnapshotList()
+    $('snapshotLabel').focus()
+  }
+})
+
+$('snapshotClose').addEventListener('click', () => {
+  $('snapshotPanel').hidden = true
+})
+
+/** POST /api/snapshot {canvas,label} — 400 label, 404 canvas, 409 duplicado. */
+$('snapshotForm').addEventListener('submit', async (event) => {
+  event.preventDefault()
+  if (isReadonly()) return
+  const label = $('snapshotLabel').value.trim()
+  if (!/^[a-z0-9-]+$/.test(label)) {
+    toast('Label inválido — use apenas a-z, 0-9 e hífen')
+    return
+  }
+  try {
+    const response = await fetch(SNAPSHOT_API, {
+      method: 'POST',
+      headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ canvas: state.canvas, label }),
+    })
+    if (!response.ok) {
+      const reasons = { 400: 'label inválido', 404: 'canvas inexistente', 409: 'label já existe' }
+      throw new Error(reasons[response.status] ?? `HTTP ${response.status}`)
+    }
+    toast(`Snapshot "${label}" salvo`)
+    $('snapshotLabel').value = ''
+    loadSnapshotList()
+  } catch (error) {
+    toast(`Não consegui salvar o snapshot (${error?.message ?? error})`)
+  }
 })
 
 /** Sweep mode: step through pending entries and resolve as you go. */
