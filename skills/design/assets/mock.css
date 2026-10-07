@@ -1,0 +1,71 @@
+/**
+ * Design canvas mock styles - static companion of mock.js (Setup tool, sits
+ * beside viewer.html/mock.js and is copied to the design root). Screens link
+ * it as ../mock.css, resolved in the mounted root. mock.js only toggles these
+ * classes and never injects CSS at runtime. Missing file degrades gracefully:
+ * mock widgets render unstyled, nothing throws.
+ *
+ * Token-first: consumes design-system.css vars. The backdrop rgba dim is the
+ * one literal (mock.css is on the validator's exempt list).
+ */
+
+/* Toast: fixed bottom-center feedback pill (Mock.toast toggles .show). */
+.mock-toast {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-6);
+  transform: translate(-50%, var(--space-3));
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  max-width: 80vw;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 99;
+}
+
+.mock-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Overlay: fixed inset layer, high z-index, flex-centers its content. */
+.mock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Backdrop: fixed inset-0 dim layer behind the .mock-overlay content. */
+.mock-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: -1;
+}
+
+/*
+ * Mock-widget state refinements, scoped to component instances so they
+ * complement (never restate) the global utilities.css [data-state] hooks.
+ */
+[data-component][data-state="disabled"] {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+[data-component][data-state="hover"] {
+  cursor: pointer;
+}
+
+[data-component][data-state="active"] {
+  cursor: pointer;
+  opacity: 0.8;
+}

@@ -83,24 +83,13 @@
       },
     },
 
-    /** Small feedback toast for simulated actions. */
+    /** Small feedback toast: toggles .mock-toast/.show (styles in mock.css; unstyled but functional without it). */
     toast(message, ms = 2200) {
-      if (!document.getElementById('mock-toast-style')) {
-        const style = document.createElement('style')
-        style.id = 'mock-toast-style'
-        style.textContent = [
-          '#mock-toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,12px);',
-          'background:var(--color-text,#0f172a);color:var(--color-bg,#f8fafc);',
-          'padding:10px 18px;border-radius:10px;font-size:14px;max-width:80vw;',
-          'opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:99}',
-          '#mock-toast.show{opacity:1;transform:translate(-50%,0)}',
-        ].join('')
-        document.head.appendChild(style)
-      }
       let el = document.getElementById('mock-toast')
       if (!el) {
         el = document.createElement('div')
         el.id = 'mock-toast'
+        el.className = 'mock-toast'
         document.body.appendChild(el)
       }
       el.textContent = message
