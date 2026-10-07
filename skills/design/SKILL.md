@@ -237,5 +237,12 @@ the server) — the pin is the persistent record (pending panel, toolbar
 count); the chat message is the channel that instructs you. `stale` has
 exactly two writers: `validate.mjs --mark-stale` (step 4) and the revert
 API. Never edit `comments.json` by hand. Validate again after any edit.
+   A message
+   `[Design-Reset: design/<canvas> — snapshot "<label>" restaurado]` is a
+   state confirmation only — the agent does NOT edit anything: acknowledge
+   and continue. (The bracket is the whole message — em-dash between canvas
+   and snapshot, no `› <arquivo>` part.) It means the snapshot was already
+   restored (the viewer's "Reverter para este snapshot" button) and the
+   regen pipeline (gen → sync → validate) already ran.
 7. **Variations.** "2 options" means separate screens in the same canvas
    (`Login A`, `Login B`), not separate canvases.

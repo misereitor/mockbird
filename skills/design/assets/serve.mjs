@@ -26,7 +26,16 @@
  *                          render/ = one FLAT self-contained HTML per top-level
  *                                    screen (css/js/data inline, local refs
  *                                    copied beside — zero href="../ or src="../)
- *   POST /api/revert     -> 501 {error:"not-implemented"} (pipeline: passo 24)
+ *   POST /api/revert     -> 200 {reverted:{canvas,label},
+ *                          pipeline:{gen:true,sync:true,validate:true}}
+ *                          restores the snapshot src/ as an integral REPLACE
+ *                          (per artifact/dir of src/: screens, canvas.json,
+ *                          data.json, tokens.json, components/ WHOLE — never a
+ *                          merge; files outside src/ survive untouched) and
+ *                          ALWAYS reruns gen-tokens -> sync-components ->
+ *                          validate on the installed design/ copies; pins whose
+ *                          anchors no longer resolve become "stale" (second
+ *                          named writer, --mark-stale semantics)
  *
  * Hardening (ONLY on /api/* — static routes are never intercepted, so LAN
  * static serving keeps working):
@@ -39,7 +48,8 @@
  * Error taxonomy: traversal 403 | schema 400 | too large 413 | missing 404 |
  * duplicate snapshot label 409 | invalid/desynced snapshot manifest 400
  * (checked BEFORE any restore, never touching the root) | write/pipeline
- * failure 500 + rollback | stub 501.
+ * failure 500 + FULL rollback to the pre-revert state (backup taken before
+ * the swap).
  *
  * The viewer gets the token via in-memory response rewrite: the placeholder
  * `window.__DESIGN_TOKEN__ = null` inside viewer.html is substituted at serve
@@ -51,18 +61,21 @@
  * banner. Static routes keep serving normally to the LAN.
  */
 import { createServer } from 'node:http'
+import { spawnSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
 import {
   createReadStream,
   cpSync,
   existsSync,
   mkdirSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join, normalize, relative, resolve, sep } from 'node:path'
 
 const argv = process.argv.slice(2)
@@ -717,28 +730,212 @@ function handleSnapshot(body) {
   }
 }
 
+// ---------- revert (w5-24) ----------
+//
+// Transaction order: STRICT manifest validation (root untouched) -> pre-swap
+// backup -> integral REPLACE of src/ -> ALWAYS gen -> sync -> validate (exit 0
+// from every step) -> stale pins -> 200. Any failure after the backup rolls
+// the root FULLY back and answers 500.
+
+/** Pre-revert backup of the served root (snapshots/ excluded — the revert
+ * never writes there). Lives in the OS temp dir so the root stays clean. */
+function backupRoot() {
+  const holder = mkdtempSync(join(tmpdir(), 'design-revert-'))
+  const copy = join(holder, 'design')
+  const snapshots = join(root, 'snapshots')
+  cpSync(root, copy, {
+    recursive: true,
+    filter: (src) => resolve(src) !== snapshots,
+  })
+  return { holder, copy }
+}
+
+/** FULL rollback to the pre-revert state (everything except snapshots/, which
+ * never changed). Removes the temp copy afterwards. */
+function rollbackRoot(backup) {
+  for (const entry of readdirSync(root)) {
+    if (entry === 'snapshots') continue
+    rmSync(join(root, entry), { recursive: true, force: true })
+  }
+  for (const entry of readdirSync(backup.copy)) {
+    cpSync(join(backup.copy, entry), join(root, entry), { recursive: true })
+  }
+  rmSync(backup.holder, { recursive: true, force: true })
+}
+
 /**
- * POST /api/revert — stub. The restore pipeline arrives at passo 24; here the
- * snapshot manifest is still validated (schema + inventory) BEFORE any restore
- * decision, without touching the root: invalid/desynced -> 400. Everything
- * else answers 501 {error:"not-implemented"}.
+ * Integral REPLACE restore of the snapshot src/ — NEVER a merge. Each
+ * artifact/dir present in src/ replaces its counterpart WHOLE:
+ *   src/tokens.json -> design/tokens.json
+ *   src/components/ -> design/components/ (dir replaced WHOLE)
+ *   anything else   -> design/<canvas>/<name> (screens, canvas.json, data.json,
+ *                      assets/ dirs — dir replaced WHOLE)
+ * Files outside the src/ artifacts (root files, other canvases, canvas files
+ * not recorded in src/) survive untouched.
  */
-function handleRevert(res, body) {
-  if (body) {
-    for (const key of ['canvas', 'label']) {
-      if (body[key] !== undefined && (typeof body[key] !== 'string' || !SAFE_ID.test(body[key]))) {
-        throw new ApiError(400, 'invalid')
-      }
-    }
-    if (typeof body.canvas === 'string' && typeof body.label === 'string') {
-      const snapDir = snapDirFor(body.canvas, body.label)
-      if (existsSync(snapDir)) {
-        const manifest = readManifest(snapDir)
-        if (!manifest || manifestDesynced(snapDir, manifest, body.label)) throw new ApiError(400, 'invalid')
-      }
+function restoreSrc(snapDir, canvas) {
+  const srcDir = join(snapDir, 'src')
+  for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
+    const from = join(srcDir, entry.name)
+    const to =
+      entry.name === 'tokens.json'
+        ? join(root, 'tokens.json')
+        : entry.name === 'components'
+          ? join(root, 'components')
+          : join(root, canvas, entry.name)
+    rmSync(to, { recursive: true, force: true })
+    mkdirSync(dirname(to), { recursive: true })
+    cpSync(from, to, { recursive: true })
+  }
+}
+
+/** Post-restore pipeline (ALWAYS): gen-tokens -> sync-components -> validate,
+ * via child_process on the INSTALLED copies under design/; cwd = this
+ * server's cwd (the parent of design/). Exit 0 required from every step. */
+function runGenSyncValidate() {
+  const cwd = process.cwd()
+  const relRoot = relative(cwd, root) || 'design'
+  const steps = [
+    [join(relRoot, 'scripts', 'gen-tokens.mjs')],
+    [join(relRoot, 'scripts', 'sync-components.mjs'), relRoot],
+    [join(relRoot, 'validate.mjs'), relRoot],
+  ]
+  for (const [script, ...args] of steps) {
+    const run = spawnSync(process.execPath, [script, ...args], {
+      cwd,
+      encoding: 'utf8',
+      windowsHide: true,
+      timeout: 120000,
+    })
+    if (run.error || run.status !== 0) {
+      console.error(`revert pipeline failed at ${script}:`, run.error ?? `exit ${run.status}`, run.stderr ?? '')
+      throw new Error(`revert pipeline failed at ${script} (exit ${run.status ?? 'none'})`)
     }
   }
-  return fail(res, 501, 'not-implemented')
+}
+
+/** Second named writer of pin `stale` (the first is validate.mjs --mark-stale):
+ * same semantics — only `open` pins; anchor = selector first, snippet as
+ * fallback; missing screen path / no anchor counts as unresolved. */
+function markStaleAfterRevert() {
+  const file = commentsPath()
+  if (!existsSync(file)) return
+  const parsed = JSON.parse(readFileSync(file, 'utf8'))
+  const list = Array.isArray(parsed)
+    ? parsed
+    : parsed && typeof parsed === 'object' && Array.isArray(parsed.comments)
+      ? parsed.comments
+      : null
+  if (list === null) return // shape already rejected by the pipeline validator
+  for (const pin of list) {
+    if (!pin || typeof pin !== 'object' || Array.isArray(pin) || pin.status !== 'open') continue
+    if (pinAnchorResolves(pin)) continue
+    pin.status = 'stale'
+  }
+  writeFileSync(file, `${JSON.stringify(parsed, null, 2)}\n`, 'utf8')
+}
+
+/** Anchor resolution (verbatim --mark-stale semantics): selector first on the
+ * comment/script/style-stripped source, then the raw-HTML snippet fallback. */
+function pinAnchorResolves(pin) {
+  if (escapesFolder(pin.canvas) || escapesFolder(pin.file)) return false
+  let html = null
+  try {
+    html = readFileSync(join(root, pin.canvas, pin.file), 'utf8')
+  } catch {
+    return false
+  }
+  const stripped = structuralSource(html)
+  if (typeof pin.selector === 'string' && pin.selector.length > 0) {
+    if (selectorFound(stripped, pin.selector)) return true
+  }
+  if (typeof pin.snippet === 'string' && pin.snippet.length > 0) {
+    return html.includes(pin.snippet)
+  }
+  return false
+}
+
+function escapesFolder(file) {
+  return (
+    file.startsWith('/') ||
+    file.includes('\\') ||
+    /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(file) ||
+    file.split('/').includes('..')
+  )
+}
+
+function structuralSource(html) {
+  return html
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+}
+
+/** Minimal selector matcher: tag / #id / .class and simple compounds. */
+function selectorFound(stripped, selector) {
+  const sel = selector.trim()
+  const parsed = /^([a-zA-Z][a-zA-Z0-9-]*)?((?:[.#][A-Za-z0-9_-]+)*)$/.exec(sel)
+  if (!parsed) return false
+  const [, tag, modsRaw] = parsed
+  if (tag && !new RegExp(`<${tag}\\b`, 'i').test(stripped)) return false
+  const mods = modsRaw ? modsRaw.match(/[.#][A-Za-z0-9_-]+/g) ?? [] : []
+  for (const mod of mods) {
+    const name = mod.slice(1)
+    if (mod[0] === '#') {
+      if (!new RegExp(`\\bid\\s*=\\s*["']${escapeRegExp(name)}["']`, 'i').test(stripped)) return false
+    } else if (!new RegExp(`\\bclass\\s*=\\s*["'][^"']*\\b${escapeRegExp(name)}\\b[^"']*["']`, 'i').test(stripped)) {
+      return false
+    }
+  }
+  return true
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * POST /api/revert {canvas,label} — restores the snapshot's src/ (integral
+ * REPLACE) and ALWAYS reruns gen -> sync -> validate.
+ *   400 invalid    manifest.json invalid/schema-broken/desynced — checked
+ *                  BEFORE any write; the root is never touched on this path
+ *   404 not-found  snapshot (or its manifest.json) missing
+ *   500 internal   restore/pipeline failure — FULL rollback to the pre-revert
+ *                  state (pre-swap backup taken before the replace)
+ */
+function handleRevert(res, body) {
+  if (
+    !body ||
+    typeof body.canvas !== 'string' ||
+    !SAFE_ID.test(body.canvas) ||
+    typeof body.label !== 'string' ||
+    !SAFE_ID.test(body.label)
+  ) {
+    throw new ApiError(400, 'invalid')
+  }
+  const { canvas, label } = body
+  const snapDir = snapDirFor(canvas, label)
+  if (!existsSync(snapDir) || !statSync(snapDir).isDirectory()) throw new ApiError(404, 'not-found')
+  const manifest = readManifest(snapDir) // schema/JSON invalid -> 400, no write
+  if (!manifest) throw new ApiError(404, 'not-found')
+  if (manifestDesynced(snapDir, manifest, label)) throw new ApiError(400, 'invalid')
+  if (!existsSync(join(snapDir, 'src'))) throw new ApiError(400, 'invalid')
+
+  const backup = backupRoot()
+  try {
+    restoreSrc(snapDir, canvas)
+    runGenSyncValidate()
+    markStaleAfterRevert()
+  } catch (error) {
+    rollbackRoot(backup)
+    if (error instanceof ApiError) throw error
+    throw new ApiError(500, 'internal')
+  }
+  rmSync(backup.holder, { recursive: true, force: true })
+  return sendJson(res, 200, {
+    reverted: { canvas, label },
+    pipeline: { gen: true, sync: true, validate: true },
+  })
 }
 
 // ---------- routing ----------

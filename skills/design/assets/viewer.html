@@ -268,6 +268,11 @@
   }
   .snap-item strong { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
   .snap-item span { color: var(--ui-muted); font-size: 11px; word-break: break-all; }
+  /* -- reverter snapshot (w5-24) -- */
+  .snap-item .snap-revert {
+    margin-top: 6px; height: 28px; min-height: 28px; padding: 0 10px;
+    font-size: 11px; align-self: flex-start;
+  }
 
   /* -- comparação (w5-23) -- */
   #comparePick {
@@ -1175,6 +1180,14 @@ async function loadSnapshotList() {
       when.textContent = String(snap?.date ?? '')
       li.appendChild(name)
       li.appendChild(when)
+      // reverter (w5-24): botão com confirmação — POST /api/revert + Design-Reset
+      const revert = document.createElement('button')
+      revert.type = 'button'
+      revert.className = 'snap-revert'
+      revert.textContent = 'Reverter para este snapshot'
+      revert.title = 'Restaurar o src/ deste snapshot (replace integral) e regenerar tokens/componentes'
+      revert.addEventListener('click', () => revertToSnapshot(String(snap?.canvas ?? ''), String(snap?.label ?? '')))
+      li.appendChild(revert)
       ul.appendChild(li)
     }
     section.appendChild(ul)
@@ -1227,6 +1240,60 @@ $('snapshotForm').addEventListener('submit', async (event) => {
     toast(`Nǜo consegui salvar o snapshot (${error?.message ?? error})`)
   }
 })
+
+/* --------------------------------------------- revert snapshot (w5-24) */
+
+const REVERT_API = 'api/revert'
+
+/**
+ * The [Design-Reset: …] chat grammar (SKILL.md step 6): state confirmation
+ * ONLY — the agent does NOT edit anything. Literal em-dash between canvas and
+ * snapshot; NO `› <arquivo>` part.
+ */
+function designResetMessage(canvas, label) {
+  return `[Design-Reset: design/${canvas} — snapshot "${label}" restaurado]`
+}
+
+/** "Reverter para este snapshot": confirm step -> POST /api/revert -> on
+ * success the clipboard carries the Design-Reset message (dual channel, same
+ * overlay as the [Design: …] comments). */
+async function revertToSnapshot(canvas, label) {
+  if (isReadonly()) return
+  const ok = window.confirm(
+    `Restaurar o snapshot "${label}" do canvas ${canvas}?\n\n` +
+      'O src/ volta ao snapshot (replace integral) e o pipeline gen → sync → validate roda em seguida. ' +
+      'Arquivos fora de src/ permanecem.',
+  )
+  if (!ok) return
+  try {
+    const response = await fetch(REVERT_API, {
+      method: 'POST',
+      headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ canvas, label }),
+    })
+    if (!response.ok) {
+      const reasons = {
+        400: 'manifest do snapshot inválido — nada foi restaurado',
+        404: 'snapshot não encontrado',
+        500: 'pipeline falhou — rollback para o estado anterior',
+      }
+      throw new Error(reasons[response.status] ?? `HTTP ${response.status}`)
+    }
+    const message = designResetMessage(canvas, label)
+    $('clipboardMsg').textContent = message
+    $('clipboard').hidden = false
+    await copyToClipboard(message)
+    toast(`Snapshot "${label}" restaurado`)
+    if (canvas === state.canvas) {
+      state.bust = Date.now()
+      await loadCanvas()
+      fitSoon()
+    }
+    loadSnapshotList()
+  } catch (error) {
+    toast(`Não consegui reverter (${error?.message ?? error})`)
+  }
+}
 
 /* ------------------------------------------------- comparison (w5-23) */
 
