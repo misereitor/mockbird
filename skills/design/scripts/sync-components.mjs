@@ -33,9 +33,15 @@
  * Node 18+, stdlib only, ZERO deps. Imports the shared marker grammar parser
  * (marker-parser.mjs) — `parseAll`, `parseSlots`, `variantCompare`,
  * `variantClasses`, `DEFAULT_REGISTRY`, `VARIANT_KEYS` — never reimplemented here.
+ *
+ * Import-safe module contract (w2-9): validate.mjs imports `materializeRegion`
+ * and `rootVariantData` from here (the materializer is NEVER reimplemented in
+ * the validator). Importing this module has ZERO side effects — the CLI runs
+ * only when executed directly (`node sync-components.mjs …`).
  */
-import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, statSync, realpathSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   parseAll,
   parseSlots,
@@ -51,20 +57,6 @@ import {
 // CLI contract
 // ---------------------------------------------------------------------------
 const usage = "usage: node sync-components.mjs [design-root] [--check]";
-const argv = process.argv.slice(2);
-const flags = argv.filter((a) => a.startsWith("--"));
-const unknownFlags = flags.filter((f) => f !== "--check");
-if (unknownFlags.length > 0) {
-  console.error(`unknown flag "${unknownFlags[0]}" — ${usage}`);
-  process.exit(2);
-}
-const positional = argv.filter((a) => !a.startsWith("--"));
-if (positional.length > 1) {
-  console.error(`${usage} (got ${positional.length} positional args)`);
-  process.exit(2);
-}
-const check = flags.includes("--check");
-const designRootArg = positional[0] ?? "./design";
 
 // Walk exemptions = the validator's exempt names (the .css/.json ones are n/a
 // for an .html-only walk; kept for parity with validate.mjs).
@@ -135,8 +127,10 @@ function parseAttrList(attrsRaw) {
   return out;
 }
 
-/** Root variant data-attrs of a region's inner, keyed `data-size`/`data-tone`/`data-state`. */
-function rootVariantData(inner) {
+/** Root variant data-attrs of a region's inner, keyed `data-size`/`data-tone`/`data-state`.
+ * Exported for validate.mjs (w2-9): the `component-divergence` marker↔`data-*`
+ * check feeds this into `variantCompare` — same root semantics as the sync CLI. */
+export function rootVariantData(inner) {
   const out = {};
   const tag = findRootTag(inner);
   if (!tag) return out;
@@ -239,6 +233,22 @@ function materializeInner(region, partialText, id) {
   return partialText.slice(0, tag.index) + newTagRaw + rest;
 }
 
+/**
+ * Materialized INNER bytes for a region (everything between its two markers),
+ * loading the component's partial from `<rootDir>/components/<entry.file>`.
+ * THE materialization entry point — exported for validate.mjs's
+ * `component-divergence` byte check (w2-9); the validator never reimplements it.
+ * Throws InputError (missing partial / no root element) or MarkerError (partial
+ * slot grammar) exactly like the sync CLI.
+ */
+export function materializeRegion(rootDir, region, registry = DEFAULT_REGISTRY) {
+  const entry = registry[region.id];
+  if (!entry || typeof entry.file !== "string") {
+    throw new InputError(`registry has no partial file for component "${region.id}"`);
+  }
+  return materializeInner(region, loadPartial(rootDir, entry, region.id), region.id);
+}
+
 function lineOf(text, index) {
   let line = 1;
   for (let i = 0; i < index; i++) if (text.charCodeAt(i) === 10) line++;
@@ -304,8 +314,24 @@ function loadPartial(rootDir, entry, id) {
 
 // ---------------------------------------------------------------------------
 // Main (two-phase: materialize everything first, then write — a marker error
-// exits 2 with ZERO writes)
+// exits 2 with ZERO writes). CLI-only: see the isMain guard at the bottom.
 // ---------------------------------------------------------------------------
+function main() {
+  const argv = process.argv.slice(2);
+  const flags = argv.filter((a) => a.startsWith("--"));
+  const unknownFlags = flags.filter((f) => f !== "--check");
+  if (unknownFlags.length > 0) {
+    console.error(`unknown flag "${unknownFlags[0]}" — ${usage}`);
+    process.exit(2);
+  }
+  const positional = argv.filter((a) => !a.startsWith("--"));
+  if (positional.length > 1) {
+    console.error(`${usage} (got ${positional.length} positional args)`);
+    process.exit(2);
+  }
+  const check = flags.includes("--check");
+  const designRootArg = positional[0] ?? "./design";
+
 try {
   const rootDir = resolve(process.cwd(), designRootArg.replaceAll("\\", "/"));
   let st = null;
@@ -415,3 +441,19 @@ try {
   console.error(`internal: ${String(error?.message ?? error)}`);
   process.exit(2);
 }
+}
+
+// Run the CLI only when executed directly — importing this module (validate.mjs
+// w2-9) must never parse argv or exit. realpathSync normalizes case/symlinks so
+// the comparison is Windows-safe.
+const isMain = (() => {
+  try {
+    return (
+      typeof process.argv[1] === "string" &&
+      realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))
+    );
+  } catch {
+    return false;
+  }
+})();
+if (isMain) main();

@@ -18,12 +18,15 @@
  *   project = everything: bans + structural (per canvas.json found under the
  *             root) + tokens.json/generated-CSS staleness + components/ +
  *             comments.json
+ *   BOTH    = component checks (presence/variants/marker/divergence, todo 9)
+ *             on every non-exempt .html in the walk - independent of canvas.json
  *
  * Exit codes: 0 = no issues, 1 = issues found, 2 = usage/input error.
  */
-import { readFileSync, statSync, readdirSync, writeFileSync } from 'node:fs'
+import { readFileSync, statSync, readdirSync, writeFileSync, existsSync } from 'node:fs'
 import { join, resolve, sep, extname, basename } from 'node:path'
 import { createHash } from 'node:crypto'
+import { fileURLToPath } from 'node:url'
 
 const DEVICES = new Set(['mobile', 'tablet', 'desktop'])
 const MIN_SIZE = 100
@@ -50,6 +53,15 @@ const HEX_COLOR =
 const RGB_COLOR = /rgba?\(/gi
 const REMOTE_URL = /https?:\/\/[^\s"'<>()\\]+/g
 
+// Component checks (todo 9): variant keys and the tag scan for instance attrs.
+// The scan ALTERNATION consumes comments/script/style wholesale so markup text
+// inside them can never masquerade as an element (byte offsets stay valid).
+const COMPONENT_VARIANT_KEYS = ['size', 'tone', 'state']
+const TAG_SCAN_RE =
+  /<!--[\s\S]*?-->|<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>|<([a-zA-Z][a-zA-Z0-9-]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>/gi
+const DATA_ATTR_RE =
+  /(?<![A-Za-z0-9_-])data-(component|size|tone|state)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi
+
 // ---------------------------------------------------------------------------
 // CLI contract
 // ---------------------------------------------------------------------------
@@ -73,6 +85,13 @@ const arg = positional[0] ?? './design'
 
 const problems = []
 const fail = (code, message) => problems.push(`- ${code}: ${message}`)
+
+// Shared component machinery (marker-parser.mjs + sync-components.mjs) — the
+// materializer is imported, NEVER reimplemented. Dual layout: the pack keeps
+// both scripts side-by-side with this file; the installed layout keeps them in
+// scripts/ (plan: validate.mjs at the design root). Missing scripts leave
+// componentLib null and are reported ONLY when component checks are actually due.
+const componentLib = await loadComponentLib()
 
 try {
   const root = process.cwd()
@@ -110,6 +129,7 @@ function runCanvasMode(canvasDir, canvasArg) {
   for (const screen of manifest.screens) {
     checkScreenFile(canvasDir, canvasDir, screen, { bans: true })
   }
+  checkComponentInstances(canvasDir) // todo 9: every non-exempt .html, independent of canvas.json
   // Extension point (todo 14): unknown-transition screen check (canvas.json "transition").
   // Extension point (todo 28): contrast is a PROJECT check - never runs here.
 }
@@ -132,8 +152,8 @@ function runProjectMode(rootDir, rootArg) {
   const walked = []
   walkBanned(rootDir, rootDir, walked)
   for (const full of walked) checkBans(full, relLabel(rootDir, full))
-  // Extension point (todo 9): component checks run on every non-exempt .html,
-  // independent of canvas.json.
+  // Component checks (todo 9): every non-exempt .html, independent of canvas.json.
+  checkComponentInstances(rootDir)
   if (!allowStale) checkStaleness(rootDir) // --allow-stale skips ONLY staleness
   checkComponentsDir(rootDir)
   checkCommentsShape(rootDir)
@@ -397,7 +417,170 @@ function checkStaleness(rootDir) {
 }
 
 // ---------------------------------------------------------------------------
-// components/ (dir presence only - rules come in todo 9) and comments.json
+// Component checks (todo 9) - EVERY non-exempt .html under the run root,
+// independent of canvas.json, in BOTH modes. Absence policy: no components/
+// directory = skipped entirely. Registry = components/components.json with
+// fallback to the parser's DEFAULT_REGISTRY. Codes:
+//   component-unknown    data-component (or marker id) not in the registry
+//   component-variant    data-size/tone/state value not in that id's enums
+//   component-marker /   marker grammar failures = the parser's own codes
+//   slot-marker          (args required, paired, unclosed/mismatched, ...)
+//   component-divergence (a) marker args vs root data-* (variantCompare) or
+//                        (b) region bytes vs the registry-materialized render
+//                        (materializeRegion - imported, never reimplemented).
+// Marker args win; the validator FLAGS the divergence, sync repairs it.
+// ---------------------------------------------------------------------------
+function checkComponentInstances(rootDir) {
+  const componentsDir = join(rootDir, 'components')
+  let st = null
+  try {
+    st = statSync(componentsDir)
+  } catch {
+    return // absence policy: missing components/ = skip these checks
+  }
+  if (!st.isDirectory()) return // shape already reported by checkComponentsDir
+  if (!componentLib) {
+    return fail('internal', 'components: component checks unavailable (marker-parser.mjs / sync-components.mjs not found)')
+  }
+  const registry = loadComponentRegistry(rootDir)
+  const files = []
+  walkComponentHtml(rootDir, files)
+  for (const full of files) checkComponentFile(rootDir, full, registry)
+}
+
+function walkComponentHtml(dir, out) {
+  let entries
+  try {
+    entries = readdirSync(dir, { withFileTypes: true })
+  } catch {
+    return
+  }
+  entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      if (isExemptDir(entry.name)) continue
+      walkComponentHtml(join(dir, entry.name), out)
+      continue
+    }
+    if (!entry.isFile() || !/\.html$/i.test(entry.name)) continue
+    if (isExemptFileName(entry.name)) continue
+    out.push(join(dir, entry.name))
+  }
+}
+
+function loadComponentRegistry(rootDir) {
+  const registryPath = join(rootDir, 'components', 'components.json')
+  let raw = null
+  try {
+    raw = readFileSync(registryPath, 'utf8')
+  } catch {
+    return componentLib.DEFAULT_REGISTRY // absence policy: no registry file = seeded default
+  }
+  try {
+    const parsed = JSON.parse(raw)
+    if (!isPlainObject(parsed)) {
+      fail('invalid-shape', 'components/components.json: the root must be an object of registry entries')
+      return componentLib.DEFAULT_REGISTRY
+    }
+    return parsed
+  } catch (error) {
+    fail('invalid-json', `components/components.json: ${jsonErrorWhere(error, raw)}${String(error.message)}`)
+    return componentLib.DEFAULT_REGISTRY
+  }
+}
+
+function checkComponentFile(rootDir, full, registry) {
+  const label = relLabel(rootDir, full)
+  let html = null
+  try {
+    html = readFileSync(full, 'utf8')
+  } catch {
+    return
+  }
+  // (1) instance rules on EVERY element carrying data-component - registry
+  // membership + variant enum values, inside a marker region or not.
+  for (const m of html.matchAll(TAG_SCAN_RE)) {
+    if (m[1] === undefined) continue // comment/script/style alternative, not a tag
+    const attrs = new Map()
+    for (const a of m[0].matchAll(DATA_ATTR_RE)) {
+      attrs.set(a[1].toLowerCase(), a[2] ?? a[3] ?? a[4] ?? '')
+    }
+    if (!attrs.has('component')) continue
+    const id = attrs.get('component')
+    const line = lineOf(html, m.index)
+    const entry = Object.prototype.hasOwnProperty.call(registry, id) ? registry[id] : undefined
+    if (!isPlainObject(entry)) {
+      fail('component-unknown', `${label}:${line}: data-component "${id}" is not in the registry`)
+      continue
+    }
+    for (const key of COMPONENT_VARIANT_KEYS) {
+      if (!attrs.has(key)) continue
+      const value = attrs.get(key)
+      const enums = isPlainObject(entry.variants) ? entry.variants[key] : undefined
+      if (!Array.isArray(enums) || !enums.includes(value)) {
+        const allowed = Array.isArray(enums) ? enums.join(', ') : '(none)'
+        fail('component-variant', `${label}:${line}: data-${key} "${value}" is invalid for component "${id}" (allowed: ${allowed})`)
+      }
+    }
+  }
+  // (2) marker grammar + registry (parser-owned errors, reused verbatim) and
+  // per-region divergence (marker vs root data-*, region vs registry render).
+  let regions = null
+  try {
+    regions = componentLib.parseAll(html, registry)
+  } catch (error) {
+    if (isMarkerError(error)) {
+      const line = markerErrorLine(error.message, html)
+      const where = line === null ? label : `${label}:${line}`
+      return fail(componentProblemCode(error), `${where}: ${error.message}`)
+    }
+    return fail('internal', `${label}: ${String(error?.message ?? error)}`)
+  }
+  for (const region of regions) {
+    const diffs = []
+    for (const div of componentLib.variantCompare(region.args, componentLib.rootVariantData(region.inner))) {
+      diffs.push(`data-${div.key}: marker=${div.marker ?? '(absent)'} root=${div.root ?? '(absent)'}`)
+    }
+    const variantDetail = diffs.length > 0 ? `marker args diverge from root data-* (${diffs.join(', ')})` : null
+    let byteDetail = null
+    try {
+      if (componentLib.materializeRegion(rootDir, region, registry) !== region.inner) {
+        byteDetail = 'region bytes differ from the registry render'
+      }
+    } catch (error) {
+      byteDetail = `registry render unavailable (${String(error?.message ?? error)})`
+    }
+    const details = [variantDetail, byteDetail].filter(Boolean)
+    if (details.length > 0) {
+      fail(
+        'component-divergence',
+        `${label}:${lineOf(html, region.start)}: component:${region.id}: ${details.join('; ')} (marker wins - run sync to fix)`,
+      )
+    }
+  }
+}
+
+function isMarkerError(error) {
+  return error?.name === 'MarkerError' && typeof error?.code === 'string'
+}
+
+/** Registry membership and enum failures become component-unknown /
+ * component-variant; every grammar failure keeps the parser's own code. */
+function componentProblemCode(error) {
+  const message = String(error?.message ?? error)
+  if (/^unknown component id "/.test(message)) return 'component-unknown'
+  if (/^invalid (?:size|tone|state)="/.test(message)) return 'component-variant'
+  return error.code
+}
+
+/** Parser messages carry "at index N" for positional failures only. */
+function markerErrorLine(message, html) {
+  const m = /at index (\d+)/.exec(message)
+  return m ? lineOf(html, Number(m[1])) : null
+}
+
+// ---------------------------------------------------------------------------
+// components/ (dir presence + shape) and comments.json
 // ---------------------------------------------------------------------------
 function checkComponentsDir(rootDir) {
   let st = null
@@ -409,7 +592,7 @@ function checkComponentsDir(rootDir) {
   if (!st.isDirectory()) {
     fail('invalid-shape', 'components: must be a directory')
   }
-  // Extension point (todo 9): registry, variant, marker and divergence rules.
+  // Registry/variant/marker/divergence rules live in checkComponentInstances.
 }
 
 function checkCommentsShape(rootDir) {
@@ -546,6 +729,36 @@ function escapeRegExp(text) {
 
 function isPlainObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/** Resolve a shared script in the two supported layouts: side-by-side with this
+ * file (pack source) or under scripts/ (installed: design/validate.mjs). */
+async function importFromLayout(name) {
+  for (const rel of [`./${name}`, `./scripts/${name}`]) {
+    const url = new URL(rel, import.meta.url)
+    if (existsSync(fileURLToPath(url))) return import(url.href)
+  }
+  return null
+}
+
+/** The shared marker grammar + the ONE materializer (sync-components.mjs).
+ * Never throws: a missing/broken script yields null and is reported at the
+ * check site only when component checks are actually due. */
+async function loadComponentLib() {
+  try {
+    const parser = await importFromLayout('marker-parser.mjs')
+    const sync = await importFromLayout('sync-components.mjs')
+    if (!parser || !sync) return null
+    return {
+      parseAll: parser.parseAll,
+      variantCompare: parser.variantCompare,
+      DEFAULT_REGISTRY: parser.DEFAULT_REGISTRY,
+      materializeRegion: sync.materializeRegion,
+      rootVariantData: sync.rootVariantData,
+    }
+  } catch {
+    return null
+  }
 }
 
 function pathExists(target) {
