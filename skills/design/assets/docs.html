@@ -182,6 +182,7 @@
     <tr><td><code>Mock.toast('Salvo!')</code></td><td>Feedback visual de ação simulada.</td></tr>
     <tr><td><code>Mock.overlay('03-modal.html')</code></td><td>Abre uma tela do canvas como camada modal: renderiza o conteúdo da tela sobre um backdrop, prende o foco dentro da camada, <kbd>Esc</kbd> fecha a camada do topo e o clique no backdrop fecha quando <code>dismissible</code> (padrão <code>true</code>). Arquivo inexistente vira toast de erro, sem camada.</td></tr>
     <tr><td><code>Mock.close()</code></td><td>Fecha a camada modal do topo; o foco volta para o elemento que a abriu.</td></tr>
+    <tr><td><code>Mock.scenario()</code></td><td>Retorna o cenário ativo vindo de <code>?scenario=</code> (string vazia quando nos dados base) — use para ramificar conteúdo por cenário.</td></tr>
   </table>
   <h3>Transições entre telas</h3>
   <p>Cada tela pode declarar sua animação de entrada no <code>canvas.json</code>:</p>
