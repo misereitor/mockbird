@@ -268,6 +268,74 @@
   }
   .snap-item strong { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
   .snap-item span { color: var(--ui-muted); font-size: 11px; word-break: break-all; }
+
+  /* -- comparação (w5-23) -- */
+  #comparePick {
+    display: flex; flex-direction: column; gap: 8px; padding: 12px;
+    border-top: 1px solid var(--ui-border);
+  }
+  #comparePick h3 {
+    margin: 0; font-size: 12px; color: var(--ui-muted);
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  #comparePick .compare-choices { display: flex; gap: 8px; }
+  #comparePick label {
+    display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0;
+    font-size: 12px; color: var(--ui-muted);
+  }
+  #comparePick select { width: 100%; }
+  #compareView {
+    position: fixed; inset: 0; z-index: 15; background: var(--ui-bg);
+    display: flex; flex-direction: column; padding: 0;
+  }
+  #compareTop {
+    display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap;
+    background: var(--ui-surface); border-bottom: 1px solid var(--ui-border);
+  }
+  #compareTop strong { font-size: 15px; }
+  .compare-modes { display: flex; }
+  .compare-modes button { height: 30px; min-height: 30px; padding: 0 12px; font-size: 12px; }
+  #opacityWrap {
+    display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ui-muted);
+  }
+  #opacityWrap input[type="range"] { width: 120px; }
+  #compareMsg {
+    margin: 0; padding: 8px 16px; color: var(--ui-danger); font-weight: 600;
+    background: #fef2f2; border-bottom: 1px solid var(--ui-border);
+  }
+  body.dark #compareMsg { background: #450a0a; }
+  #compareStage { flex: 1; overflow: hidden; position: relative; }
+  .compare-cols {
+    position: absolute; inset: 0; display: flex; gap: 12px; padding: 12px; overflow: hidden;
+  }
+  .compare-col {
+    flex: 1; min-width: 0; display: flex; flex-direction: column;
+    background: var(--ui-surface); border: 1px solid var(--ui-border);
+    border-radius: 8px; overflow: hidden;
+  }
+  .compare-col-head {
+    padding: 6px 10px; font-size: 12px; font-weight: 600; color: var(--ui-muted);
+    border-bottom: 1px solid var(--ui-border);
+    font-family: ui-monospace, Consolas, monospace;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .compare-scroll {
+    flex: 1; overflow: auto; display: flex; flex-direction: column;
+    gap: 16px; padding: 12px; align-items: center;
+  }
+  .compare-slot {
+    background: var(--ui-surface); border: 1px solid var(--ui-border);
+    border-radius: 4px; overflow: hidden; box-shadow: 0 10px 24px rgb(15 23 42 / .12);
+    flex: 0 0 auto;
+  }
+  .compare-slot iframe { display: block; width: 100%; height: 100%; border: 0; background: #fff; }
+  #compareStack { position: absolute; inset: 0; }
+  #layerA, #overlayB {
+    position: absolute; inset: 0; overflow: hidden;
+    background: var(--ui-surface);
+  }
+  /* overlayB = camada empilhada do Onion skin (existe só nesse modo) */
+  #overlayB { pointer-events: none; }
 </style>
 <style id="chipCss">
   /* 🧩 inspector chips — cloned into each screen iframe by renderCompChips */
@@ -431,6 +499,36 @@
 
 <div id="toast"></div>
 
+<div id="compareView" data-mode="side" data-share-hide hidden>
+  <div id="compareTop">
+    <strong>Comparação</strong>
+    <span class="compare-modes" data-share-hide>
+      <button id="modeSide" type="button" class="primary" aria-pressed="true" title="Lado a lado — duas colunas com scroll sincronizado (padrão)">Lado a lado</button>
+      <button id="modeOnion" type="button" aria-pressed="false" title="Onion skin — B empilhado sobre A com opacidade">Onion skin</button>
+    </span>
+    <label id="opacityWrap" data-share-hide hidden>Opacidade B
+      <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.5" data-share-hide>
+    </label>
+    <button id="compareClose" type="button" data-share-hide>Fechar</button>
+  </div>
+  <p id="compareMsg" role="alert" hidden></p>
+  <div id="compareStage">
+    <div class="compare-cols" id="compareCols">
+      <section class="compare-col" id="compareColA">
+        <div class="compare-col-head" id="compareHeadA">A</div>
+        <div class="compare-scroll" id="sideA"></div>
+      </section>
+      <section class="compare-col" id="compareColB">
+        <div class="compare-col-head" id="compareHeadB">B</div>
+        <div class="compare-scroll" id="sideB"></div>
+      </section>
+    </div>
+    <div id="compareStack" hidden>
+      <div class="compare-layer" id="layerA"></div>
+    </div>
+  </div>
+</div>
+
 <aside id="pendingPanel" data-share-hide hidden>
   <div class="pending-top">
     <strong>Comentários pendentes</strong>
@@ -455,6 +553,18 @@
     <button type="submit" class="primary" id="snapshotSave">Salvar snapshot</button>
   </form>
   <div id="snapshotList" data-share-hide></div>
+  <div id="comparePick" data-share-hide>
+    <h3>Comparar</h3>
+    <div class="compare-choices">
+      <label>A
+        <select id="compareA" data-share-hide title="Lado A — atual ou um snapshot deste canvas"></select>
+      </label>
+      <label>B
+        <select id="compareB" data-share-hide title="Lado B — atual ou um snapshot deste canvas"></select>
+      </label>
+    </div>
+    <button id="compareStart" type="button" class="primary" data-share-hide title="Abrir a comparação A vs B nos modos Lado a lado / Onion skin">Comparar</button>
+  </div>
 </aside>
 
 <script>
@@ -1081,6 +1191,11 @@ $('snapshotBtn').addEventListener('click', () => {
   }
 })
 
+// comparação (w5-23): opções A/B acompanham a abertura do painel
+$('snapshotBtn').addEventListener('click', () => {
+  if (!$('snapshotPanel').hidden) renderCompareOptions()
+})
+
 $('snapshotClose').addEventListener('click', () => {
   $('snapshotPanel').hidden = true
 })
@@ -1107,9 +1222,269 @@ $('snapshotForm').addEventListener('submit', async (event) => {
     toast(`Snapshot "${label}" salvo`)
     $('snapshotLabel').value = ''
     loadSnapshotList()
+    renderCompareOptions()
   } catch (error) {
-    toast(`Não consegui salvar o snapshot (${error?.message ?? error})`)
+    toast(`Nǜo consegui salvar o snapshot (${error?.message ?? error})`)
   }
+})
+
+/* ------------------------------------------------- comparison (w5-23) */
+
+// Modos distintos (r1-oracle#15): 'side' = "Lado a lado" (padrão, duas
+// colunas com scroll sincronizado); 'onion' = "Onion skin" (B empilhado sobre
+// A em overlayB — camada que EXISTE só neste modo — com input#opacity).
+const COMPARE_MODES = ['side', 'onion']
+let compareSpec = null
+let compareSyncing = false
+
+/**
+ * Pure planning: A/B selections + mode -> compare spec. Selections: '' or
+ * 'atual' = live screens of the canvas; anything else = snapshot label from
+ * GET /api/snapshots. A label missing from the list -> clear message (no crash).
+ */
+function buildCompareSpec(selA, selB, mode, snapshots, canvas) {
+  const list = Array.isArray(snapshots) ? snapshots : []
+  const resolve = (sel) => {
+    const value = String(sel ?? '')
+    if (value === '' || value === 'atual') return { kind: 'atual', label: 'atual' }
+    const found = list.find((snap) => snap && snap.canvas === canvas && snap.label === value)
+    return found ? { kind: 'snapshot', label: found.label, date: found.date } : null
+  }
+  const a = resolve(selA)
+  const b = resolve(selB)
+  if (!a || !b) {
+    const missing = !a ? String(selA ?? '') : String(selB ?? '')
+    return { ok: false, message: `Snapshot "${missing}" não encontrado — atualize a lista de snapshots.` }
+  }
+  if (!COMPARE_MODES.includes(mode)) {
+    return { ok: false, message: `Modo de comparação inválido: ${String(mode)}` }
+  }
+  return { ok: true, mode, canvas, a, b }
+}
+
+/** URL de um lado: snapshot -> render/ flat; atual -> tela viva do canvas. */
+function compareSrc(side, file, canvas, bust) {
+  const clean = String(file).split('?')[0]
+  return side.kind === 'snapshot'
+    ? `snapshots/${canvas}/${side.label}/render/${clean}`
+    : `${canvas}/${clean}?_=${bust}`
+}
+
+function compareLabel(side) {
+  return side.kind === 'snapshot' ? `snapshot ${side.label}` : 'atual'
+}
+
+/**
+ * Onion skin: input#opacity -> overlayB opacity (0..1). overlayB só existe no
+ * modo onion; o handler fica neutro fora dele (sem overlayB, sem efeito).
+ */
+function applyOverlayOpacity(value) {
+  const clamped = Math.min(1, Math.max(0, Number(value)))
+  const overlayB = $('overlayB')
+  if (overlayB) overlayB.style.opacity = String(clamped)
+  return clamped
+}
+
+$('opacity').addEventListener('input', () => applyOverlayOpacity($('opacity').value))
+
+/** Scroll sync (Lado a lado e Onion): as duas colunas rolam juntas. */
+function syncCompareScroll(from, to) {
+  if (compareSyncing) return
+  compareSyncing = true
+  to.scrollTop = from.scrollTop
+  to.scrollLeft = from.scrollLeft
+  requestAnimationFrame(() => { compareSyncing = false })
+}
+
+function attachCompareScrollSync() {
+  const a = $('sideA')
+  const b = $('sideB')
+  if (!a || !b || a.dataset.sync === '1') return
+  a.dataset.sync = '1'
+  a.addEventListener('scroll', () => syncCompareScroll(a, b), { passive: true })
+  b.addEventListener('scroll', () => syncCompareScroll(b, a), { passive: true })
+}
+
+/**
+ * Toggle dos modos (próprio de cada modo): 'side' usa as duas colunas;
+ * 'onion' move os mesmos lados para o stack — layerA + overlayB (criado aqui,
+ * removido ao sair do modo: overlayB só existe no Onion skin).
+ */
+function setCompareMode(mode) {
+  if (!COMPARE_MODES.includes(mode)) return
+  const cols = $('compareCols')
+  const stack = $('compareStack')
+  const layerA = $('layerA')
+  const sideA = $('sideA')
+  const sideB = $('sideB')
+  $('compareStage').dataset.mode = mode
+  $('modeSide').classList.toggle('primary', mode === 'side')
+  $('modeOnion').classList.toggle('primary', mode === 'onion')
+  $('modeSide').setAttribute('aria-pressed', String(mode === 'side'))
+  $('modeOnion').setAttribute('aria-pressed', String(mode === 'onion'))
+  const overlayB = $('overlayB')
+  if (mode === 'onion') {
+    cols.hidden = true
+    stack.hidden = false
+    $('opacityWrap').hidden = false
+    layerA.append(sideA)
+    let layer = overlayB
+    if (!layer) {
+      layer = document.createElement('div')
+      layer.className = 'compare-layer overlayB'
+      layer.id = 'overlayB'
+      stack.append(layer)
+    }
+    layer.append(sideB)
+    applyOverlayOpacity($('opacity').value)
+  } else {
+    cols.hidden = false
+    stack.hidden = true
+    $('opacityWrap').hidden = true
+    $('compareColA').append(sideA)
+    $('compareColB').append(sideB)
+    if (overlayB) overlayB.remove() // overlayB é exclusivo do Onion skin
+  }
+}
+
+$('modeSide').addEventListener('click', () => {
+  if (compareSpec) compareSpec.mode = 'side'
+  setCompareMode('side')
+})
+
+$('modeOnion').addEventListener('click', () => {
+  if (compareSpec) compareSpec.mode = 'onion'
+  setCompareMode('onion')
+})
+
+function showCompareMsg(message) {
+  const el = $('compareMsg')
+  if (!message) {
+    el.hidden = true
+    el.textContent = ''
+    return
+  }
+  el.textContent = message
+  el.hidden = false
+}
+
+/** GET /api/snapshots -> [{canvas,label,date}] (lista crua para o spec). */
+async function fetchSnapshotList() {
+  if (isReadonly()) return []
+  try {
+    const response = await fetch(SNAPSHOTS_API, { cache: 'no-store', headers: apiHeaders() })
+    if (!response.ok) return []
+    const payload = await response.json()
+    return payload && Array.isArray(payload.snapshots) ? payload.snapshots : []
+  } catch {
+    return []
+  }
+}
+
+/** Opções A/B a partir da lista GET /api/snapshots (deste canvas) + "atual". */
+async function renderCompareOptions() {
+  const snapshots = await fetchSnapshotList()
+  const selects = [$('compareA'), $('compareB')]
+  const kept = selects.map((select) => select.value)
+  for (const [index, select] of selects.entries()) {
+    select.innerHTML = ''
+    const atual = document.createElement('option')
+    atual.value = ''
+    atual.textContent = 'atual (telas vivas)'
+    select.appendChild(atual)
+    for (const snap of snapshots.filter((snap) => snap && snap.canvas === state.canvas)) {
+      const option = document.createElement('option')
+      option.value = String(snap.label)
+      option.textContent = `${snap.label} — ${snap.date}`
+      select.appendChild(option)
+    }
+    if ([...select.options].some((option) => option.value === kept[index])) select.value = kept[index]
+  }
+  return snapshots
+}
+
+/** Pré-checagem: o snapshot escolhido precisa ter render/ legível. */
+async function snapshotRenderExists(side) {
+  if (side.kind !== 'snapshot') return true
+  const first = state.screens[0]
+  if (!first) return true
+  try {
+    const response = await fetch(compareSrc(side, String(first.file).split('?')[0], state.canvas, state.bust), {
+      method: 'HEAD',
+      cache: 'no-store',
+    })
+    return response.ok
+  } catch {
+    return false
+  }
+}
+
+/** Lado inteiro: um slot+iframe por tela — dispositivo/tema valem para os dois. */
+function buildCompareSide(side) {
+  const frag = document.createDocumentFragment()
+  for (const screen of state.screens) {
+    const [width, height] = screenSize(screen)
+    const slot = document.createElement('div')
+    slot.className = 'compare-slot'
+    slot.style.width = `${width}px`
+    slot.style.height = `${height}px`
+    const iframe = document.createElement('iframe')
+    iframe.sandbox = 'allow-scripts allow-same-origin allow-forms'
+    iframe.title = `${compareLabel(side)} — ${screen.name}`
+    iframe.src = compareSrc(side, String(screen.file).split('?')[0], state.canvas, state.bust)
+    iframe.addEventListener('load', () => applyThemeToFrame(iframe))
+    slot.appendChild(iframe)
+    frag.appendChild(slot)
+  }
+  return frag
+}
+
+async function renderCompare() {
+  if (!compareSpec) return
+  showCompareMsg('')
+  for (const side of [compareSpec.a, compareSpec.b]) {
+    if (!(await snapshotRenderExists(side))) {
+      showCompareMsg(`Snapshot "${side.label}" não encontrado — o render/ dele não está disponível; atualize a lista de snapshots.`)
+      return
+    }
+  }
+  $('compareHeadA').textContent = `A — ${compareLabel(compareSpec.a)}`
+  $('compareHeadB').textContent = `B — ${compareLabel(compareSpec.b)}`
+  const sideA = $('sideA')
+  const sideB = $('sideB')
+  sideA.innerHTML = ''
+  sideB.innerHTML = ''
+  sideA.appendChild(buildCompareSide(compareSpec.a))
+  sideB.appendChild(buildCompareSide(compareSpec.b))
+  attachCompareScrollSync()
+  setCompareMode(compareSpec.mode)
+}
+
+$('compareStart').addEventListener('click', async () => {
+  if (isReadonly()) return
+  const snapshots = await fetchSnapshotList()
+  const mode = $('compareStage').dataset.mode || 'side'
+  const spec = buildCompareSpec($('compareA').value, $('compareB').value, mode, snapshots, state.canvas)
+  compareSpec = spec.ok ? spec : null
+  $('compareView').hidden = false
+  if (!spec.ok) {
+    $('sideA').innerHTML = ''
+    $('sideB').innerHTML = ''
+    showCompareMsg(spec.message)
+    toast(spec.message)
+    return
+  }
+  await renderCompare()
+})
+
+$('compareClose').addEventListener('click', () => {
+  $('compareView').hidden = true
+  showCompareMsg('')
+})
+
+// dispositivo vale para os dois lados: re-renderiza a comparação aberta
+$('deviceSelect').addEventListener('change', () => {
+  if (!$('compareView').hidden && compareSpec) renderCompare()
 })
 
 /** Sweep mode: step through pending entries and resolve as you go. */
@@ -1577,8 +1952,8 @@ $('zoomFit').addEventListener('click', fitView)
 
 function applyTheme() {
   document.body.classList.toggle('dark', state.theme === 'dark')
-  $('themeBtn').textContent = state.theme === 'dark' ? '☀️ Claro' : '🌙 Escuro'
-  for (const iframe of document.querySelectorAll('#strip iframe, #fsFrame')) applyThemeToFrame(iframe)
+  $('themeBtn').textContent = state.theme === 'dark' ? '☀ Claro' : '🌙 Escuro'
+  for (const iframe of document.querySelectorAll('#strip iframe, #fsFrame, #compareView iframe')) applyThemeToFrame(iframe)
   applyCompChips() // chip palette is copied from the viewer tokens
 }
 
