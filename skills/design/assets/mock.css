@@ -44,6 +44,21 @@
   justify-content: center;
 }
 
+/*
+ * Stacking scale: mock.js appends one layer per open screen and steps it up
+ * with data-depth (0 = base 100, clamped at 9 = 109), so the topmost overlay
+ * always paints above the layers below without inline style writes.
+ */
+.mock-overlay[data-depth="1"] { z-index: 101; }
+.mock-overlay[data-depth="2"] { z-index: 102; }
+.mock-overlay[data-depth="3"] { z-index: 103; }
+.mock-overlay[data-depth="4"] { z-index: 104; }
+.mock-overlay[data-depth="5"] { z-index: 105; }
+.mock-overlay[data-depth="6"] { z-index: 106; }
+.mock-overlay[data-depth="7"] { z-index: 107; }
+.mock-overlay[data-depth="8"] { z-index: 108; }
+.mock-overlay[data-depth="9"] { z-index: 109; }
+
 /* Backdrop: fixed inset-0 dim layer behind the .mock-overlay content. */
 .mock-backdrop {
   position: fixed;
