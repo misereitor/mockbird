@@ -84,3 +84,40 @@
   cursor: pointer;
   opacity: 0.8;
 }
+
+/*
+ * Enter transitions (todo 14): mock.js adds mock-enter-<transition> to the
+ * destination <body> after Mock.go and drops it once the run ends. Durations
+ * stay <= 300ms (mock.js removes the class at 250ms); reduced motion disables
+ * the run entirely so the screen lands in its final state instantly.
+ */
+.mock-enter-fade {
+  animation: mock-fade-in 220ms ease-out;
+}
+
+.mock-enter-slide-left {
+  animation: mock-slide-left-in 220ms ease-out;
+}
+
+@keyframes mock-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mock-slide-left-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mock-enter-fade,
+  .mock-enter-slide-left {
+    animation: none;
+  }
+}

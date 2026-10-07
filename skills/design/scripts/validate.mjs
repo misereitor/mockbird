@@ -13,13 +13,14 @@
  *                  open pins whose anchor no longer resolves as "stale", exit 0
  *
  * Modes (pinned):
- *   canvas  = screen checks (bans + structural) on the screens listed in that
- *             canvas.json (plus the manifest checks below)
- *   project = everything: bans + structural (per canvas.json found under the
- *             root) + tokens.json/generated-CSS staleness + components/ +
- *             comments.json
+ *   canvas  = screen checks (bans + structural + unknown-transition) on the
+ *             screens listed in that canvas.json (plus the manifest checks below)
+ *   project = everything: bans + structural + unknown-transition (per canvas.json
+ *             found under the root) + tokens.json/generated-CSS staleness +
+ *             components/ + comments.json
  *   BOTH    = component checks (presence/variants/marker/divergence, todo 9)
- *             on every non-exempt .html in the walk - independent of canvas.json
+ *             on every non-exempt .html in the walk - independent of canvas.json;
+ *             unknown-transition is a SCREEN check and runs in BOTH modes
  *
  * Exit codes: 0 = no issues, 1 = issues found, 2 = usage/input error.
  */
@@ -31,6 +32,8 @@ import { fileURLToPath } from 'node:url'
 const DEVICES = new Set(['mobile', 'tablet', 'desktop'])
 const MIN_SIZE = 100
 const MAX_SIZE = 10000
+// Screen "transition" enum (todo 14): absent = default "none" (schema-tolerant).
+const TRANSITIONS = new Set(['fade', 'slide-left', 'none'])
 
 // Bans walker: **/*.{html,css,js,jsx,mjs,svg} minus the exempt list
 const WALK_EXT = /\.(?:html|css|js|jsx|mjs|svg)$/i
@@ -130,7 +133,7 @@ function runCanvasMode(canvasDir, canvasArg) {
     checkScreenFile(canvasDir, canvasDir, screen, { bans: true })
   }
   checkComponentInstances(canvasDir) // todo 9: every non-exempt .html, independent of canvas.json
-  // Extension point (todo 14): unknown-transition screen check (canvas.json "transition").
+  checkScreenTransitions(manifest.screens, canvasArg) // todo 14: SCREEN check, runs in BOTH modes
   // Extension point (todo 28): contrast is a PROJECT check - never runs here.
 }
 
@@ -146,7 +149,7 @@ function runProjectMode(rootDir, rootArg) {
     for (const screen of manifest.screens) {
       checkScreenFile(rootDir, entry.dir, screen, { bans: false })
     }
-    // Extension point (todo 14): unknown-transition screen check (canvas.json "transition").
+    checkScreenTransitions(manifest.screens, entry.label) // todo 14: SCREEN check, runs in BOTH modes
   }
   // Bans walker over the whole root (bans run on walked files regardless of canvas.json).
   const walked = []
@@ -201,6 +204,22 @@ function checkScreenFile(scanRoot, canvasDir, screen, opts) {
   const label = relLabel(scanRoot, full)
   if (opts.bans) checkBans(full, label)
   runStructuralChecks(full, label)
+}
+
+// ---------------------------------------------------------------------------
+// unknown-transition (todo 14) - SCREEN check that runs in BOTH modes over the
+// screens of every canvas.json. Per-screen optional "transition" must be
+// fade|slide-left|none when present; absent = default "none" (schema-tolerant).
+// ---------------------------------------------------------------------------
+function checkScreenTransitions(screens, label) {
+  for (const [index, screen] of screens.entries()) {
+    if (!isPlainObject(screen)) continue
+    if (screen.transition === undefined) continue // absent = default "none"
+    const value = screen.transition
+    if (typeof value === 'string' && TRANSITIONS.has(value)) continue
+    const id = typeof screen.id === 'string' && screen.id.length > 0 ? screen.id : `#${index + 1}`
+    fail('unknown-transition', `${label}: screen "${id}": transition ${JSON.stringify(value)} is not fade|slide-left|none`)
+  }
 }
 
 // ---------------------------------------------------------------------------

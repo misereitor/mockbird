@@ -1,0 +1,12 @@
+{
+  "title": "Unknown transition",
+  "screens": [
+    {
+      "id": "explode",
+      "name": "Explode",
+      "file": "01-s.html",
+      "device": "mobile",
+      "transition": "explode"
+    }
+  ]
+}

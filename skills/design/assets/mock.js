@@ -17,6 +17,13 @@
   'use strict'
 
   const NS = 'mock.'
+  // Enter-animation handoff slot (todo 14): Mock.go writes {to, transition}
+  // here and the matching destination boot consumes it in the same tick it
+  // paints. The ':' separator keeps the slot OUT of the Mock.state key
+  // namespace (state keys are always NS + key), so a state key named 'enter'
+  // can never collide with it.
+  const ENTER_KEY = 'mock:enter'
+  const ENTER_MS = 250 // < 300ms: mock.css runs 220ms, the class drops right after
   const scenario = new URLSearchParams(location.search).get('scenario') ?? ''
 
   let cache = null
@@ -83,6 +90,89 @@
     return link
   }
 
+  /*
+   * Scroll preservation (todo 14): each screen owns a sessionStorage slot
+   * "scroll.<canvas>.<file>" built from its own path (canvas = folder holding
+   * the screen). Saved right before leaving (Mock.go, plus pagehide for plain
+   * navigations) and restored on load. The "scroll." namespace deliberately
+   * sits OUTSIDE "mock." - "Reset fluxo" clears only mock.* (Mock.state.clear
+   * below and the viewer's routine), so scroll positions survive a reset.
+   */
+  function scrollKey() {
+    return 'scroll.' + pageParts().canvas + '.' + pageParts().file
+  }
+
+  function pageParts() {
+    const parts = location.pathname.split('/').filter(Boolean)
+    const file = parts.pop() ?? ''
+    const canvas = parts.pop() ?? ''
+    return { canvas, file }
+  }
+
+  function saveScroll() {
+    try {
+      sessionStorage.setItem(scrollKey(), String(window.scrollY ?? 0))
+    } catch { /* preview degrades to stateless */ }
+  }
+
+  function restoreScroll() {
+    try {
+      const saved = sessionStorage.getItem(scrollKey())
+      if (saved !== null) window.scrollTo(0, Number(saved))
+    } catch { /* ignore */ }
+  }
+
+  /*
+   * canvas.json is the transition registry (todo 14): each screen may declare
+   * "transition": "fade"|"slide-left"|"none" (absent = none). Only fade and
+   * slide-left animate on enter; anything else (including validator-flagged
+   * values) degrades to a plain navigation with no class.
+   */
+  let manifestCache = null
+  async function loadManifest() {
+    if (manifestCache) return manifestCache
+    try {
+      const response = await fetch('canvas.json', { cache: 'no-store' })
+      manifestCache = response.ok ? await response.json() : {}
+    } catch {
+      manifestCache = {}
+    }
+    return manifestCache
+  }
+
+  function transitionFor(manifest, file) {
+    const clean = String(file).split(/[?#]/)[0].replace(/^\.\//, '')
+    const screens = Array.isArray(manifest?.screens) ? manifest.screens : []
+    for (const screen of screens) {
+      if (!screen || typeof screen !== 'object') continue
+      if (screen.file !== clean) continue
+      return screen.transition === 'fade' || screen.transition === 'slide-left' ? screen.transition : ''
+    }
+    return ''
+  }
+
+  /*
+   * Enter animation (todo 14): the handoff is consumed synchronously so the
+   * class lands on <body> before first paint, then self-removes once the
+   * mock.css run is over. Absent/"none" (or a stale/unknown slot) = no class.
+   */
+  function applyEnter() {
+    let slot = null
+    try {
+      const raw = sessionStorage.getItem(ENTER_KEY)
+      sessionStorage.removeItem(ENTER_KEY) // one-shot: plain reloads never re-enter
+      slot = raw ? JSON.parse(raw) : null
+    } catch { /* preview degrades to no enter animation */ }
+    const transition = slot && typeof slot === 'object' ? slot.transition : null
+    if (transition !== 'fade' && transition !== 'slide-left') return
+    if (slot.to !== pageParts().file) return // stale handoff (aborted navigation) = no class
+    const body = document.body
+    if (!body || !body.classList) return
+    const cls = 'mock-enter-' + transition
+    body.classList.add(cls)
+    setTimeout(() => body.classList.remove(cls), ENTER_MS)
+  }
+
   window.Mock = {
     /** Fictitious data from this canvas's data.json: await Mock.data('users') */
     async data(key) {
@@ -95,9 +185,30 @@
       return scenario
     },
 
-    /** Navigate this screen to another screen of the same canvas. */
+    /**
+     * Navigate this screen to another screen of the same canvas. The current
+     * scroll position is saved (scroll.<canvas>.<file>, restored on return) and
+     * the destination's canvas.json "transition" rides along as an enter-class
+     * handoff: the destination <body> gets mock-enter-fade / mock-enter-slide-left
+     * on load (mock.css). Absent/"none" = no class, plain navigation; ?scenario=
+     * is preserved either way.
+     */
     go(file) {
-      location.href = file + location.search
+      saveScroll()
+      loadManifest().then(
+        (manifest) => {
+          try {
+            const clean = String(file).split(/[?#]/)[0].replace(/^\.\//, '')
+            const transition = transitionFor(manifest, file)
+            if (transition) sessionStorage.setItem(ENTER_KEY, JSON.stringify({ to: clean, transition }))
+            else sessionStorage.removeItem(ENTER_KEY)
+          } catch { /* preview degrades to no enter animation */ }
+          location.href = file + location.search
+        },
+        () => {
+          location.href = file + location.search // never block navigation
+        },
+      )
     },
 
     /**
@@ -243,4 +354,19 @@
 
   document.addEventListener('keydown', onKeydown)
   document.addEventListener('click', onClick)
+
+  // Boot (todo 14): restore scroll + apply the enter class; pagehide saves the
+  // scroll slot for plain navigations too (Mock.go saves it itself).
+  if (document.body) {
+    restoreScroll()
+    applyEnter()
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      restoreScroll()
+      applyEnter()
+    })
+  }
+  try {
+    window.addEventListener('pagehide', saveScroll)
+  } catch { /* preview degrades without pagehide */ }
 })()
