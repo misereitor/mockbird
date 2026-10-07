@@ -5,29 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Login</title>
   <link rel="stylesheet" href="../design-system.css">
+  <link rel="stylesheet" href="../utilities.css">
+  <link rel="stylesheet" href="../mock.css">
   <style>
-    main { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: var(--space-6); gap: var(--space-6); }
-    h1 { margin: 0; font-size: var(--font-size-xl); }
-    p { margin: 0; color: var(--color-text-muted); }
-    form { display: flex; flex-direction: column; gap: var(--space-4); }
-    label { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--font-size-sm); }
-    input { height: 48px; padding: 0 var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; }
-    input:focus-visible, button:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
-    button { height: 48px; border: 0; border-radius: var(--radius-md); background: var(--color-primary); color: var(--color-primary-contrast); font: inherit; font-weight: 600; }
-    a { color: var(--color-primary); font-size: var(--font-size-sm); }
+    * { box-sizing: border-box; }
+    main { display: flex; flex-direction: column; justify-content: center; }
+    form { display: flex; flex-direction: column; max-width: 28rem; margin: 0 auto; }
+    label { display: flex; flex-direction: column; font-size: var(--font-size-sm); }
+    input { height: 48px; border-width: 1px; border-style: solid; }
+    input:focus-visible { outline: 3px solid var(--color-text); outline-offset: 2px; }
+    button:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
   </style>
 </head>
-<body>
-  <main>
-    <div>
-      <h1>Entrar</h1>
-      <p>Acesse sua conta para continuar.</p>
-    </div>
-    <form>
-      <label>E-mail<input type="email" placeholder="voce@empresa.com.br" autocomplete="email"></label>
-      <label>Senha<input type="password" placeholder="Sua senha" autocomplete="current-password"></label>
-      <button type="submit">Entrar</button>
-      <a href="#">Esqueci minha senha</a>
+<body class="m-0 bg-bg text-text font-body text-body">
+  <main class="min-h-screen p-4">
+    <form class="w-full gap-4">
+      <!-- component:card size=md tone=primary state=default --><div data-component="card" data-size="md" data-tone="primary" data-state="default" class="rounded-md font-body p-2 text-body bg-accent text-bg">
+  <!-- slot:title --><h1 class="m-0 text-heading font-bold">Entrar</h1><!-- /slot:title -->
+  <!-- slot:body --><p class="m-0 leading-body">Acesse sua conta para continuar.</p>
+  <label class="gap-2 mt-3">E-mail<input class="w-full p-2 rounded-md border-border bg-surface text-text font-body text-body" type="email" placeholder="voce@empresa.com.br" autocomplete="email"></label>
+  <label class="gap-2 mt-3">Senha<input class="w-full p-2 rounded-md border-border bg-surface text-text font-body text-body" type="password" placeholder="Sua senha" autocomplete="current-password"></label><!-- /slot:body -->
+</div><!-- /component:card -->
+      <!-- component:button size=md tone=primary state=default --><button type="button" data-component="button" data-size="md" data-tone="primary" data-state="default" class="rounded-md font-body p-2 text-body bg-accent text-bg"><!-- slot:label -->Entrar<!-- /slot:label --></button><!-- /component:button -->
+      <!-- component:button size=md tone=ghost state=default --><button type="button" data-component="button" data-size="md" data-tone="ghost" data-state="default" class="rounded-md font-body p-2 text-body text-accent border-accent"><!-- slot:label -->Esqueci minha senha<!-- /slot:label --></button><!-- /component:button -->
     </form>
   </main>
   <script src="../mock.js"></script>
@@ -41,6 +41,9 @@
       Mock.state.set('user', user)
       Mock.toast(`Bem-vindo, ${user.name.split(' ')[0]}!`)
       Mock.go('../dashboard/01-overview.html')
+    })
+    document.querySelector('[data-component="button"][data-tone="primary"]').addEventListener('click', () => {
+      document.querySelector('form').requestSubmit()
     })
   </script>
 </body>
