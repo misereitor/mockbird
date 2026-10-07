@@ -142,6 +142,28 @@
   <p>O agente localiza pelo seletor (depois pelo trecho) e edita <strong>só aquele ponto</strong>. Alfinetes têm <kbd>×</kbd> para remover e não aparecem no PNG exportado.</p>
   <div class="dica"><strong>Ciclo completo:</strong> comente → cole no chat → agente edita → o visualizador atualiza sozinho. Sem sair do navegador.</div>
 
+  <h3 id="comentarios">Comentários persistentes (pins) <span class="tag">🎯</span></h3>
+  <p><strong>Regra dual-channel 🎯:</strong> cada comentário de elemento faz <strong>duas coisas de uma só vez</strong>: (1) grava um <strong>pin persistente</strong> — o alfinete numerado na tela, que sobrevive ao reload e aparece no painel <strong>⧉ Comentários (n)</strong> — e (2) copia a mensagem de chat <code>[Design: …]</code> para você colar no agente. O pin é o <strong>registro persistente</strong> (status por elemento, painel de pendências, contagem na toolbar); a mensagem de chat é o <strong>canal que instrui o agente</strong>. <strong>O formato da mensagem de chat é inalterado</strong> — os pins são um canal a mais, nunca uma mudança de gramática.</p>
+  <p>Os pins vivem em <code>design/comments.json</code>, escrito <strong>somente pelo servidor</strong> (nunca edite à mão):</p>
+  <pre><code>{
+  "comments": [
+    {
+      "id": "p-1a2b3c4d5e6f",
+      "canvas": "login",
+      "file": "01-login.html",
+      "selector": "body &gt; main &gt; form &gt; button",
+      "snippet": "Entrar",
+      "rect": { "x": 12, "y": 340, "width": 120, "height": 44 },
+      "status": "open",
+      "replies": [ { "text": "deixar este botão em largura total", "createdAt": "2026-10-07T12:00:00.000Z" } ],
+      "createdAt": "2026-10-07T12:00:00.000Z",
+      "_demo": true
+    }
+  ]
+}</code></pre>
+  <p>Schema do pin: <code>{id, canvas, file, selector?, snippet?, rect?, status, replies, createdAt, _demo?}</code> — <code>id</code> gerado pelo servidor (<code>p-&lt;hex&gt;</code>); criação exige <code>canvas</code>+<code>file</code>; atualização é por <code>id</code> (<code>status</code> + <code>replies</code>, que são anexados). O texto do comentário é o primeiro item de <code>replies</code> (o pin não tem campo <code>text</code>); cada reply é <code>{text, createdAt}</code> (a forma legada <code>at</code> ainda é aceita na entrada e normalizada para <code>createdAt</code>). <code>status</code> vale <code>"open" | "resolved" | "stale"</code>. <code>_demo?: boolean</code> é opcional — marca pins de demonstração (fixtures/exemplo) e só é persistido quando declarado explicitamente como <code>true</code>; qualquer outro tipo é recusado pela API (400).</p>
+  <p><strong>Regra de staleness — escritores nomeados:</strong> o status <code>stale</code> tem exatamente <strong>dois escritores</strong>: <code>node design/validate.mjs --mark-stale</code> (a única escrita do validador — marca os pins cuja âncora sumiu da tela) e a <strong>API de revert</strong> (<code>POST /api/revert</code>, que marca os pins afetados pela restauração). Tentar escrever <code>stale</code> por qualquer outro caminho é recusado (400 <code>invalid</code>) — inclusive num POST comum de pin. No painel, pins <code>stale</code> aparecem destacados e <strong>não contam</strong> como pendência aberta. Em <code>--share</code> pins, painel e contagem ficam ocultos (ver <a href="#api-local">API local</a>).</p>
+
   <h2 id="fluxo">Modo fluxo (testar o sistema de verdade)</h2>
   <p><strong>Duplo clique</strong> em uma tela abre o modo fluxo: a tela em tamanho real, <strong>interativa</strong> — você loga, navega, cadastra. A barra flutua no topo e <strong>sai da frente sozinha</strong> depois de alguns segundos sem mouse; qualquer movimento sobre a tela traz ela de volta. Na barra:</p>
   <ul>
@@ -207,6 +229,7 @@
   mock.css               estilos do runtime (toast/overlay/transições)
   vendor/html-to-image.js  export de PNG (vendado, sem CDN)
   index.json             lista de canvases {"canvases": ["login", …]}
+  comments.json          pins de comentários persistentes (escrito só pelo servidor)
   &lt;canvas&gt;/              um fluxo por pasta (login, dashboard, …)
     canvas.json          título + telas em ordem
     data.json            dados fictícios + cenários (opcional)
@@ -221,14 +244,14 @@
     <tr><th>Método</th><th>Path</th><th>Body</th><th>Resposta</th><th>Códigos</th></tr>
     <tr>
       <td><code>GET</code></td><td><code>/api/comments</code></td><td>—</td>
-      <td><code>{ comments: [pin, …] }</code> — pin: <code>{id, canvas, file, selector?, snippet?, rect?, status, replies, createdAt, _demo?}</code>; <code>status</code> = <code>"open"|"resolved"|"stale"</code>; replies = <code>[{text, at}]</code></td>
+      <td><code>{ comments: [pin, …] }</code> — pin: <code>{id, canvas, file, selector?, snippet?, rect?, status, replies, createdAt, _demo?}</code>; <code>status</code> = <code>"open"|"resolved"|"stale"</code>; replies = <code>[{text, createdAt}]</code> (a forma legada <code>at</code> é normalizada na entrada). Persistido em <code>design/comments.json</code> — schema completo em <a href="#comentarios">Comentários persistentes</a></td>
       <td><strong>200</strong>; <strong>400</strong> (<code>comments.json</code> inválido); <strong>403</strong> (sem token, Host/Origin)</td>
     </tr>
     <tr>
       <td><code>POST</code></td><td><code>/api/comments</code></td>
       <td>pin <code>{id?, canvas?, file?, selector?, snippet?, rect?, status?, replies?, _demo?}</code> — cria (exige <code>canvas</code>+<code>file</code>) ou atualiza (por <code>id</code>: <code>status</code> + <code>replies</code>, que são anexados)</td>
       <td><code>{ comments: [...] }</code> (lista atualizada)</td>
-      <td><strong>200</strong>; <strong>400</strong> (schema/corpo malformado; escrita de <code>stale</code> — só o <code>validate.mjs --mark-stale</code> escreve <code>stale</code>); <strong>403</strong> (sem token, Host/Origin, traversal); <strong>404</strong> (canvas/arquivo inexistente); <strong>413</strong></td>
+      <td><strong>200</strong>; <strong>400</strong> (schema/corpo malformado; escrita de <code>stale</code> — recusada: os únicos escritores de <code>stale</code> são <code>validate.mjs --mark-stale</code> e a API de revert, ver <a href="#comentarios">Comentários persistentes</a>); <strong>403</strong> (sem token, Host/Origin, traversal); <strong>404</strong> (canvas/arquivo inexistente); <strong>413</strong></td>
     </tr>
     <tr>
       <td><code>GET</code></td><td><code>/api/snapshots</code></td><td>—</td>
@@ -247,7 +270,7 @@
       <td><strong>501</strong>; <strong>400</strong> (corpo inválido; manifest inválido/dessincronizado — detectado ANTES de qualquer restore); <strong>403</strong> (sem token, Host/Origin, traversal); <strong>413</strong>; pipeline: <strong>404</strong> (snapshot inexistente), <strong>500</strong> (falha pós-restore + rollback)</td>
     </tr>
   </table>
-  <p>Códigos de erro JSON: <code>invalid</code> (400), <code>forbidden</code> e <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500), <code>not-implemented</code> (501). O <code>GET /api/snapshots</code> ignora manifestos inválidos ou dessincronizados na listagem — a validação completa (schema + inventário contra os arquivos em disco) acontece no revert. Com <code>--share</code> o bind vira <code>0.0.0.0</code> (preview em LAN) e <strong>toda rota <code>/api/*</code> responde 403</strong> (leituras incluídas — nada vaza).</p>
+  <p>Códigos de erro JSON (taxonomia pinada, corpo <code>{"error": código}</code>): <code>invalid</code> (400), <code>forbidden</code> e <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500), <code>not-implemented</code> (501) — sucesso é <strong>200</strong> com o corpo JSON documentado na tabela. O <code>GET /api/snapshots</code> ignora manifestos inválidos ou dessincronizados na listagem — a validação completa (schema + inventário contra os arquivos em disco) acontece no revert. Com <code>--share</code> o bind vira <code>0.0.0.0</code> (preview em LAN) e <strong>toda rota <code>/api/*</code> responde 403</strong> (leituras incluídas — nada vaza).</p>
 
   <p><strong>Changelog (w4)</strong>: o bind padrão do servidor passou a ser <code>127.0.0.1</code> (só a própria máquina) — a API de escrita nunca fica exposta na rede. Para testar no celular ou em outro aparelho da LAN, <code>--share</code> é o caminho de migração: <code>node design/serve.mjs 8766 --share</code> (bind <code>0.0.0.0</code>). Em <code>--share</code> o visualizador entra em <strong>modo leitura com degradação declarada</strong>: além do 403 em toda rota <code>/api/*</code>, ele esconde as ações de escrita e os recursos alimentados por <code>/api</code> (pins nas telas, painel de pendências, responder/resolver) e mostra o banner "modo leitura — comentários e snapshots indisponíveis". O contrato vale para o futuro: as UIs de <strong>snapshots/comparação</strong> (que chegam depois) também precisam ficar ocultas em <code>--share</code> — marcá-las com <code>data-share-hide</code> no HTML já basta, pois o visualizador as esconde via <code>syncShareDegradation()</code>.</p>
 

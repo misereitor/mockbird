@@ -221,13 +221,21 @@ never in the example copy.
    `http://localhost:8765/viewer.html?canvas=<canvas>`. Mention that 🎯
    Elemento lets them click any element to comment on it specifically.
    Then summarize in one or two sentences what you created.
-6. **Comments.** A message starting with
-   `[Design: design/<canvas> › <name> (<file>)]` is a request about that exact
-   screen: edit only that file. A message whose bracket ends with
-   `› <selector> "<snippet>"` (the viewer's 🎯 Elemento mode, which pins
-   element comments on the screen) targets one element inside it: locate the
-   element by the selector first, then by the snippet text, and change only
-   that element (and the tokens only if the user agrees). Validate again
-   after any edit.
+6. **Comments.** The `[Design: …]` chat message format below is
+UNCHANGED — persistent pins are an extra channel, never a grammar change.
+A message starting with
+`[Design: design/<canvas> › <name> (<file>)]` is a request about that exact
+screen: edit only that file. A message whose bracket ends with
+`› <selector> "<snippet>"` (the viewer's 🎯 Elemento mode) targets one
+element inside it: locate the element by the selector first, then by the
+snippet text, and change only that element (and the tokens only if the
+user agrees). Element comments are dual-channel 🎯: besides the chat
+message the viewer persists a numbered pin in `design/comments.json`
+(schema `{id, canvas, file, selector?, snippet?, rect?, status, replies,
+createdAt, _demo?}`, `status` `open`|`resolved`|`stale`, written only by
+the server) — the pin is the persistent record (pending panel, toolbar
+count); the chat message is the channel that instructs you. `stale` has
+exactly two writers: `validate.mjs --mark-stale` (step 4) and the revert
+API. Never edit `comments.json` by hand. Validate again after any edit.
 7. **Variations.** "2 options" means separate screens in the same canvas
    (`Login A`, `Login B`), not separate canvases.
