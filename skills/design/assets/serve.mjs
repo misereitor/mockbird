@@ -203,10 +203,17 @@ function saveComments(comments) {
   writeFileSync(commentsPath(), `${JSON.stringify({ comments }, null, 2)}\n`)
 }
 
+/** Replies persist as {text, createdAt} (comments.json schema); legacy "at"
+ * input is accepted and folded into createdAt. */
 function normalizeReplies(list) {
   return list.map((reply) => ({
     text: reply.text,
-    at: typeof reply.at === 'string' ? reply.at : new Date().toISOString(),
+    createdAt:
+      typeof reply.createdAt === 'string'
+        ? reply.createdAt
+        : typeof reply.at === 'string'
+          ? reply.at
+          : new Date().toISOString(),
   }))
 }
 
@@ -228,6 +235,7 @@ function handleCommentsPost(body) {
         throw new ApiError(400, 'invalid')
       }
       if (reply.at !== undefined && typeof reply.at !== 'string') throw new ApiError(400, 'invalid')
+      if (reply.createdAt !== undefined && typeof reply.createdAt !== 'string') throw new ApiError(400, 'invalid')
     }
   }
   if (body.selector !== undefined && typeof body.selector !== 'string') throw new ApiError(400, 'invalid')

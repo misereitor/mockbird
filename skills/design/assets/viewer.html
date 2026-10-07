@@ -47,9 +47,13 @@
   .zoomgrp { display: flex; align-items: center; gap: 4px; }
   .zoomgrp span { min-width: 44px; text-align: center; color: var(--ui-muted); font-variant-numeric: tabular-nums; }
 
-  #problems { z-index: 4; }
-  #problems[open] { background: #fef2f2; }
-  body.dark #problems[open] { background: #450a0a; }
+  #problems, #commentsAlert { z-index: 4; }
+  #problems[open], #commentsAlert { background: #fef2f2; }
+  body.dark #problems[open], body.dark #commentsAlert { background: #450a0a; }
+  #commentsAlert {
+    padding: 8px 16px; color: var(--ui-danger); font-weight: 600;
+    border-bottom: 1px solid var(--ui-border);
+  }
   #problems summary {
     padding: 8px 16px; cursor: pointer; color: var(--ui-danger); font-weight: 600; list-style: none;
     border-bottom: 1px solid var(--ui-border);
@@ -170,12 +174,15 @@
     box-shadow: 0 2px 6px rgb(15 23 42 / .35);
   }
   body.dark .pin-badge { color: #042f2e; }
-  .pin .pin-del {
+  .pin .pin-act {
     display: none; height: 22px; min-height: 22px; width: 20px; padding: 0;
     border: 0; border-radius: 0 11px 11px 0; background: var(--ui-surface);
     color: var(--ui-muted); cursor: pointer; font-size: 12px; line-height: 1;
   }
-  .pin:hover .pin-del { display: block; }
+  .pin:hover .pin-act { display: block; }
+  .pin.resolved .pin-badge { background: var(--ui-muted); }
+  .pin.stale { opacity: .55; filter: grayscale(1); }
+  .pin.stale .pin-badge { background: var(--ui-dot); color: var(--ui-muted); text-decoration: line-through; }
   [hidden] { display: none !important; }
 </style>
 <style id="chipCss">
@@ -238,6 +245,8 @@
   <summary><span id="problemsCount"></span> problema(s) no canvas — clique para ver</summary>
   <ul id="problemsList"></ul>
 </details>
+
+<div id="commentsAlert" role="alert" hidden></div>
 
 <main id="viewport" hidden>
   <div id="world"><div id="strip"></div></div>
@@ -343,7 +352,7 @@ const state = {
   canvas: '', theme: 'light', device: 'original',
   zoom: 1, x: 0, y: 0,
   screens: [], selectedId: null, bust: 0,
-  inspect: false, annotations: [], pinSeq: 0,
+  inspect: false, comments: [],
   chips: false,
   scenario: '', problems: [],
 }
@@ -368,7 +377,6 @@ function savePrefs() {
     localStorage.setItem(prefsKey(), JSON.stringify({
       scenario: state.scenario, theme: state.theme, device: state.device,
       chips: state.chips,
-      annotations: state.annotations, pinSeq: state.pinSeq,
     }))
   } catch { /* storage unavailable; prefs stay per-session */ }
 }
@@ -390,6 +398,7 @@ async function loadCanvas() {
   $('canvasPath').textContent = `design/${state.canvas}`
   await loadScenarioSelect()
   await loadCanvasSelect()
+  await loadComments()
   renderStrip()
 }
 
@@ -523,6 +532,115 @@ function renderProblems(problems) {
     const li = document.createElement('li')
     li.textContent = problem
     $('problemsList').appendChild(li)
+  }
+}
+
+/* ---------------------------------------------- persistent comments (pins) */
+
+const COMMENTS_API = 'api/comments'
+
+/** X-Design-Token per server run (serve.mjs rewrites the placeholder above). */
+function apiHeaders() {
+  return window.__DESIGN_TOKEN__ ? { 'X-Design-Token': window.__DESIGN_TOKEN__ } : {}
+}
+
+function showCommentsAlert(message) {
+  const el = $('commentsAlert')
+  el.textContent = message
+  el.hidden = false
+}
+
+function clearCommentsAlert() {
+  $('commentsAlert').hidden = true
+}
+
+/** The screen a pin belongs to, matched by file (query suffix ignored). */
+function pinScreen(pin) {
+  const file = String(pin?.file ?? '').split('?')[0]
+  return state.screens.find((s) => String(s.file).split('?')[0] === file) ?? null
+}
+
+function pinText(pin) {
+  const replies = Array.isArray(pin?.replies) ? pin.replies : []
+  return replies[0]?.text ?? ''
+}
+
+/** Anchor resolution (SKILL.md step 6): selector first, snippet as fallback. */
+function resolveAnchor(doc, pin) {
+  if (!doc || !pin) return null
+  if (typeof pin.selector === 'string' && pin.selector) {
+    try {
+      const el = doc.querySelector(pin.selector)
+      if (el) return el
+    } catch { /* selector not usable in querySelector */ }
+  }
+  if (typeof pin.snippet === 'string' && pin.snippet) {
+    for (const el of doc.querySelectorAll('body *')) {
+      const raw = el.getAttribute('aria-label') || el.getAttribute('placeholder')
+        || (typeof el.value === 'string' && el.value) || el.textContent || ''
+      if (raw.trim().replace(/\s+/g, ' ').includes(pin.snippet)) return el
+    }
+  }
+  return null
+}
+
+/** GET /api/comments -> pins of this canvas. Corrupt comments.json answers 400:
+ * the guard banner warns and pins are disabled until the file is fixed. */
+async function loadComments() {
+  let response
+  try {
+    response = await fetch(COMMENTS_API, { cache: 'no-store', headers: apiHeaders() })
+  } catch {
+    showCommentsAlert('comments.json indisponível — pins persistentes desativados')
+    state.comments = []
+    return
+  }
+  if (!response.ok) {
+    const reason = response.status === 400
+      ? 'comments.json inválido'
+      : `GET /api/comments ${response.status}`
+    showCommentsAlert(`${reason} — pins persistentes desativados até corrigir`)
+    state.comments = []
+    return
+  }
+  let payload
+  try {
+    payload = await response.json()
+  } catch {
+    showCommentsAlert('comments.json inválido (resposta não é JSON) — pins persistentes desativados')
+    state.comments = []
+    return
+  }
+  if (!payload || !Array.isArray(payload.comments)) {
+    showCommentsAlert('comments.json inválido (formato inesperado) — pins persistentes desativados')
+    state.comments = []
+    return
+  }
+  clearCommentsAlert()
+  state.comments = payload.comments.filter((pin) => pin && pin.canvas === state.canvas)
+}
+
+/** POST /api/comments — creates/updates a pin (status open|resolved only; stale
+ * is written solely by validate.mjs --mark-stale). Failures never block the
+ * chat channel: the clipboard message still goes out (dual-channel). */
+async function persistPin(body) {
+  try {
+    const response = await fetch(COMMENTS_API, {
+      method: 'POST',
+      headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const payload = await response.json()
+    if (!payload || !Array.isArray(payload.comments)) throw new Error('resposta inesperada')
+    clearCommentsAlert()
+    state.comments = payload.comments.filter((pin) => pin && pin.canvas === state.canvas)
+    renderAllPins()
+    updateCopyAll()
+    return true
+  } catch (error) {
+    toast(`Não consegui salvar o pin (${error?.message ?? error}) — a mensagem segue para o chat`)
+    return false
   }
 }
 
@@ -690,18 +808,19 @@ $('elementForm').addEventListener('submit', async (event) => {
   if (!elementTarget || !text) return
   const { screen, selector, snippet, el } = elementTarget
   const rect = el?.getBoundingClientRect?.()
-  const annotation = {
-    id: `pin${++state.pinSeq}`,
-    screenId: screen.id,
-    selector, snippet, text,
-    rect: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
+  const pin = {
+    canvas: state.canvas,
+    file: screen.file,
+    selector,
+    snippet,
+    replies: [{ text }],
   }
-  state.annotations.push(annotation)
-  savePrefs()
-  renderPins(screen.id)
-  updateCopyAll()
+  if (rect) pin.rect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
   $('elementDialog').hidden = true
-  const message = annotationMessage(annotation)
+  // Channel (a): the pin persists in comments.json (GET/POST /api/comments).
+  await persistPin(pin)
+  // Channel (b): the chat message on the clipboard — template preserved.
+  const message = annotationMessage({ screenId: screen.id, selector, snippet, text })
   $('clipboardMsg').textContent = message
   $('clipboard').hidden = false
   await copyToClipboard(message)
@@ -709,10 +828,39 @@ $('elementForm').addEventListener('submit', async (event) => {
 
 function annotationMessage(a) {
   const screen = state.screens.find((s) => s.id === a.screenId)
-  const name = screen?.name ?? a.screenId
-  const file = screen?.file ?? ''
+  const name = a.name ?? screen?.name ?? a.screenId
+  const file = a.file ?? screen?.file ?? ''
   const element = a.selector ? ` › ${a.selector}${a.snippet ? ` "${a.snippet}"` : ''}` : ''
   return `[Design: design/${state.canvas} › ${name} (${file})${element}] ${a.text}`
+}
+
+/** Same [Design: …] template for a persisted pin (channel (b) stays identical). */
+function pinMessage(pin) {
+  const screen = pinScreen(pin)
+  return annotationMessage({
+    screenId: screen?.id,
+    name: screen?.name ?? pin.file,
+    file: screen?.file ?? pin.file,
+    selector: pin.selector,
+    snippet: pin.snippet,
+    text: pinText(pin),
+  })
+}
+
+/** Pin position on the screen: the persisted rect first; anchor resolution
+ * (selector first, snippet fallback) fills in when the pin carries no rect. */
+function pinPosition(pin, layer) {
+  if (pin.rect && Number.isFinite(pin.rect.x) && Number.isFinite(pin.rect.y)) {
+    const width = Number.isFinite(pin.rect.width) ? pin.rect.width : 0
+    return { left: `${pin.rect.x + width / 2}px`, top: `${pin.rect.y}px` }
+  }
+  const iframe = layer?.parentElement?.querySelector('iframe')
+  const el = resolveAnchor(iframe?.contentDocument ?? null, pin)
+  if (el) {
+    const rect = el.getBoundingClientRect()
+    return { left: `${rect.x + rect.width / 2}px`, top: `${rect.y}px` }
+  }
+  return { left: '50%', top: '24px' }
 }
 
 function renderPins(screenId) {
@@ -720,35 +868,35 @@ function renderPins(screenId) {
   const layer = card?.querySelector('.pins')
   if (!layer) return
   layer.innerHTML = ''
-  const mine = state.annotations.filter((a) => a.screenId === screenId)
-  mine.forEach((annotation, index) => {
-    const pin = document.createElement('div')
-    pin.className = 'pin'
-    if (annotation.rect) {
-      pin.style.left = `${annotation.rect.x + annotation.rect.width / 2}px`
-      pin.style.top = `${annotation.rect.y}px`
-    } else {
-      pin.style.left = '50%'
-      pin.style.top = '24px'
-    }
-    pin.title = `${annotation.selector}\n${annotation.text}`
+  const screen = state.screens.find((s) => s.id === screenId)
+  if (!screen) return
+  const file = String(screen.file).split('?')[0]
+  const mine = state.comments.filter((pin) => String(pin?.file ?? '').split('?')[0] === file)
+  mine.forEach((pin, index) => {
+    const marker = document.createElement('div')
+    marker.className = 'pin'
+    if (pin.status === 'stale') marker.classList.add('stale')
+    else if (pin.status === 'resolved') marker.classList.add('resolved')
+    const pos = pinPosition(pin, layer)
+    marker.style.left = pos.left
+    marker.style.top = pos.top
+    marker.title = `${pin.selector ?? ''}\n${pinText(pin)}${
+      pin.status === 'stale' ? '\nstale — âncora perdida (validate.mjs --mark-stale)' : ''
+    }${pin.status === 'resolved' ? '\nresolvido' : ''}`
     const badge = document.createElement('span')
     badge.className = 'pin-badge'
     badge.textContent = String(index + 1)
-    const del = document.createElement('button')
-    del.className = 'pin-del'
-    del.type = 'button'
-    del.textContent = '×'
-    del.title = 'Remover comentário'
-    del.addEventListener('click', (event) => {
+    const act = document.createElement('button')
+    act.className = 'pin-act'
+    act.type = 'button'
+    act.textContent = pin.status === 'resolved' ? '↺' : '✓'
+    act.title = pin.status === 'resolved' ? 'Reabrir comentário' : 'Marcar como resolvido'
+    act.addEventListener('click', (event) => {
       event.stopPropagation()
-      state.annotations = state.annotations.filter((x) => x.id !== annotation.id)
-      savePrefs()
-      renderPins(screenId)
-      updateCopyAll()
+      persistPin({ id: pin.id, status: pin.status === 'resolved' ? 'open' : 'resolved' })
     })
-    pin.append(badge, del)
-    layer.appendChild(pin)
+    marker.append(badge, act)
+    layer.appendChild(marker)
   })
 }
 
@@ -759,15 +907,15 @@ function renderAllPins() {
 function updateCopyAll() {
   const btn = $('copyAllBtn')
   btn.hidden = false
-  btn.textContent = `⧉ Comentários (${state.annotations.length})`
+  btn.textContent = `⧉ Comentários (${state.comments.length})`
 }
 
 $('copyAllBtn').addEventListener('click', async () => {
-  if (state.annotations.length === 0) {
+  if (state.comments.length === 0) {
     toast('Nenhum comentário de elemento ainda — ative 🎯 Elemento e clique no alvo')
     return
   }
-  const message = state.annotations.map(annotationMessage).join('\n')
+  const message = state.comments.map(pinMessage).join('\n')
   $('clipboardMsg').textContent = message
   $('clipboard').hidden = false
   await copyToClipboard(message)
@@ -1507,9 +1655,7 @@ async function boot() {
   state.device = prefs.device ?? 'original'
   // 🧩 inspector toggle persists per canvas (like theme/device)
   state.chips = prefs.chips === true
-  // element comments persist per canvas (survive F5)
-  state.annotations = Array.isArray(prefs.annotations) ? prefs.annotations : []
-  state.pinSeq = Number(prefs.pinSeq) || 0
+  // element comments persist in comments.json (GET/POST /api/comments)
   if (![...$('deviceSelect').options].some((option) => option.value === state.device)) state.device = 'original'
   $('deviceSelect').value = state.device
   $('chipBtn').classList.toggle('primary', state.chips)
