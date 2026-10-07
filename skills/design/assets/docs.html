@@ -96,6 +96,7 @@
     <li><a href="#interativo">Como as telas ficam interativas</a></li>
     <li><a href="#estrutura">Estrutura de arquivos</a></li>
     <li><a href="#tokens">Design tokens e utilitários</a></li>
+    <li><a href="#componentes">Componentes</a></li>
     <li><a href="#problemas">Solução de problemas</a></li>
   </ul>
 
@@ -214,6 +215,26 @@
     <tr><td>Estados</td><td>hooks <code>[data-state="hover"]</code>, <code>[data-state="active"]</code>, <code>[data-state="disabled"]</code></td></tr>
   </table>
   <div class="dica"><strong>Classes banidas:</strong> paleta do Tailwind (<code>bg-zinc-900</code>) e valores arbitrários (<code>text-[13px]</code>). O vocabulário é fechado e toda cor vem dos tokens.</div>
+
+  <h2 id="componentes">Componentes</h2>
+  <p>As telas reutilizam <strong>instâncias de componentes</strong> vindas de <code>design/components/</code> (o registro <code>components.json</code> mais um partial por componente). Uma instância nunca é markup solto de componente: é o partial embrulhado por um par de marcadores, com <strong>três argumentos obrigatórios</strong> (os únicos aceitos):</p>
+  <pre><code>&lt;!-- component:button size=md tone=primary state=default --&gt;…&lt;!-- /component:button --&gt;</code></pre>
+  <p>Os valores precisam estar nos enums do registro: <code>size</code> vale <code>sm|md|lg</code>, <code>tone</code> vale <code>primary|ghost</code> e <code>state</code> vale <code>default|hover|active|disabled</code>. Os espaços preenchíveis (slots) são pares de marcadores dentro da região, e o conteúdo entre eles é preservado byte a byte:</p>
+  <pre><code>&lt;!-- slot:label --&gt;Entrar&lt;!-- /slot:label --&gt;</code></pre>
+  <h3>Precedência: marker-args-win</h3>
+  <p>Os argumentos do marcador são a <strong>fonte de verdade</strong> da variante. A cada sincronização a região é rematerializada a partir do partial: <code>data-size</code>, <code>data-tone</code>, <code>data-state</code> e as classes de variante da raiz são re-emitidos <em>a partir do marcador</em>. O conteúdo dos slots e atributos <code>data-*</code> extras que você colocar na raiz sobrevivem intactos.</p>
+  <h3>Sincronizar: sync e <code>--check</code></h3>
+  <p>Depois de editar um partial em <code>design/components/</code> (ou os argumentos de um marcador), rode antes de apresentar qualquer tela:</p>
+  <pre><code>node design/scripts/sync-components.mjs</code></pre>
+  <p>Com <code>--check</code> o comando vira dry-run: mostra um diff <code>arquivo:linha</code> de cada região divergente, termina com código 1 se houver divergência e 0 se estiver tudo limpo, e nunca grava nada. O validador também aplica as regras de componente em qualquer <code>.html</code> não isento (independente do <code>canvas.json</code>) com os códigos <code>component-unknown</code>, <code>component-variant</code>, <code>component-marker</code>, <code>component-divergence</code> e <code>slot-marker</code>.</p>
+  <h3>Exemplo: mudar a variante do Button</h3>
+  <p>Instrução recebida: <em>"mudar a variante do Button"</em>. O caminho documentado é editar o marcador e rodar o sync, sem reescrever markup à mão:</p>
+  <ol>
+    <li>Na tela, localize o marcador do botão e troque o argumento no próprio marcador (ex.: <code>size=md</code> vira <code>size=lg</code>): <code>&lt;!-- component:button size=lg tone=primary state=default --&gt;…</code></li>
+    <li>Rode <code>node design/scripts/sync-components.mjs</code>: a instância ganha <code>data-size="lg"</code> e as classes de variante de <code>lg</code> (o marcador vence).</li>
+    <li>Valide antes de apresentar: <code>node design/validate.mjs design/&lt;canvas&gt;</code>.</li>
+  </ol>
+  <div class="dica"><strong>Fonte única:</strong> no pacote, <code>example/components/</code> é cópia byte-idêntica de <code>assets/components/</code>. Os partials se editam só na fonte única; a cópia do exemplo é referência, nunca alvo de edição.</div>
 
   <h2 id="problemas">Solução de problemas</h2>
   <ul>

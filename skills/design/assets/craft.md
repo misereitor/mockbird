@@ -57,6 +57,18 @@ Semantic classes carry structure and layout only. `var(--…)` is fine where no
 utility fits, and an inline `<style>` block is fine when a screen needs one,
 but neither may hold a literal color.
 
+**Components are instances, never loose markup** ("instância usa partial,
+nunca markup solto de componente"). Every instance is the partial from
+`design/components/` wrapped in a marker pair,
+`<!-- component:id size=md tone=primary state=default -->…<!-- /component:id -->`,
+with the THREE required args `size=`, `tone=`, `state=`, and slots as paired
+markers `<!-- slot:name -->…<!-- /slot:name -->`. Marker args are the source
+of truth (marker-args-win): sync re-emits `data-size`/`data-tone`/`data-state`
+plus the variant classes from the marker, while slot contents and user extra
+`data-*` attributes survive. After editing any partial in
+`design/components/`, run `node design/scripts/sync-components.mjs` before
+presenting.
+
 **Canvas overrides that win over taste:** the canvas is offline — no remote
 images or CDN, so use inline SVG, CSS patterns/gradients or local assets, and
 leave a clearly labeled placeholder when a real photo is required. And the

@@ -28,6 +28,12 @@ design/
   scripts/               copied once per project (see Setup)
     gen-tokens.mjs       regenerates design-system.css + utilities.css from
                          tokens.json
+    sync-components.mjs  rematerializes every component marker region from its
+                         partial (copied once per project)
+    marker-parser.mjs    the shared marker grammar parser sync imports at
+                         runtime (copied once per project)
+  components/            component registry + partials seed (copied once per
+                         project): components.json + one partial per component
   vendor/html-to-image.js  PNG export library (copied once per project)
   index.json             {"canvases": ["login", ...]} so the viewer can list them
   <canvas>/              one folder per canvas, kebab-case (login, dashboard)
@@ -68,12 +74,15 @@ If `design/` does not exist yet, create it and copy from this skill's folder
 - `assets/docs.html` → `design/docs.html` (usage guide, linked from the viewer's 📘 Docs button)
 - `assets/vendor/html-to-image.js` → `design/vendor/html-to-image.js`
 - `scripts/gen-tokens.mjs` → `design/scripts/gen-tokens.mjs`
+- `assets/components/` → `design/components/` (registry + partials seed)
+- `scripts/sync-components.mjs` → `design/scripts/sync-components.mjs`
+- `scripts/marker-parser.mjs` → `design/scripts/marker-parser.mjs` (the shared
+  parser module sync imports, required at runtime)
 
 Rule for this copy list: only files that already exist enter it ("só entra no
 copy list arquivo que já existe"). Files still to come join only at their
-Contracts wave: `sync-components.mjs` enters at Contracts wave 2, `mock.css` at
-wave 3, and `export-tokens.mjs` only at Contracts wave 6. Until then do not
-copy them and do not list them here.
+Contracts wave: `mock.css` enters at wave 3, and `export-tokens.mjs` only at
+Contracts wave 6. Until then do not copy them and do not list them here.
 
 Whenever `tokens.json` changes, regenerate the two generated files from the
 project root:
@@ -89,7 +98,10 @@ to it as you create canvases. A complete, valid example lives in this skill's
 login and sign-up navigate across canvases into the overview, which reads
 its fictitious items, supports named scenarios, and logs out back to the
 login canvas. Read it before starting a new design system or canvas and
-adapt it.
+adapt it. The seed `example/components/` is a byte-identical copy of
+`assets/components/` ("example/components/ é cópia byte-idêntica de
+assets/components/ (fonte única)"): edit partials only in `assets/components/`,
+never in the example copy.
 
 ## Workflow
 
@@ -124,8 +136,19 @@ adapt it.
    - Cover empty, loading and error states when they matter, as extra screens.
    - Accessible basics: labels on inputs, visible focus, sufficient contrast,
      tap targets ≥ 44px on mobile.
-   - The layout must hold at the screen's device width.
-   - **Make it a system preview, not a poster.** When the request implies a
+    - The layout must hold at the screen's device width.
+    - **Components are instances of partials, never loose component markup**
+      ("instância usa partial, nunca markup solto de componente"). Wrap every
+      instance in the marker pair
+      `<!-- component:id size=md tone=primary state=default -->…<!-- /component:id -->`
+      with the THREE required args `size=`, `tone=`, `state=` (values must be
+      in the registry enums of `design/components/components.json`), and fill
+      its slots as paired markers `<!-- slot:name -->…<!-- /slot:name -->`.
+      Precedence: marker args are the source of truth (marker-args-win). The
+      sync re-emits `data-size`/`data-tone`/`data-state` and the variant
+      classes from the marker on every run; slot contents and user extra
+      `data-*` attributes on the root survive.
+    - **Make it a system preview, not a poster.** When the request implies a
      working product, wire the screens with the mock runtime
      (`<script src="../mock.js"></script>`, copied by Setup): forms validate
      and submit, buttons give feedback, screens navigate with
@@ -145,15 +168,25 @@ adapt it.
      project-wide, so the login canvas sets the user and the dashboard
      canvas reads it. The viewer's canvas selector jumps between canvases
      (each canvas keeps its own scenario, theme and device).
-4. **Validate and fix.** Run from the project root:
+4. **Validate and fix.** MANDATORY sync first: after editing any partial in
+   `design/components/` (or any marker's args), run
+   `node design/scripts/sync-components.mjs` from the project root before
+   presenting anything; it rematerializes every instance from its partial
+   (marker-args-win). `--check` is the dry-run form: it prints a
+   `file:line` diff per divergent region and exits 1 on divergence (0 clean),
+   never writing. Then run from the project root:
    `node design/validate.mjs design/<canvas>`. Fix every issue it lists and run
    again until only the summary line remains. Never present a canvas that has
    issues. The validator's argument is a design-root (project mode) or a single
    canvas folder (canvas mode); with no argument it defaults to `./design`.
    Structural checks cover only the screens listed in `canvas.json`; project
    mode additionally checks tokens/generated-CSS staleness, components and
-   comments. `--allow-stale` skips ONLY the staleness check; `--mark-stale` is
-   the validator's only write (it marks comment pins whose anchor is gone).
+   comments. Component rules are scanned on every non-exempt `.html`,
+   independent of `canvas.json`, with the codes `component-unknown`,
+   `component-variant`, `component-marker`, `component-divergence` and
+   `slot-marker`. `--allow-stale` skips ONLY the staleness check;
+   `--mark-stale` is the validator's only write (it marks comment pins whose
+   anchor is gone).
 5. **Show it.** Start the viewer server in the background
    (`node design/serve.mjs`, default port 8765; if the port is busy a server is
    probably already running — reuse it) and give the user the link:

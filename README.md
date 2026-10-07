@@ -65,7 +65,8 @@ Depois, **reinicie a sessão** do agente para as skills carregarem.
    vez só, precisa de rede). Se falhar, ela continua sem engine com fallback.
 
 Os comandos que ficam no `design/` do projeto são `node design/validate.mjs`,
-`node design/serve.mjs` e `node design/scripts/gen-tokens.mjs` (instalado).
+`node design/serve.mjs`, `node design/scripts/gen-tokens.mjs` e `node
+design/scripts/sync-components.mjs` (instalado).
 
 ## Solução de problemas
 
