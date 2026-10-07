@@ -93,7 +93,7 @@
     <li><a href="#fluxo">Modo fluxo (testar o sistema de verdade)</a></li>
     <li><a href="#cenarios">Cenários de dados</a></li>
     <li><a href="#exportar">Exportar: PNG e vídeo</a></li>
-    <li><a href="#interativo">Como as telas ficam interativas</a></li>
+    <li><a href="#interativo">Como as telas ficam interativas (API do mock)</a></li>
     <li><a href="#estrutura">Estrutura de arquivos</a></li>
     <li><a href="#tokens">Design tokens e utilitários</a></li>
     <li><a href="#componentes">Componentes</a></li>
@@ -172,15 +172,25 @@
   </table>
 
   <h2 id="interativo">Como as telas ficam interativas</h2>
-  <p>As telas incluem um runtime minúsculo e offline, o <code>mock.js</code>, e dados fictícios em <code>data.json</code>:</p>
+  <p>As telas incluem um runtime minúsculo e offline, o <code>mock.js</code>, dados fictícios em <code>data.json</code> e os estilos do runtime no <code>mock.css</code> (as telas linkam <code>../mock.css</code>; o JavaScript só liga e desliga classes — ele nunca injeta CSS):</p>
+  <h3 id="api-do-mock">API do mock</h3>
   <table>
     <tr><th>API</th><th>O que faz</th></tr>
     <tr><td><code>await Mock.data('items')</code></td><td>Lê os dados do <code>data.json</code> do canvas (com o cenário escolhido aplicado).</td></tr>
-    <tr><td><code>Mock.go('03-detalhe.html')</code></td><td>Navega para outra tela do fluxo — inclusive de outro canvas: <code>Mock.go('../dashboard/01-overview.html')</code>.</td></tr>
-    <tr><td><code>Mock.state.set('user', …)</code> / <code>.get('user')</code></td><td>Estado do fluxo compartilhado no projeto inteiro (login de um canvas, leitura em outro).</td></tr>
+    <tr><td><code>Mock.state</code> (<code>.set('user', …)</code>, <code>.get('user')</code>, <code>.clear()</code>)</td><td>Estado do fluxo compartilhado no projeto inteiro (login de um canvas, leitura em outro). O <code>.clear()</code> zera o estado — é o que o "⟲ Reset fluxo" do visualizador chama.</td></tr>
+    <tr><td><code>Mock.go('03-detalhe.html')</code></td><td>Navega para outra tela do fluxo — inclusive de outro canvas: <code>Mock.go('../dashboard/01-overview.html')</code>. Preserva <code>?scenario=</code> e guarda a posição de scroll da tela atual.</td></tr>
     <tr><td><code>Mock.toast('Salvo!')</code></td><td>Feedback visual de ação simulada.</td></tr>
-    <tr><td><code>Mock.scenario()</code></td><td>Nome do cenário ativo (<code>''</code> para o padrão).</td></tr>
+    <tr><td><code>Mock.overlay('03-modal.html')</code></td><td>Abre uma tela do canvas como camada modal: renderiza o conteúdo da tela sobre um backdrop, prende o foco dentro da camada, <kbd>Esc</kbd> fecha a camada do topo e o clique no backdrop fecha quando <code>dismissible</code> (padrão <code>true</code>). Arquivo inexistente vira toast de erro, sem camada.</td></tr>
+    <tr><td><code>Mock.close()</code></td><td>Fecha a camada modal do topo; o foco volta para o elemento que a abriu.</td></tr>
   </table>
+  <h3>Transições entre telas</h3>
+  <p>Cada tela pode declarar sua animação de entrada no <code>canvas.json</code>:</p>
+  <pre><code>{ "id": "overview", "name": "Visão geral", "file": "01-overview.html", "device": "tablet", "transition": "fade" }</code></pre>
+  <p><code>"transition"</code> vale <code>fade</code>, <code>slide-left</code> ou <code>none</code> (padrão quando ausente; o validador rejeita qualquer outro valor com o código <code>unknown-transition</code>). Na navegação com <code>Mock.go</code>, a tela de destino ganha a classe <code>mock-enter-fade</code>/<code>mock-enter-slide-left</code> no <code>&lt;body&gt;</code>, que se remove sozinha em menos de 300&nbsp;ms — o <code>prefers-reduced-motion</code> desliga a animação por completo. A classe é resolvida pelo nome do arquivo de destino no <code>canvas.json</code> do canvas <strong>atual</strong>: funciona nos saltos dentro do mesmo canvas (inclusive um self-nav como <code>Mock.go('01-overview.html')</code>, o padrão de "recarregar lista"), enquanto <code>Mock.go('../dashboard/01-overview.html')</code> (troca de canvas) é navegação simples, <strong>sem</strong> classe de entrada.</p>
+  <h3>Scroll preservado</h3>
+  <p>A posição de rolagem de cada tela é guardada em <code>sessionStorage</code> na chave <code>scroll.&lt;canvas&gt;.&lt;tela&gt;</code>: salva no <code>Mock.go</code> (e no <code>pagehide</code>, para navegações comuns) e restaurada quando a tela volta. As chaves <code>scroll.*</code> ficam fora do espaço <code>mock.*</code> de propósito — o "⟲ Reset fluxo" limpa só o estado <code>mock.*</code>, e o scroll sobrevive ao reset.</p>
+  <h3>Fallback sem JS (e a regra do CSS)</h3>
+  <p>O gatilho de um overlay é um link comum para a tela do modal — <code>&lt;a href="03-modal.html"&gt;Excluir conta&lt;/a&gt;</code>. Com JS, o clique abre a tela como camada modal; sem JS, o navegador segue o <code>href</code> e abre a própria tela do modal (que é uma tela completa e válida do canvas). Nada de markup duplicado na página hospedeira: a camada renderiza o <code>&lt;body&gt;</code> da própria tela. E todos os estilos do runtime vivem no <code>mock.css</code> — o JavaScript nunca injeta CSS, só alterna as classes <code>.mock-toast</code>, <code>.mock-overlay</code>, <code>.mock-backdrop</code> e <code>.mock-enter-*</code>.</p>
   <p>Regras que o agente respeita: nada de CDN ou URL remota (ícones SVG inline, fontes do sistema), tokens do design system para toda cor/espaçamento, os dois temas sempre funcionando, e a tela continua compondo mesmo se o JavaScript falhar.</p>
 
   <h2 id="estrutura">Estrutura de arquivos</h2>
@@ -192,13 +202,14 @@
   serve.mjs              servidor local (node design/serve.mjs [porta])
   validate.mjs           validador (node design/validate.mjs design/&lt;canvas&gt;)
   mock.js                runtime de interatividade
+  mock.css               estilos do runtime (toast/overlay/transições)
   vendor/html-to-image.js  export de PNG (vendado, sem CDN)
   index.json             lista de canvases {"canvases": ["login", …]}
   &lt;canvas&gt;/              um fluxo por pasta (login, dashboard, …)
     canvas.json          título + telas em ordem
     data.json            dados fictícios + cenários (opcional)
     01-&lt;tela&gt;.html       um documento HTML completo por tela</code></pre>
-  <p><code>canvas.json</code> define a ordem e o tamanho: <code>device</code> é <code>mobile</code> (390×844), <code>tablet</code> (834×1112) ou <code>desktop</code> (1440×900), com <code>width</code>/<code>height</code> opcionais.</p>
+  <p><code>canvas.json</code> define a ordem e o tamanho: <code>device</code> é <code>mobile</code> (390×844), <code>tablet</code> (834×1112) ou <code>desktop</code> (1440×900), com <code>width</code>/<code>height</code> opcionais; a transição de entrada de cada tela também é declarada ali (<code>"transition": "fade"|"slide-left"|"none"</code> — ver API do mock).</p>
 
   <h2 id="tokens">Design tokens e utilitários</h2>
   <p>O <code>tokens.json</code> é a <strong>fonte única</strong> de todos os tokens do design system (claro e escuro). A partir dele o gerador escreve dois arquivos gerados, que nunca se edita à mão: <code>design-system.css</code> (as variáveis <code>var(--…)</code>) e <code>utilities.css</code> (o vocabulário fechado de utilitários). Depois de qualquer mudança em <code>tokens.json</code>, regenere os dois:</p>

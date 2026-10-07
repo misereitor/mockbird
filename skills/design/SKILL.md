@@ -25,6 +25,10 @@ design/
   serve.mjs              tiny static server for the viewer (copied once per project)
   viewer.html            the viewer (copied once per project)
   mock.js                mock runtime for interactive screens (copied once per project)
+  mock.css              static styles for the mock runtime classes (copied once
+                         per project) — toast/overlay/enter-transition states;
+                         screens link it as `../mock.css`; mock.js only toggles
+                         these classes and never injects CSS
   scripts/               copied once per project (see Setup)
     gen-tokens.mjs       regenerates design-system.css + utilities.css from
                          tokens.json
@@ -58,6 +62,9 @@ design/
 
 - `device`: `mobile` = 390×844, `tablet` = 834×1112, `desktop` = 1440×900;
   optional `width`/`height` (integers 100–10000) override it.
+- `transition` (optional): `fade`, `slide-left` or `none` (default). It is the
+  screen's enter animation after `Mock.go` — see Workflow step 3 for the
+  same-canvas/cross-canvas rule.
 - `id` unique and non-empty; `name` non-empty; `title` optional.
 - `file` is relative to the canvas folder: never `..`, leading `/`, `\` or a
   scheme (`http:`, `file:` …).
@@ -71,6 +78,8 @@ If `design/` does not exist yet, create it and copy from this skill's folder
 - `assets/viewer.html` → `design/viewer.html`
 - `assets/serve.mjs` → `design/serve.mjs`
 - `assets/mock.js` → `design/mock.js`
+- `assets/mock.css` → `design/mock.css` (styles for the mock runtime classes;
+  screens link `../mock.css`)
 - `assets/docs.html` → `design/docs.html` (usage guide, linked from the viewer's 📘 Docs button)
 - `assets/vendor/html-to-image.js` → `design/vendor/html-to-image.js`
 - `scripts/gen-tokens.mjs` → `design/scripts/gen-tokens.mjs`
@@ -81,8 +90,9 @@ If `design/` does not exist yet, create it and copy from this skill's folder
 
 Rule for this copy list: only files that already exist enter it ("só entra no
 copy list arquivo que já existe"). Files still to come join only at their
-Contracts wave: `mock.css` enters at wave 3, and `export-tokens.mjs` only at
-Contracts wave 6. Until then do not copy them and do not list them here.
+Contracts wave: `export-tokens.mjs` only at Contracts wave 6 — until then do
+not copy it and do not list it here. (`mock.css` joined at wave 3 and is listed
+above.)
 
 Whenever `tokens.json` changes, regenerate the two generated files from the
 project root:
@@ -94,10 +104,12 @@ node design/scripts/gen-tokens.mjs
 Create `design/index.json` (`{"canvases": []}`) and add every new canvas name
 to it as you create canvases. A complete, valid example lives in this skill's
 `assets/example/` — a working stock-app system across two canvases:
-`login/` (login, sign-up) and `dashboard/` (interactive overview), where
-login and sign-up navigate across canvases into the overview, which reads
-its fictitious items, supports named scenarios, and logs out back to the
-login canvas. Read it before starting a new design system or canvas and
+`login/` (login, sign-up, and a delete-account confirm modal opened as an
+overlay from a plain link) and `dashboard/` (interactive overview with a long
+item list, a same-canvas "Atualizar lista" refresh that demos the `fade`
+transition and scroll restore), where login and sign-up navigate across
+canvases into the overview, which reads its fictitious items, supports named
+scenarios, and logs out back to the login canvas. Read it before starting a new design system or canvas and
 adapt it. The seed `example/components/` is a byte-identical copy of
 `assets/components/` ("example/components/ é cópia byte-idêntica de
 assets/components/ (fonte única)"): edit partials only in `assets/components/`,
@@ -116,17 +128,19 @@ never in the example copy.
    (it fuses the sibling craft skills — taste, emil-design-eng, impeccable —
    into rules for canvas screens) and apply it to every screen. Then create
    `canvas.json` and the screens. Rules for every screen:
-   - Styling policy: the utilities vocabulary is the vocabulary. Anything
-     token-backed (colors, type, spacing, radius) goes through the generated
-     utilities: link `<link rel="stylesheet" href="../design-system.css">` and
-     `<link rel="stylesheet" href="../utilities.css">`, then use classes like
-     `bg-accent`, `p-2`, `text-heading`, `rounded-md`. Semantic classes carry
-     structure and layout only. `var(--…)` stays allowed where no utility fits,
-     and an inline `<style>` block is allowed but must hold ZERO literal
-     colors. The ban sweep scans literal colors in `<style>`, `style=""` and
-     the VALUE positions of SVG `fill=`/`stroke=`; it also bans `http(s)://`
-     anywhere in screens, Tailwind palette classes like `bg-zinc-900`, and
-     arbitrary values like `text-[13px]`.
+    - Styling policy: the utilities vocabulary is the vocabulary. Anything
+      token-backed (colors, type, spacing, radius) goes through the generated
+      utilities: link `<link rel="stylesheet" href="../design-system.css">` and
+      `<link rel="stylesheet" href="../utilities.css">`, then use classes like
+      `bg-accent`, `p-2`, `text-heading`, `rounded-md`. Interactive screens
+      also link `<link rel="stylesheet" href="../mock.css">` (the mock runtime
+      classes: toast, overlay, enter transitions). Semantic classes carry
+      structure and layout only. `var(--…)` stays allowed where no utility fits,
+      and an inline `<style>` block is allowed but must hold ZERO literal
+      colors. The ban sweep scans literal colors in `<style>`, `style=""` and
+      the VALUE positions of SVG `fill=`/`stroke=`; it also bans `http(s)://`
+      anywhere in screens, Tailwind palette classes like `bg-zinc-900`, and
+      arbitrary values like `text-[13px]`.
    - Work in both themes through the tokens; the theme arrives as
      `data-theme` on `<html>` (`light` by default — include the attribute).
    - No CDN or remote URL of any kind (the canvas is offline and sandboxed):
@@ -163,11 +177,25 @@ never in the example copy.
      `"vazio": {"items": []}`) — the viewer gains a selector for them, the
      choice survives navigation, and each scenario must compose well
      (empty list, all items below minimum, API failure). A system may span
-     canvases (one per flow): navigate across with
-     `Mock.go('../<canvas>/<screen>.html')` — flow state is shared
-     project-wide, so the login canvas sets the user and the dashboard
-     canvas reads it. The viewer's canvas selector jumps between canvases
-     (each canvas keeps its own scenario, theme and device).
+      canvases (one per flow): navigate across with
+      `Mock.go('../<canvas>/<screen>.html')` — flow state is shared
+      project-wide, so the login canvas sets the user and the dashboard
+      canvas reads it. The viewer's canvas selector jumps between canvases
+      (each canvas keeps its own scenario, theme and device). Modals and
+      confirm dialogs are full canvas screens too (one source of truth): the
+      trigger is a plain screen link, `<a href="03-modal.html">`, which the
+      mock runtime intercepts into `Mock.overlay('03-modal.html')` — without
+      JS the untouched href navigates to the modal screen itself (the JS-off
+      fallback). Screens may declare `"transition": "fade"|"slide-left"|"none"`
+      in `canvas.json`: `Mock.go` hands an enter class to the destination
+      (`mock-enter-fade`/`mock-enter-slide-left`, self-removed within 300 ms).
+      The handoff reads the CURRENT canvas's `canvas.json` matched by the
+      destination filename, so it works for same-canvas hops (a self-nav like
+      `Mock.go('01-overview.html')` is the refresh pattern) — a cross-canvas
+      `Mock.go('../<canvas>/<screen>.html')` is a plain navigation without
+      enter class. Scroll position is preserved per screen
+      (`scroll.<canvas>.<file>` in sessionStorage, restored when the screen
+      returns and surviving ⟲ Reset fluxo, which clears only `mock.*`).
 4. **Validate and fix.** MANDATORY sync first: after editing any partial in
    `design/components/` (or any marker's args), run
    `node design/scripts/sync-components.mjs` from the project root before

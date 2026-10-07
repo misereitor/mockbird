@@ -121,6 +121,33 @@ Interactive screens follow the same craft bar:
   critical, failure). The viewer's scenario selector must make each one
   compose well — a scenario that renders an empty shell is a broken screen,
   not a scenario.
+- Overlays: a modal is a full canvas screen (one source of truth), never a
+  copy of markup inside the host page. The trigger is a plain screen link
+  (`<a href="03-modal.html">`) that the mock runtime intercepts into
+  `Mock.overlay`; without JS the untouched href navigates to the modal screen
+  itself, so the modal must compose as a standalone page. Closing is layered:
+  `Mock.close()` / ESC dismiss the topmost layer, a backdrop click dismisses
+  only when `dismissible`. Confirm actions close the loop — clear state,
+  toast, then `Mock.go` to where the flow continues. Remember the overlay
+  re-renders only the screen's `<body>` content: scripts do not run inside
+  the layer, so wire overlay actions with inline handlers on wrapper
+  elements (component roots keep only extra `data-*` attributes) or with
+  delegation from the host page.
+- Transitions are declared per screen in `canvas.json`
+  (`"transition": "fade"|"slide-left"|"none"`) and ride `Mock.go` as an
+  enter class on the destination (`mock-enter-fade`/`mock-enter-slide-left`,
+  self-removed within 300 ms; `prefers-reduced-motion` disables the run).
+  Use `fade` for state refreshes and same-screen returns, `slide-left` for
+  drill-in steps, `none` for jumps that are not spatial. The handoff matches
+  the destination filename in the CURRENT canvas's manifest: same-canvas
+  hops only — a cross-canvas `Mock.go('../<canvas>/<screen>.html')` is a
+  plain navigation with no enter class. Motivate the motion (section 4):
+  one enter run per navigation, never on every re-render.
+- Scroll positions are preserved per screen (`scroll.<canvas>.<file>`,
+  restored when the user returns, surviving ⟲ Reset fluxo which clears only
+  `mock.*`). Earn the scroll: if a screen scrolls, the extra content must be
+  real value (a long list of items), and returning to the screen must land
+  the user where they left — that is part of the flow's continuity.
 - When the system spans canvases, the flow must cross them cleanly: the
   login canvas hands the user over through shared state, the next canvas
   never shows a fallback where real data should be, and every canvas
