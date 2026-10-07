@@ -178,6 +178,22 @@
   .pin:hover .pin-del { display: block; }
   [hidden] { display: none !important; }
 </style>
+<style id="chipCss">
+  /* 🧩 inspector chips — cloned into each screen iframe by renderCompChips */
+  [data-comp-chips] {
+    position: absolute; top: 0; left: 0;
+    z-index: 2147483000; pointer-events: none;
+  }
+  [data-comp-chip] {
+    position: absolute; transform: translateY(-100%);
+    pointer-events: none;
+    padding: 2px 6px; border-radius: 4px;
+    background: var(--ui-accent); color: var(--ui-surface);
+    border: 1px solid var(--ui-border);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 10px; line-height: 1.3; white-space: nowrap;
+  }
+</style>
 </head>
 <body>
 
@@ -210,6 +226,7 @@
     <button id="recordBtn" title="Gravar o fluxo como vídeo .webm — o navegador pede para compartilhar esta aba; clique de novo para parar e baixar">⏺ Gravar fluxo</button>
     <button id="docsBtn" title="Abrir a documentação de utilização">📘 Docs</button>
     <button id="inspectBtn" title="Comentar um elemento específico da tela (Esc sai do modo)">🎯 Elemento</button>
+    <button id="chipBtn" title="Mostrar chips de id/variante sobre cada componente (inspetor)">🧩 Componentes</button>
     <button id="commentBtn" disabled>💬 Comentar esta tela</button>
     <button id="copyAllBtn" title="Ver/copiar todos os comentários de elemento">⧉ Comentários (0)</button>
     <button id="exportBtn" disabled>⬇ PNG da tela</button>
@@ -243,6 +260,7 @@
     <button id="fsNext" title="Tela seguinte do fluxo">▶</button>
     <button id="fsRestart" title="Reiniciar o fluxo do começo">⟲</button>
     <button id="fsInspect" title="Comentar um elemento da tela (Esc sai do modo)">🎯 Elemento</button>
+    <button id="fsChip" title="Mostrar chips de id/variante sobre cada componente (inspetor)">🧩 Componentes</button>
     <button id="fsTheme" title="Alternar tema claro/escuro">🌙</button>
     <strong id="fsTitle"></strong>
     <span id="fsSize" style="color: var(--ui-muted); font-size: 12px;"></span>
@@ -321,6 +339,7 @@ const state = {
   zoom: 1, x: 0, y: 0,
   screens: [], selectedId: null, bust: 0,
   inspect: false, annotations: [], pinSeq: 0,
+  chips: false,
   scenario: '', problems: [],
 }
 
@@ -343,6 +362,7 @@ function savePrefs() {
   try {
     localStorage.setItem(prefsKey(), JSON.stringify({
       scenario: state.scenario, theme: state.theme, device: state.device,
+      chips: state.chips,
       annotations: state.annotations, pinSeq: state.pinSeq,
     }))
   } catch { /* storage unavailable; prefs stay per-session */ }
@@ -567,6 +587,7 @@ function cardFor(screen) {
   iframe.src = origSrc
   iframe.addEventListener('load', () => {
     applyThemeToFrame(iframe)
+    renderCompChips(iframe)
     let navigated = false
     try {
       navigated = !iframe.contentWindow.location.pathname.endsWith(`/${state.canvas}/${screen.file}`)
@@ -761,6 +782,68 @@ $('inspectBtn').addEventListener('click', () => {
   if (!$('fullscreen').hidden) layoutFullscreen()
 })
 
+/* ------------------------------------------- component inspector chips */
+
+/**
+ * 🧩 INSPECTOR: one floating chip per [data-component] instance inside a screen
+ * iframe, labelled `id · size · tone · state`. The layer is appended to the
+ * iframe DOM as a pointer-events:none overlay, so 🎯 Elemento hit-testing
+ * (elementFromPoint) and every screen interaction keep working untouched.
+ */
+function renderCompChips(iframe) {
+  const doc = iframe?.contentDocument
+  if (!doc?.body) return
+  for (const layer of doc.querySelectorAll('[data-comp-chips]')) layer.remove()
+  if (!state.chips) return
+  const instances = doc.querySelectorAll('[data-component]')
+  if (!instances.length) return
+  if (!doc.getElementById('chipCss')) {
+    const source = document.getElementById('chipCss')
+    if (source) doc.head.appendChild(source.cloneNode(true))
+  }
+  const layer = doc.createElement('div')
+  layer.setAttribute('data-comp-chips', '')
+  // chip palette = the viewer tokens (no literal colors in chipCss)
+  const palette = getComputedStyle(document.body)
+  for (const name of ['--ui-accent', '--ui-surface', '--ui-border']) {
+    layer.style.setProperty(name, palette.getPropertyValue(name))
+  }
+  doc.body.appendChild(layer)
+  const base = layer.getBoundingClientRect()
+  for (const el of instances) {
+    const rect = el.getBoundingClientRect()
+    const chip = doc.createElement('span')
+    chip.setAttribute('data-comp-chip', '')
+    chip.textContent = [
+      el.getAttribute('data-component'),
+      el.getAttribute('data-size'),
+      el.getAttribute('data-tone'),
+      el.getAttribute('data-state'),
+    ].filter(Boolean).join(' · ')
+    chip.style.left = `${rect.left - base.left}px`
+    chip.style.top = `${rect.top - base.top}px`
+    layer.appendChild(chip)
+  }
+}
+
+/** Re-render the 🧩 chips in every screen iframe (strip + fullscreen). */
+function applyCompChips() {
+  for (const iframe of document.querySelectorAll('#strip iframe, #fsFrame')) renderCompChips(iframe)
+}
+
+$('chipBtn').addEventListener('click', () => {
+  state.chips = !state.chips
+  $('chipBtn').classList.toggle('primary', state.chips)
+  $('fsChip').classList.toggle('primary', state.chips)
+  savePrefs()
+  applyCompChips()
+})
+
+$('fsChip').addEventListener('click', () => {
+  $('chipBtn').click()
+  showFsBar()
+})
+
 function showBroken(frame, screen) {
   const broken = document.createElement('div')
   broken.className = 'broken'
@@ -853,6 +936,7 @@ function applyTheme() {
   document.body.classList.toggle('dark', state.theme === 'dark')
   $('themeBtn').textContent = state.theme === 'dark' ? '☀️ Claro' : '🌙 Escuro'
   for (const iframe of document.querySelectorAll('#strip iframe, #fsFrame')) applyThemeToFrame(iframe)
+  applyCompChips() // chip palette is copied from the viewer tokens
 }
 
 function applyThemeToFrame(iframe) {
@@ -895,6 +979,7 @@ function openFullscreen(screen) {
   frame.src = screenUrl(screen)
   frame.onload = () => {
     applyThemeToFrame(frame)
+    renderCompChips(frame)
     // the iframe swallows mouse events: the auto-hide bar must listen inside it
     try {
       frame.contentDocument.addEventListener('mousemove', showFsBar)
@@ -917,6 +1002,7 @@ function openFullscreen(screen) {
   }
   $('fullscreen').hidden = false
   $('fsInspect').classList.toggle('primary', state.inspect)
+  $('fsChip').classList.toggle('primary', state.chips)
   layoutFullscreen()
   showFsBar()
   updateFsNavButtons()
@@ -1218,11 +1304,18 @@ async function captureScreen(iframe) {
   const doc = iframe.contentDocument
   const width = iframe.clientWidth
   const height = iframe.clientHeight
-  return withInlineStyles(iframe, () =>
-    htmlToImage.toPng(doc.documentElement, {
-      width, height, pixelRatio: 2, cacheBust: true,
-      backgroundColor: frameBackgroundColor(doc),
-    }))
+  return withInlineStyles(iframe, async () => {
+    // inspector chips are viewer chrome: keep them out of the exported PNG
+    for (const layer of doc.querySelectorAll('[data-comp-chips]')) layer.remove()
+    try {
+      return await htmlToImage.toPng(doc.documentElement, {
+        width, height, pixelRatio: 2, cacheBust: true,
+        backgroundColor: frameBackgroundColor(doc),
+      })
+    } finally {
+      renderCompChips(iframe)
+    }
+  })
 }
 
 async function exportScreen(screen) {
@@ -1407,11 +1500,15 @@ async function boot() {
   state.scenario = prefs.scenario ?? ''
   state.theme = prefs.theme ?? 'light'
   state.device = prefs.device ?? 'original'
+  // 🧩 inspector toggle persists per canvas (like theme/device)
+  state.chips = prefs.chips === true
   // element comments persist per canvas (survive F5)
   state.annotations = Array.isArray(prefs.annotations) ? prefs.annotations : []
   state.pinSeq = Number(prefs.pinSeq) || 0
   if (![...$('deviceSelect').options].some((option) => option.value === state.device)) state.device = 'original'
   $('deviceSelect').value = state.device
+  $('chipBtn').classList.toggle('primary', state.chips)
+  $('fsChip').classList.toggle('primary', state.chips)
   $('bar').hidden = false
   $('viewport').hidden = false
   applyTheme()
