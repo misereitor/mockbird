@@ -85,6 +85,13 @@ design/scripts/sync-components.mjs` (instalado).
   chegarem depois também precisam ficar ocultas em `--share` — basta marcá-las
   com `data-share-hide` no HTML que o `syncShareDegradation()` do visualizador
   as esconde.
+- **Snapshots, comparação e revert (w5)**: o painel **Snapshots** do
+  visualizador salva o estado de um canvas (`src/` + `render/` flat), compara
+  dois estados nos modos **Lado a lado** e **Onion skin** e restaura com o
+  botão **"Reverter para este snapshot"** (com confirmação) — uso direto
+  pela API: `POST /api/revert {"canvas": "<canvas>", "label": "<label>"}`
+  (400 = manifest inválido, nada restaurado; 500 = pipeline falhou,
+  rollback).
 
 ## Solução de problemas
 

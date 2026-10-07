@@ -220,6 +220,9 @@ never in the example copy.
    probably already running — reuse it) and give the user the link:
    `http://localhost:8765/viewer.html?canvas=<canvas>`. Mention that 🎯
    Elemento lets them click any element to comment on it specifically.
+   Snapshots are review material: `Salvar snapshot` freezes a canvas state
+   (`src/` + flat `render/`) for later review, `Comparar` shows any two
+   states side by side or as onion skin, and `Reverter` restores a snapshot.
    Then summarize in one or two sentences what you created.
 6. **Comments.** The `[Design: …]` chat message format below is
 UNCHANGED — persistent pins are an extra channel, never a grammar change.
@@ -243,6 +246,8 @@ API. Never edit `comments.json` by hand. Validate again after any edit.
    and continue. (The bracket is the whole message — em-dash between canvas
    and snapshot, no `› <arquivo>` part.) It means the snapshot was already
    restored (the viewer's "Reverter para este snapshot" button) and the
-   regen pipeline (gen → sync → validate) already ran.
+   regen pipeline (gen → sync → validate) already ran. You may proactively
+   offer to revert to a saved snapshot when one exists, but only revert on
+   explicit user request.
 7. **Variations.** "2 options" means separate screens in the same canvas
    (`Login A`, `Login B`), not separate canvases.

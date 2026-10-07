@@ -90,6 +90,7 @@
     <li><a href="#comecando">Começando (fluxo com o agente)</a></li>
     <li><a href="#visualizador">O visualizador, controle por controle</a></li>
     <li><a href="#revisao">Comentar e iterar (o ciclo de revisão)</a></li>
+    <li><a href="#snapshots">Snapshots e comparação</a></li>
     <li><a href="#fluxo">Modo fluxo (testar o sistema de verdade)</a></li>
     <li><a href="#cenarios">Cenários de dados</a></li>
     <li><a href="#exportar">Exportar: PNG e vídeo</a></li>
@@ -163,6 +164,28 @@
 }</code></pre>
   <p>Schema do pin: <code>{id, canvas, file, selector?, snippet?, rect?, status, replies, createdAt, _demo?}</code> — <code>id</code> gerado pelo servidor (<code>p-&lt;hex&gt;</code>); criação exige <code>canvas</code>+<code>file</code>; atualização é por <code>id</code> (<code>status</code> + <code>replies</code>, que são anexados). O texto do comentário é o primeiro item de <code>replies</code> (o pin não tem campo <code>text</code>); cada reply é <code>{text, createdAt}</code> (a forma legada <code>at</code> ainda é aceita na entrada e normalizada para <code>createdAt</code>). <code>status</code> vale <code>"open" | "resolved" | "stale"</code>. <code>_demo?: boolean</code> é opcional — marca pins de demonstração (fixtures/exemplo) e só é persistido quando declarado explicitamente como <code>true</code>; qualquer outro tipo é recusado pela API (400).</p>
   <p><strong>Regra de staleness — escritores nomeados:</strong> o status <code>stale</code> tem exatamente <strong>dois escritores</strong>: <code>node design/validate.mjs --mark-stale</code> (a única escrita do validador — marca os pins cuja âncora sumiu da tela) e a <strong>API de revert</strong> (<code>POST /api/revert</code>, que marca os pins afetados pela restauração). Tentar escrever <code>stale</code> por qualquer outro caminho é recusado (400 <code>invalid</code>) — inclusive num POST comum de pin. No painel, pins <code>stale</code> aparecem destacados e <strong>não contam</strong> como pendência aberta. Em <code>--share</code> pins, painel e contagem ficam ocultos (ver <a href="#api-local">API local</a>).</p>
+
+  <h2 id="snapshots">Snapshots e comparação</h2>
+  <p>Um <strong>snapshot</strong> congela o estado de um canvas como <strong>material de revisão</strong>: o painel <strong>Snapshots</strong> do visualizador (botão <strong>Salvar snapshot</strong>) grava <code>design/snapshots/&lt;canvas&gt;/&lt;label&gt;/</code> com duas formas do mesmo estado:</p>
+  <ul>
+    <li><code>src/</code> — a <strong>forma-fonte</strong> (o que o agente edita): as telas do canvas byte a byte (marcas de componente intactas), <code>canvas.json</code>, <code>data.json</code>, o <code>tokens.json</code> global e o <code>components/</code> <strong>COMPLETO</strong> (registro + todos os partials).</li>
+    <li><code>render/</code> — a <strong>forma de apresentação</strong>: um HTML <strong>flat e autocontido</strong> por tela (CSS/JS/dados inline, zero <code>../</code>), pronto para abrir em <code>file://</code> e para a comparação A/B.</li>
+  </ul>
+  <p>Cada snapshot tem um <code>manifest.json</code> (inventário de <code>src/</code>+<code>render/</code> + <code>tokensHash</code>) que o revert valida <strong>antes</strong> de tocar em qualquer arquivo.</p>
+
+  <h3>Comparar dois estados</h3>
+  <p>Na mesma lista escolha os lados A e B (um snapshot ou o estado <code>atual</code>) e clique <strong>Comparar</strong>. São <strong>dois modos</strong>:</p>
+  <ul>
+    <li><strong>Lado a lado</strong> (padrão) — duas colunas com scroll sincronizado;</li>
+    <li><strong>Onion skin</strong> — o lado B empilhado sobre o A em overlay, com a intensidade no controle <code>input#opacity</code> (0 = só o A, 1 = só o B).</li>
+  </ul>
+
+  <h3>Reverter para um snapshot</h3>
+  <p>O botão <strong>"Reverter para este snapshot"</strong> (com passo de confirmação) chama <code>POST /api/revert</code> com <code>{canvas, label}</code> e restaura o <code>src/</code> do snapshot em <strong>replace integral</strong> (nunca merge); depois roda <strong>sempre</strong> o pipeline <code>node design/scripts/gen-tokens.mjs</code> → <code>node design/scripts/sync-components.mjs</code> → <code>node design/validate.mjs</code> (exit 0 exigido) e marca como <code>stale</code> os pins cuja âncora sumiu. O visualizador copia então a mensagem de confirmação:</p>
+  <pre><code>[Design-Reset: design/&lt;canvas&gt; — snapshot "&lt;label&gt;" restaurado]</code></pre>
+  <p>Essa mensagem é <strong>apenas confirmação de estado</strong>: o agente não edita nada — reconhece e segue.</p>
+  <p><strong>Limites do restore:</strong> o restore é <strong>replace integral</strong> por artefato de <code>src/</code> — telas, <code>canvas.json</code>, <code>data.json</code>, <code>tokens.json</code> e <code>components/</code> completo substituem integralmente os correspondentes na raiz servida, e arquivos fora de <code>src/</code> sobrevivem intactos. Os globais (<code>tokens.json</code>, <code>components/</code>) voltam exatamente ao estado do snapshot e <strong>afetam os outros canvases</strong>: a unidade é o snapshot do canvas (o <code>src/</code> inteiro), e o restore global de tokens/components é por replace integral.</p>
+  <p><strong>Códigos do revert:</strong> <strong>400</strong> = manifest inválido ou dessincronizado, detectado ANTES do restore — a raiz fica intacta e nada foi restaurado; <strong>500</strong> = o pipeline falhou depois do restore, com rollback completo para o estado anterior; <strong>404</strong> = snapshot inexistente.</p>
 
   <h2 id="fluxo">Modo fluxo (testar o sistema de verdade)</h2>
   <p><strong>Duplo clique</strong> em uma tela abre o modo fluxo: a tela em tamanho real, <strong>interativa</strong> — você loga, navega, cadastra. A barra flutua no topo e <strong>sai da frente sozinha</strong> depois de alguns segundos sem mouse; qualquer movimento sobre a tela traz ela de volta. Na barra:</p>
@@ -260,17 +283,17 @@
     </tr>
     <tr>
       <td><code>POST</code></td><td><code>/api/snapshot</code></td><td><code>{canvas, label}</code></td>
-      <td><code>{ snapshot: {canvas, label, date} }</code> — grava <code>snapshots/&lt;canvas&gt;/&lt;label&gt;/{src, render, manifest.json}</code> (<code>render/</code> provisório = cópia simples das telas; <code>manifest.json</code> = <code>{label, date, inventory}</code>)</td>
+      <td><code>{ snapshot: {canvas, label, date} }</code> — grava <code>snapshots/&lt;canvas&gt;/&lt;label&gt;/{src, render, manifest.json}</code> (<code>src/</code> = forma-fonte: telas do canvas + <code>tokens.json</code> + <code>components/</code> COMPLETO; <code>render/</code> = flat autocontido por tela; <code>manifest.json</code> = <code>{label, date, inventory:{src,render}, tokensHash}</code>)</td>
       <td><strong>200</strong>; <strong>400</strong> (schema); <strong>403</strong> (sem token, Host/Origin, traversal); <strong>404</strong> (canvas inexistente); <strong>409</strong> (label duplicado); <strong>413</strong>; <strong>500</strong> (falha de escrita + rollback do diretório)</td>
     </tr>
     <tr>
       <td><code>POST</code></td><td><code>/api/revert</code></td>
-      <td><code>{canvas?, label?, id?}</code></td>
-      <td>hoje sempre <code>{"error": "not-implemented"}</code> (stub — o pipeline de restore chega no passo 24); antes do stub o manifest do snapshot é validado (schema + inventário contra o disco) <strong>sem tocar a raiz</strong></td>
-      <td><strong>501</strong>; <strong>400</strong> (corpo inválido; manifest inválido/dessincronizado — detectado ANTES de qualquer restore); <strong>403</strong> (sem token, Host/Origin, traversal); <strong>413</strong>; pipeline: <strong>404</strong> (snapshot inexistente), <strong>500</strong> (falha pós-restore + rollback)</td>
+      <td><code>{canvas, label}</code></td>
+      <td><code>{ reverted: {canvas, label}, pipeline: {gen, sync, validate} }</code> — restaura o <code>src/</code> do snapshot em replace integral (unidade = snapshot do canvas, ver <a href="#snapshots">Snapshots e comparação</a>), roda sempre <code>gen-tokens</code> → <code>sync-components</code> → <code>validate</code> e marca <code>stale</code> os pins afetados</td>
+      <td><strong>200</strong>; <strong>400</strong> (corpo inválido; manifest inválido/dessincronizado — detectado ANTES de qualquer restore, raiz intacta); <strong>403</strong> (sem token, Host/Origin, traversal); <strong>404</strong> (snapshot inexistente); <strong>413</strong>; <strong>500</strong> (falha de escrita/pipeline + rollback completo)</td>
     </tr>
   </table>
-  <p>Códigos de erro JSON (taxonomia pinada, corpo <code>{"error": código}</code>): <code>invalid</code> (400), <code>forbidden</code> e <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500), <code>not-implemented</code> (501) — sucesso é <strong>200</strong> com o corpo JSON documentado na tabela. O <code>GET /api/snapshots</code> ignora manifestos inválidos ou dessincronizados na listagem — a validação completa (schema + inventário contra os arquivos em disco) acontece no revert. Com <code>--share</code> o bind vira <code>0.0.0.0</code> (preview em LAN) e <strong>toda rota <code>/api/*</code> responde 403</strong> (leituras incluídas — nada vaza).</p>
+  <p>Códigos de erro JSON (taxonomia pinada, corpo <code>{"error": código}</code>): <code>invalid</code> (400), <code>forbidden</code> e <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500) — sucesso é <strong>200</strong> com o corpo JSON documentado na tabela. O <code>GET /api/snapshots</code> ignora manifestos inválidos ou dessincronizados na listagem — a validação completa (schema + inventário contra os arquivos em disco) acontece no revert. Com <code>--share</code> o bind vira <code>0.0.0.0</code> (preview em LAN) e <strong>toda rota <code>/api/*</code> responde 403</strong> (leituras incluídas — nada vaza).</p>
 
   <p><strong>Changelog (w4)</strong>: o bind padrão do servidor passou a ser <code>127.0.0.1</code> (só a própria máquina) — a API de escrita nunca fica exposta na rede. Para testar no celular ou em outro aparelho da LAN, <code>--share</code> é o caminho de migração: <code>node design/serve.mjs 8766 --share</code> (bind <code>0.0.0.0</code>). Em <code>--share</code> o visualizador entra em <strong>modo leitura com degradação declarada</strong>: além do 403 em toda rota <code>/api/*</code>, ele esconde as ações de escrita e os recursos alimentados por <code>/api</code> (pins nas telas, painel de pendências, responder/resolver) e mostra o banner "modo leitura — comentários e snapshots indisponíveis". O contrato vale para o futuro: as UIs de <strong>snapshots/comparação</strong> (que chegam depois) também precisam ficar ocultas em <code>--share</code> — marcá-las com <code>data-share-hide</code> no HTML já basta, pois o visualizador as esconde via <code>syncShareDegradation()</code>.</p>
 
