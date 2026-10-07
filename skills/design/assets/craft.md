@@ -45,6 +45,17 @@ Never on a canvas screen unless the brand brief explicitly asks:
   premium-consumer briefs.
 - Buttons whose text fails WCAG AA contrast against their own background;
   CTAs that wrap to two lines at desktop width.
+- Literal colors outside `tokens.json`: the sweep checks `<style>` blocks,
+  `style=""` attributes and the VALUE positions of SVG `fill=`/`stroke=`.
+  Remote URLs (`http(s)://`) in screens. Tailwind palette classes like
+  `bg-zinc-900`. Arbitrary values like `text-[13px]`.
+
+**Utilities are the vocabulary.** Token-backed styling (colors, type, spacing,
+radius) goes through the generated utilities matrix (exactly 140 entries:
+`bg-accent`, `p-2`, `text-heading`, `rounded-md`, the `[data-state=…]` hooks).
+Semantic classes carry structure and layout only. `var(--…)` is fine where no
+utility fits, and an inline `<style>` block is fine when a screen needs one,
+but neither may hold a literal color.
 
 **Canvas overrides that win over taste:** the canvas is offline — no remote
 images or CDN, so use inline SVG, CSS patterns/gradients or local assets, and

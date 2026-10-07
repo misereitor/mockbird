@@ -14,12 +14,20 @@ back to you as chat messages with an exact prefix.
 
 ```
 design/
-  design-system.css      design tokens for [data-theme="light"] and [data-theme="dark"]
+  tokens.json            the single source of truth for every design token
+                         (both themes); the only place brand values live
+  design-system.css      GENERATED from tokens.json: design tokens for
+                         [data-theme="light"] and [data-theme="dark"] (never edit)
+  utilities.css          GENERATED from tokens.json: the closed utilities
+                         vocabulary (never edit)
   design-system.md       brand decisions in words (short)
   validate.mjs           the validator (copied once per project — see Setup)
   serve.mjs              tiny static server for the viewer (copied once per project)
   viewer.html            the viewer (copied once per project)
   mock.js                mock runtime for interactive screens (copied once per project)
+  scripts/               copied once per project (see Setup)
+    gen-tokens.mjs       regenerates design-system.css + utilities.css from
+                         tokens.json
   vendor/html-to-image.js  PNG export library (copied once per project)
   index.json             {"canvases": ["login", ...]} so the viewer can list them
   <canvas>/              one folder per canvas, kebab-case (login, dashboard)
@@ -59,6 +67,20 @@ If `design/` does not exist yet, create it and copy from this skill's folder
 - `assets/mock.js` → `design/mock.js`
 - `assets/docs.html` → `design/docs.html` (usage guide, linked from the viewer's 📘 Docs button)
 - `assets/vendor/html-to-image.js` → `design/vendor/html-to-image.js`
+- `scripts/gen-tokens.mjs` → `design/scripts/gen-tokens.mjs`
+
+Rule for this copy list: only files that already exist enter it ("só entra no
+copy list arquivo que já existe"). Files still to come join only at their
+Contracts wave: `sync-components.mjs` enters at Contracts wave 2, `mock.css` at
+wave 3, and `export-tokens.mjs` only at Contracts wave 6. Until then do not
+copy them and do not list them here.
+
+Whenever `tokens.json` changes, regenerate the two generated files from the
+project root:
+
+```
+node design/scripts/gen-tokens.mjs
+```
 
 Create `design/index.json` (`{"canvases": []}`) and add every new canvas name
 to it as you create canvases. A complete, valid example lives in this skill's
@@ -82,9 +104,17 @@ adapt it.
    (it fuses the sibling craft skills — taste, emil-design-eng, impeccable —
    into rules for canvas screens) and apply it to every screen. Then create
    `canvas.json` and the screens. Rules for every screen:
-   - Link the tokens: `<link rel="stylesheet" href="../design-system.css">` and
-     use only `var(--…)` tokens for color, type, spacing and radius — never a
-     hard-coded color.
+   - Styling policy: the utilities vocabulary is the vocabulary. Anything
+     token-backed (colors, type, spacing, radius) goes through the generated
+     utilities: link `<link rel="stylesheet" href="../design-system.css">` and
+     `<link rel="stylesheet" href="../utilities.css">`, then use classes like
+     `bg-accent`, `p-2`, `text-heading`, `rounded-md`. Semantic classes carry
+     structure and layout only. `var(--…)` stays allowed where no utility fits,
+     and an inline `<style>` block is allowed but must hold ZERO literal
+     colors. The ban sweep scans literal colors in `<style>`, `style=""` and
+     the VALUE positions of SVG `fill=`/`stroke=`; it also bans `http(s)://`
+     anywhere in screens, Tailwind palette classes like `bg-zinc-900`, and
+     arbitrary values like `text-[13px]`.
    - Work in both themes through the tokens; the theme arrives as
      `data-theme` on `<html>` (`light` by default — include the attribute).
    - No CDN or remote URL of any kind (the canvas is offline and sandboxed):
@@ -118,7 +148,12 @@ adapt it.
 4. **Validate and fix.** Run from the project root:
    `node design/validate.mjs design/<canvas>`. Fix every issue it lists and run
    again until only the summary line remains. Never present a canvas that has
-   issues.
+   issues. The validator's argument is a design-root (project mode) or a single
+   canvas folder (canvas mode); with no argument it defaults to `./design`.
+   Structural checks cover only the screens listed in `canvas.json`; project
+   mode additionally checks tokens/generated-CSS staleness, components and
+   comments. `--allow-stale` skips ONLY the staleness check; `--mark-stale` is
+   the validator's only write (it marks comment pins whose anchor is gone).
 5. **Show it.** Start the viewer server in the background
    (`node design/serve.mjs`, default port 8765; if the port is busy a server is
    probably already running — reuse it) and give the user the link:

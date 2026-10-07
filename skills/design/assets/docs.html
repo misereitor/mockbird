@@ -95,6 +95,7 @@
     <li><a href="#exportar">Exportar: PNG e vídeo</a></li>
     <li><a href="#interativo">Como as telas ficam interativas</a></li>
     <li><a href="#estrutura">Estrutura de arquivos</a></li>
+    <li><a href="#tokens">Design tokens e utilitários</a></li>
     <li><a href="#problemas">Solução de problemas</a></li>
   </ul>
 
@@ -197,6 +198,22 @@
     data.json            dados fictícios + cenários (opcional)
     01-&lt;tela&gt;.html       um documento HTML completo por tela</code></pre>
   <p><code>canvas.json</code> define a ordem e o tamanho: <code>device</code> é <code>mobile</code> (390×844), <code>tablet</code> (834×1112) ou <code>desktop</code> (1440×900), com <code>width</code>/<code>height</code> opcionais.</p>
+
+  <h2 id="tokens">Design tokens e utilitários</h2>
+  <p>O <code>tokens.json</code> é a <strong>fonte única</strong> de todos os tokens do design system (claro e escuro). A partir dele o gerador escreve dois arquivos gerados, que nunca se edita à mão: <code>design-system.css</code> (as variáveis <code>var(--…)</code>) e <code>utilities.css</code> (o vocabulário fechado de utilitários). Depois de qualquer mudança em <code>tokens.json</code>, regenere os dois:</p>
+  <pre><code>node design/scripts/gen-tokens.mjs</code></pre>
+  <p>A matriz de utilitários tem <strong>140 entradas exatas</strong> (137 classes + 3 helpers <code>[data-state=…]</code>), cobrindo estas famílias:</p>
+  <table>
+    <tr><th>Família</th><th>Exemplos</th></tr>
+    <tr><td>Cores (fundo, texto, borda)</td><td><code>bg-accent</code>, <code>text-muted</code>, <code>border-border</code></td></tr>
+    <tr><td>Espaçamento</td><td><code>p-2</code>, <code>m-0</code>, <code>gap-3</code> e direcionais (<code>px-</code>, <code>mt-</code>, <code>gap-x-</code>…)</td></tr>
+    <tr><td>Tamanho</td><td><code>w-full</code>, <code>h-screen</code>, <code>min-h-0</code>…</td></tr>
+    <tr><td>Raio</td><td><code>rounded-sm</code>, <code>rounded-md</code>, <code>rounded-lg</code></td></tr>
+    <tr><td>Tipografia</td><td><code>font-body</code>, <code>text-heading</code>, <code>leading-body</code>…</td></tr>
+    <tr><td>Sombra</td><td><code>shadow-card</code></td></tr>
+    <tr><td>Estados</td><td>hooks <code>[data-state="hover"]</code>, <code>[data-state="active"]</code>, <code>[data-state="disabled"]</code></td></tr>
+  </table>
+  <div class="dica"><strong>Classes banidas:</strong> paleta do Tailwind (<code>bg-zinc-900</code>) e valores arbitrários (<code>text-[13px]</code>). O vocabulário é fechado e toda cor vem dos tokens.</div>
 
   <h2 id="problemas">Solução de problemas</h2>
   <ul>

@@ -24,7 +24,9 @@ sozinhas para trabalho em código frontend real.
 
 ## Instalação
 
-Dentro da pasta deste pacote:
+Dentro da pasta deste pacote. As duas flags de instalação são `--target
+<agente>` (destino conhecido) e `--dir <pasta>` (qualquer pasta, instalação
+por projeto):
 
 ```bash
 node install.mjs --target opencode   # OpenCode (global: ~/.config/opencode/skill)
@@ -62,12 +64,15 @@ Depois, **reinicie a sessão** do agente para as skills carregarem.
 3. A skill `impeccable` baixa seu engine binário na primeira execução (uma
    vez só, precisa de rede). Se falhar, ela continua sem engine com fallback.
 
+Os comandos que ficam no `design/` do projeto são `node design/validate.mjs`,
+`node design/serve.mjs` e `node design/scripts/gen-tokens.mjs` (instalado).
+
 ## Solução de problemas
 
 - **OpenCode não detectou as skills**: algumas versões leem `skill/` (singular)
   e outras `skills/` (plural). Instale no padrão aberto — `node install.mjs
   --target agents` — que o OpenCode também lê, ou use
-  `node install.mjs --dir <caminho>` apontando para o diretório da sua versão.
+  `node install.mjs --dir <pasta>` apontando para o diretório da sua versão.
 - **Porta 8765 ocupada**: `node design/serve.mjs 8766` e ajuste o link.
 - **Skills não aparecem**: confirme que o agente suporta `SKILL.md` e que a
   pasta escolhida é a que ele lê (`node install.mjs --list` mostra os caminhos).
