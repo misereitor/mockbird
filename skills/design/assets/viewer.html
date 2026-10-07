@@ -184,6 +184,67 @@
   .pin.stale { opacity: .55; filter: grayscale(1); }
   .pin.stale .pin-badge { background: var(--ui-dot); color: var(--ui-muted); text-decoration: line-through; }
   [hidden] { display: none !important; }
+
+  /* -- painel de comentários pendentes (w4-19) -- */
+  #pendingPanel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 340px; z-index: 8;
+    display: flex; flex-direction: column;
+    background: var(--ui-surface); border-left: 1px solid var(--ui-border);
+    box-shadow: -12px 0 32px rgb(15 23 42 / .18);
+  }
+  .pending-top {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 10px 12px; border-bottom: 1px solid var(--ui-border);
+  }
+  .pending-top strong { flex: 1; min-width: 120px; font-size: 14px; }
+  .pending-sweep { display: flex; align-items: center; gap: 4px; }
+  .pending-sweep button { height: 28px; min-height: 28px; padding: 0 10px; font-size: 12px; }
+  .pending-sweep span {
+    min-width: 36px; text-align: center; color: var(--ui-muted); font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  #pendingBody {
+    flex: 1; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 16px;
+  }
+  .pending-section h3 {
+    margin: 0 0 8px; font-size: 12px; color: var(--ui-muted);
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  .pending-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .pending-item {
+    display: flex; flex-direction: column; gap: 6px; padding: 10px 12px;
+    border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-bg);
+  }
+  .pending-item.current { border-color: var(--ui-accent); outline: 2px solid var(--ui-accent); outline-offset: -1px; }
+  .pending-item.resolved { opacity: .7; }
+  .pending-item.stale {
+    border-left: 3px solid var(--ui-danger); background: #fef2f2; opacity: .75; filter: grayscale(1);
+  }
+  body.dark .pending-item.stale { background: #450a0a; }
+  .pending-jump {
+    align-self: flex-start; height: auto; min-height: 0; padding: 4px 8px; text-align: left;
+    border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-surface);
+    font-size: 12px; font-weight: 600;
+  }
+  .pending-jump:hover { border-color: var(--ui-accent); color: var(--ui-accent); }
+  .pending-text { margin: 0; font-size: 13px; }
+  .pending-meta {
+    color: var(--ui-muted); font-size: 11px;
+    font-family: ui-monospace, Consolas, monospace; word-break: break-all;
+  }
+  .pending-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pending-actions button { height: 26px; min-height: 26px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
+  .pending-reply { display: flex; flex-direction: column; gap: 6px; }
+  .pending-reply textarea {
+    min-height: 56px; resize: vertical; padding: 8px; font-size: 13px;
+    border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-surface);
+  }
+  .pending-empty { margin: 0; color: var(--ui-muted); font-size: 13px; }
+  #pendingBtn #pendingBadge {
+    display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 9px;
+    background: var(--ui-accent); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px;
+  }
+  body.dark #pendingBtn #pendingBadge { color: #042f2e; }
 </style>
 <style id="chipCss">
   /* 🧩 inspector chips — cloned into each screen iframe by renderCompChips */
@@ -236,6 +297,7 @@
     <button id="chipBtn" title="Mostrar chips de id/variante sobre cada componente (inspetor)">🧩 Componentes</button>
     <button id="commentBtn" disabled>💬 Comentar esta tela</button>
     <button id="copyAllBtn" title="Ver/copiar todos os comentários de elemento">⧉ Comentários (0)</button>
+    <button id="pendingBtn" title="Abrir o painel de comentários pendentes (todos os canvases)">💬 Pendentes <span id="pendingBadge">0</span></button>
     <button id="exportBtn" disabled>⬇ PNG da tela</button>
     <button id="exportAllBtn">⬇ PNG do canvas</button>
   </div>
@@ -318,6 +380,18 @@
   </div>
 </div>
 
+<div id="replyDialog" class="overlay" hidden>
+  <form class="box" id="replyForm">
+    <h2>Responder comentário</h2>
+    <p class="hint" id="replyHint"></p>
+    <textarea id="replyText" placeholder="Ex.: ajustado no commit anterior — confira o espaçamento" required></textarea>
+    <div class="row">
+      <button type="button" data-close>Cancelar</button>
+      <button type="submit" class="primary">Enviar resposta</button>
+    </div>
+  </form>
+</div>
+
 <div id="preview" class="overlay" hidden>
   <div class="box">
     <h2>PNG exportado</h2>
@@ -330,6 +404,20 @@
 </div>
 
 <div id="toast"></div>
+
+<aside id="pendingPanel" hidden>
+  <div class="pending-top">
+    <strong>Comentários pendentes</strong>
+    <div class="pending-sweep">
+      <button id="sweepPrev" type="button" title="Pendente anterior (sweep)">◀</button>
+      <span id="sweepPos">0/0</span>
+      <button id="sweepNext" type="button" title="Próxima pendente (sweep)">▶</button>
+      <button id="sweepResolve" type="button" class="primary" title="Marcar a pendente atual como resolvida">Resolver</button>
+    </div>
+    <button id="pendingClose" type="button" title="Fechar painel">×</button>
+  </div>
+  <div id="pendingBody"></div>
+</aside>
 
 <script>
 'use strict'
@@ -355,6 +443,7 @@ const state = {
   inspect: false, comments: [],
   chips: false,
   scenario: '', problems: [],
+  allComments: [], sweepIndex: -1,
 }
 
 /* --------------------------------------------- per-canvas preferences */
@@ -593,6 +682,8 @@ async function loadComments() {
   } catch {
     showCommentsAlert('comments.json indisponível — pins persistentes desativados')
     state.comments = []
+    state.allComments = []
+    renderPendingPanel()
     return
   }
   if (!response.ok) {
@@ -601,6 +692,8 @@ async function loadComments() {
       : `GET /api/comments ${response.status}`
     showCommentsAlert(`${reason} — pins persistentes desativados até corrigir`)
     state.comments = []
+    state.allComments = []
+    renderPendingPanel()
     return
   }
   let payload
@@ -609,15 +702,21 @@ async function loadComments() {
   } catch {
     showCommentsAlert('comments.json inválido (resposta não é JSON) — pins persistentes desativados')
     state.comments = []
+    state.allComments = []
+    renderPendingPanel()
     return
   }
   if (!payload || !Array.isArray(payload.comments)) {
     showCommentsAlert('comments.json inválido (formato inesperado) — pins persistentes desativados')
     state.comments = []
+    state.allComments = []
+    renderPendingPanel()
     return
   }
   clearCommentsAlert()
   state.comments = payload.comments.filter((pin) => pin && pin.canvas === state.canvas)
+  state.allComments = payload.comments.filter((pin) => pin && typeof pin === 'object')
+  renderPendingPanel()
 }
 
 /** POST /api/comments — creates/updates a pin (status open|resolved only; stale
@@ -635,14 +734,224 @@ async function persistPin(body) {
     if (!payload || !Array.isArray(payload.comments)) throw new Error('resposta inesperada')
     clearCommentsAlert()
     state.comments = payload.comments.filter((pin) => pin && pin.canvas === state.canvas)
+    state.allComments = payload.comments.filter((pin) => pin && typeof pin === 'object')
     renderAllPins()
     updateCopyAll()
+    renderPendingPanel()
     return true
   } catch (error) {
     toast(`Não consegui salvar o pin (${error?.message ?? error}) — a mensagem segue para o chat`)
     return false
   }
 }
+
+/* ------------------------------------------ pending comments panel (w4-19) */
+
+/** Pending = status "open" across ALL canvases (stale/resolved excluded). */
+function pendingPins(comments) {
+  return (Array.isArray(comments) ? comments : []).filter((pin) => pin && pin.status === 'open')
+}
+
+/** Toolbar badge count: ONLY open pins — stale never counts as pendente aberta. */
+function openPinCount(comments) {
+  return pendingPins(comments).length
+}
+
+/** Stale pins stay visible (highlighted/greyed) but out of the open count. */
+function stalePins(comments) {
+  return (Array.isArray(comments) ? comments : []).filter((pin) => pin && pin.status === 'stale')
+}
+
+/** Sweep index stepping: clamped to the pending list (-1 = no selection). */
+function sweepStep(list, index, delta) {
+  const len = (Array.isArray(list) ? list : []).length
+  if (len === 0) return -1
+  const next = Math.max(0, Math.min(len - 1, index + delta))
+  return next
+}
+
+/** Jump to a pin's screen: switch canvas first when it lives elsewhere. */
+function jumpToPin(pin) {
+  if (!pin || !pin.canvas || !pin.file) return
+  const file = String(pin.file).split('?')[0]
+  if (pin.canvas !== state.canvas) {
+    location.search = `?canvas=${encodeURIComponent(pin.canvas)}&screen=${encodeURIComponent(file)}`
+    return
+  }
+  const screen = state.screens.find((s) => String(s.file).split('?')[0] === file) ?? null
+  if (screen) centerOnScreen(screen.id)
+}
+
+/** Select a screen and center the pan/zoom viewport on its card. */
+function centerOnScreen(screenId) {
+  select(screenId)
+  const card = $('strip').querySelector(`.card[data-id="${CSS.escape(screenId)}"]`)
+  if (!card) return
+  const rect = $('viewport').getBoundingClientRect()
+  state.x = rect.width / 2 - (card.offsetLeft + card.offsetWidth / 2) * state.zoom
+  state.y = rect.height / 2 - (card.offsetTop + card.offsetHeight / 2) * state.zoom
+  applyView()
+}
+
+function pendingLabel(pin) {
+  const file = String(pin?.file ?? '').split('?')[0]
+  const replies = Array.isArray(pin?.replies) ? pin.replies : []
+  return `${pin?.canvas ?? '?'} › ${file} — ${replies[0]?.text ?? '(sem texto)'}`
+}
+
+/** One entry: link to the screen + Resolver/Reabrir/Responder actions. */
+function pendingEntry(pin) {
+  const item = document.createElement('li')
+  item.className = 'pending-item'
+  if (pin.status === 'stale') item.classList.add('stale')
+  else if (pin.status === 'resolved') item.classList.add('resolved')
+
+  const jump = document.createElement('button')
+  jump.type = 'button'
+  jump.className = 'pending-jump'
+  jump.textContent = pendingLabel(pin)
+  jump.title = 'Ir para a tela deste comentário'
+  jump.addEventListener('click', () => jumpToPin(pin))
+
+  const meta = document.createElement('div')
+  meta.className = 'pending-meta'
+  const replies = Array.isArray(pin.replies) ? pin.replies : []
+  meta.textContent = `status: ${pin.status}${replies.length > 1 ? ` · ${replies.length} mensagens` : ''}`
+
+  const actions = document.createElement('div')
+  actions.className = 'pending-actions'
+
+  const resolve = document.createElement('button')
+  resolve.type = 'button'
+  resolve.textContent = 'Resolver'
+  resolve.title = 'Marcar como resolvido'
+  resolve.addEventListener('click', () => persistPin({ id: pin.id, status: 'resolved' }))
+
+  const reopen = document.createElement('button')
+  reopen.type = 'button'
+  reopen.textContent = 'Reabrir'
+  reopen.title = 'Voltar o comentário para aberto'
+  reopen.addEventListener('click', () => persistPin({ id: pin.id, status: 'open' }))
+
+  const reply = document.createElement('button')
+  reply.type = 'button'
+  reply.textContent = 'Responder'
+  reply.title = 'Acrescentar uma resposta com data/hora'
+  reply.addEventListener('click', () => openReplyDialog(pin))
+
+  actions.append(resolve, reopen, reply)
+  item.append(jump, meta, actions)
+  return item
+}
+
+/* -- Responder: append {text, createdAt} via POST /api/comments -- */
+
+let replyTarget = null
+
+function openReplyDialog(pin) {
+  replyTarget = pin
+  $('replyHint').textContent = pendingLabel(pin)
+  $('replyText').value = ''
+  $('replyDialog').hidden = false
+  $('replyText').focus()
+}
+
+$('replyForm').addEventListener('submit', async (event) => {
+  event.preventDefault()
+  const text = $('replyText').value.trim()
+  if (!replyTarget || !text) return
+  $('replyDialog').hidden = true
+  await persistPin({
+    id: replyTarget.id,
+    replies: [{ text, createdAt: new Date().toISOString() }],
+  })
+})
+
+/** Panel body: pending list + sweep bar position + stale section + empty state. */
+function renderPendingPanel() {
+  const body = $('pendingBody')
+  if (!body) return
+  const all = Array.isArray(state.allComments) ? state.allComments : []
+  const open = pendingPins(all)
+  const stale = stalePins(all)
+  updatePendingBadge(openPinCount(all))
+  if (state.sweepIndex > open.length - 1) state.sweepIndex = open.length - 1
+  $('sweepPos').textContent = open.length === 0 ? '0/0' : `${state.sweepIndex + 1}/${open.length}`
+  body.innerHTML = ''
+
+  const section = document.createElement('section')
+  section.className = 'pending-section'
+  const heading = document.createElement('h3')
+  heading.textContent = `Pendentes abertas (${open.length})`
+  section.appendChild(heading)
+  if (open.length === 0) {
+    const empty = document.createElement('p')
+    empty.className = 'pending-empty'
+    empty.textContent = 'Nenhum comentário pendente — tudo em dia.'
+    section.appendChild(empty)
+  } else {
+    const list = document.createElement('ul')
+    list.className = 'pending-list'
+    open.forEach((pin, index) => {
+      const entry = pendingEntry(pin)
+      if (index === state.sweepIndex) entry.classList.add('current')
+      list.appendChild(entry)
+    })
+    section.appendChild(list)
+  }
+  body.appendChild(section)
+
+  if (stale.length > 0) {
+    const staleSection = document.createElement('section')
+    staleSection.className = 'pending-section'
+    const staleHeading = document.createElement('h3')
+    staleHeading.textContent = `Stale — âncora perdida (${stale.length})`
+    staleSection.appendChild(staleHeading)
+    const hint = document.createElement('p')
+    hint.className = 'pending-empty'
+    hint.textContent = 'Não contam como pendentes abertas (validate.mjs --mark-stale).'
+    staleSection.appendChild(hint)
+    const list = document.createElement('ul')
+    list.className = 'pending-list'
+    for (const pin of stale) list.appendChild(pendingEntry(pin))
+    staleSection.appendChild(list)
+    body.appendChild(staleSection)
+  }
+}
+
+/** Live toolbar badge with the open-pin count. */
+function updatePendingBadge(count) {
+  $('pendingBadge').textContent = String(count)
+  $('pendingBtn').title = `Abrir o painel de comentários pendentes (${count} aberto(s) em todos os canvases)`
+}
+
+$('pendingBtn').addEventListener('click', () => {
+  const panel = $('pendingPanel')
+  panel.hidden = !panel.hidden
+  if (!panel.hidden) renderPendingPanel()
+})
+
+$('pendingClose').addEventListener('click', () => {
+  $('pendingPanel').hidden = true
+})
+
+/** Sweep mode: step through pending entries and resolve as you go. */
+function sweepMove(delta) {
+  const open = pendingPins(Array.isArray(state.allComments) ? state.allComments : [])
+  state.sweepIndex = sweepStep(open, state.sweepIndex, delta)
+  renderPendingPanel()
+  const pin = open[state.sweepIndex]
+  if (pin) jumpToPin(pin)
+}
+
+$('sweepPrev').addEventListener('click', () => sweepMove(-1))
+$('sweepNext').addEventListener('click', () => sweepMove(1))
+$('sweepResolve').addEventListener('click', () => {
+  const open = pendingPins(Array.isArray(state.allComments) ? state.allComments : [])
+  const pin = open[state.sweepIndex]
+  if (!pin) return
+  persistPin({ id: pin.id, status: 'resolved' })
+})
 
 /* ----------------------------------------------------------------- strip */
 
@@ -1665,6 +1974,12 @@ async function boot() {
   applyTheme()
   await loadCanvas()
   updateCopyAll()
+  // w4-19: cross-canvas jump from the pending panel lands on the target screen
+  const screenParam = params.get('screen') ?? ''
+  if (screenParam) {
+    const target = state.screens.find((s) => String(s.file).split('?')[0] === screenParam) ?? null
+    if (target) centerOnScreen(target.id)
+  }
   fitSoon()
 }
 
