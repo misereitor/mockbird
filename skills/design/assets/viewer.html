@@ -325,6 +325,11 @@
 <script>
 'use strict'
 
+// Token do servidor local (serve.mjs). O serve.mjs substitui este valor em
+// memória no ato de servir (X-Design-Token para as rotas /api/*); o arquivo
+// em disco mantém sempre `window.__DESIGN_TOKEN__ = null`.
+window.__DESIGN_TOKEN__ = null
+
 const DEVICES = { mobile: [390, 844], tablet: [834, 1112], desktop: [1440, 900] }
 const DEVICE_LABEL = { mobile: 'celular', tablet: 'tablet', desktop: 'desktop' }
 const MIN_SIZE = 100
