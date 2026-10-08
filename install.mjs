@@ -164,9 +164,13 @@ console.log(`
 Pronto. Proximos passos:
 
 1. Reinicie a sessao do seu agente para que as skills aparecam.
-2. A skill design roda o validador e o visualizador com Node 18+
-   (node design/validate.mjs, node design/serve.mjs) e regenera o CSS dos
-   tokens com node design/scripts/gen-tokens.mjs (instalado).
+2. A skill design roda o validador e o visualizador com Node 18+:
+   node design/validate.mjs, node design/serve.mjs [porta] [--share]
+   (bind 127.0.0.1 por padrao; a raiz servida e ./design relativa ao cwd;
+   --share = LAN somente-leitura com degradacao declarada),
+   node design/scripts/gen-tokens.mjs (regenera o CSS dos tokens),
+   node design/scripts/sync-components.mjs (rematerializa componentes) e
+   node design/scripts/export-tokens.mjs (exporta tokens.w3c.json) (instalado).
 3. A skill impeccable baixa seu engine binario na primeira execucao
    (uma vez so, precisa de rede; se falhar, ela tem fallback sem engine).
 4. Teste: peca "uma landing page para o app X" ou digite /design, /taste,

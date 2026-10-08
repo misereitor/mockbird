@@ -1,0 +1,33 @@
+{
+  "files": [
+    "comments.json",
+    "components/button.html",
+    "components/card.html",
+    "components/components.json",
+    "dashboard/01-overview.html",
+    "dashboard/canvas.json",
+    "dashboard/data.json",
+    "design-system.css",
+    "inventory.json",
+    "login/01-login.html",
+    "login/02-cadastro.html",
+    "login/03-modal.html",
+    "login/canvas.json",
+    "login/data.json",
+    "snapshots/login/v1/manifest.json",
+    "snapshots/login/v1/render/01-login.html",
+    "snapshots/login/v1/render/02-cadastro.html",
+    "snapshots/login/v1/render/03-modal.html",
+    "snapshots/login/v1/src/01-login.html",
+    "snapshots/login/v1/src/02-cadastro.html",
+    "snapshots/login/v1/src/03-modal.html",
+    "snapshots/login/v1/src/canvas.json",
+    "snapshots/login/v1/src/components/button.html",
+    "snapshots/login/v1/src/components/card.html",
+    "snapshots/login/v1/src/components/components.json",
+    "snapshots/login/v1/src/data.json",
+    "snapshots/login/v1/src/tokens.json",
+    "tokens.json",
+    "utilities.css"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Login",
+  "screens": [
+    { "id": "login", "name": "Login", "file": "01-login.html", "device": "mobile" },
+    { "id": "cadastro", "name": "Cadastro", "file": "02-cadastro.html", "device": "mobile" },
+    { "id": "excluir", "name": "Excluir conta", "file": "03-modal.html", "device": "mobile" }
+  ]
+}

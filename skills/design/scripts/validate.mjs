@@ -5,12 +5,24 @@
  * `internal:` line.
  *
  * Usage: node design/validate.mjs [target] [--allow-stale] [--mark-stale]
+ *          [--example-inventory]
  *   target = design-root (no canvas.json at its root -> project mode)
  *          | canvas (has canvas.json -> canvas mode)
  *   no target = ./design relative to cwd
  *   --allow-stale  skip ONLY the staleness check
  *   --mark-stale   the validator's ONLY write: rewrite comments.json marking
  *                  open pins whose anchor no longer resolves as "stale", exit 0
+ *   --example-inventory  todo 30 example contract - a MODE of its own (like
+ *                  --mark-stale, it replaces the normal run): compare the
+ *                  target's EXACT file list against inventory.json (bidirectional;
+ *                  snapshot files under snapshots/ ARE listed and checked;
+ *                  tokens.w3c.json is name-exempt on the extra side) and demand
+ *                  "_demo": true on every comments.json pin. No inventory.json
+ *                  in the design-root = the flag does nothing (skip, exit 0).
+ *                  Codes: inventory-missing (listed, absent on disk),
+ *                  inventory-extra (on disk, not listed), inventory-demo-missing
+ *                  (pin without the demo marker), inventory-invalid (malformed
+ *                  inventory.json / comments.json).
  *
  * Modes (pinned):
  *   canvas  = screen checks (bans + structural + unknown-transition) on the
@@ -73,10 +85,12 @@ const DATA_ATTR_RE =
 // ---------------------------------------------------------------------------
 // CLI contract
 // ---------------------------------------------------------------------------
-const usage = 'usage: node design/validate.mjs [target] [--allow-stale] [--mark-stale]'
+const usage =
+  'usage: node design/validate.mjs [target] [--allow-stale] [--mark-stale] [--example-inventory]'
 const argv = process.argv.slice(2)
 const flags = argv.filter((a) => a.startsWith('--'))
-const unknownFlags = flags.filter((f) => f !== '--allow-stale' && f !== '--mark-stale')
+const KNOWN_FLAGS = new Set(['--allow-stale', '--mark-stale', '--example-inventory'])
+const unknownFlags = flags.filter((f) => !KNOWN_FLAGS.has(f))
 if (unknownFlags.length > 0) {
   console.error(`unknown flag "${unknownFlags[0]}" — ${usage}`)
   process.exit(2)
@@ -88,8 +102,8 @@ if (positional.length > 1) {
 }
 const allowStale = flags.includes('--allow-stale')
 const markStale = flags.includes('--mark-stale')
+const exampleInventory = flags.includes('--example-inventory')
 const arg = positional[0] ?? './design'
-// Extension point (todo 30): --example-inventory flag (no inventory.json = skip, exit 0).
 
 const problems = []
 const fail = (code, message) => problems.push(`- ${code}: ${message}`)
@@ -116,6 +130,8 @@ try {
       fail('not-found', `${canvasArg} is not a folder`)
     } else if (markStale) {
       markStalePins(canvasDir)
+    } else if (exampleInventory) {
+      checkExampleInventory(canvasDir) // todo 30: mode of its own (skip, exit 0)
     } else if (pathExists(join(canvasDir, 'canvas.json'))) {
       runCanvasMode(canvasDir, canvasArg)
     } else {
@@ -803,6 +819,125 @@ function validatePinShape(pin, index) {
     if (pin[key] !== undefined && typeof pin[key] !== 'string') {
       fail('invalid-shape', `${where} (${pin.id ?? '?'}): "${key}" must be a string`)
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// --example-inventory (todo 30): the example contract, assertable. A MODE of
+// its own (like --mark-stale: it replaces the normal run). Without
+// inventory.json in the design-root the flag does nothing (skip, exit 0).
+// With inventory.json the file list is compared BIDIRECTIONALLY (missing ->
+// inventory-missing, extra -> inventory-extra) - snapshot files under
+// snapshots/ ARE listed and checked (they are exempt only from the bans
+// walker) and tokens.w3c.json is name-exempt on the EXTRA side (derived
+// export, todo 26). Every comments.json pin must carry "_demo": true
+// (inventory-demo-missing). inventory-invalid = malformed inventory.json or
+// comments.json.
+// ---------------------------------------------------------------------------
+function checkExampleInventory(rootDir) {
+  const invPath = join(rootDir, 'inventory.json')
+  if (!pathExists(invPath)) {
+    console.log('example-inventory: no inventory.json — skipped.')
+    return // the flag does nothing without the pinned inventory (todo 30)
+  }
+  let raw = null
+  try {
+    raw = readFileSync(invPath, 'utf8')
+  } catch {
+    return fail('inventory-invalid', 'inventory.json: unreadable')
+  }
+  let parsed = null
+  try {
+    parsed = JSON.parse(raw)
+  } catch (error) {
+    return fail('inventory-invalid', `inventory.json: ${jsonErrorWhere(error, raw)}${String(error.message)}`)
+  }
+  const list = Array.isArray(parsed)
+    ? parsed
+    : isPlainObject(parsed) && Array.isArray(parsed.files)
+      ? parsed.files
+      : null
+  if (list === null) {
+    return fail('inventory-invalid', 'inventory.json: the root must be {"files": [...]} (or a list of paths)')
+  }
+  const listed = new Set()
+  for (const [index, entry] of list.entries()) {
+    if (typeof entry !== 'string' || entry.length === 0) {
+      fail('inventory-invalid', `inventory.json: entry #${index + 1} must be a non-empty string`)
+      continue
+    }
+    const rel = entry.replaceAll('\\', '/')
+    if (
+      rel.startsWith('/') ||
+      rel.split('/').includes('..') ||
+      /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(rel)
+    ) {
+      fail('inventory-invalid', `inventory.json: entry "${entry}" escapes the root`)
+      continue
+    }
+    listed.add(rel)
+  }
+  const disk = new Set()
+  walkInventory(rootDir, rootDir, disk)
+  for (const rel of listed) {
+    if (!disk.has(rel)) {
+      fail('inventory-missing', `${rel}: listed in inventory.json but missing on disk`)
+    }
+  }
+  for (const rel of [...disk].sort()) {
+    if (listed.has(rel)) continue
+    if (basename(rel) === 'tokens.w3c.json') continue // derived export - name-exempt (todo 26/30)
+    fail('inventory-extra', `${rel}: on disk but not listed in inventory.json`)
+  }
+  checkDemoMarkers(rootDir)
+  if (problems.length === 0) {
+    console.log(`example-inventory: ${listed.size} listed / ${disk.size} on disk — OK.`)
+  }
+}
+
+/** Full recursive file list (rel paths, `/`-separated). Unlike the bans walker
+ * this covers EVERY file - snapshots/ included (todo 30). */
+function walkInventory(rootDir, dir, out) {
+  let entries
+  try {
+    entries = readdirSync(dir, { withFileTypes: true })
+  } catch {
+    return
+  }
+  entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+  for (const entry of entries) {
+    const full = join(dir, entry.name)
+    if (entry.isDirectory()) {
+      walkInventory(rootDir, full, out)
+      continue
+    }
+    if (!entry.isFile()) continue
+    out.add(relLabel(rootDir, full))
+  }
+}
+
+/** Demo markers (todo 30): every pin of comments.json must carry "_demo": true. */
+function checkDemoMarkers(rootDir) {
+  let raw = null
+  try {
+    raw = readFileSync(join(rootDir, 'comments.json'), 'utf8')
+  } catch {
+    return // absence policy: no pins, nothing to mark
+  }
+  let parsed = null
+  try {
+    parsed = JSON.parse(raw)
+  } catch (error) {
+    return fail('inventory-invalid', `comments.json: ${jsonErrorWhere(error, raw)}${String(error.message)}`)
+  }
+  const list = commentsList(parsed)
+  if (list === null) {
+    return fail('inventory-invalid', 'comments.json: the root must be a list of pin objects')
+  }
+  for (const [index, pin] of list.entries()) {
+    if (isPlainObject(pin) && pin._demo === true) continue
+    const id = isPlainObject(pin) && typeof pin.id === 'string' && pin.id ? ` (${pin.id})` : ''
+    fail('inventory-demo-missing', `comments.json: pin #${index + 1}${id} lacks "_demo": true`)
   }
 }
 

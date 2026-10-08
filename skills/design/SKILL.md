@@ -87,12 +87,15 @@ If `design/` does not exist yet, create it and copy from this skill's folder
 - `scripts/sync-components.mjs` → `design/scripts/sync-components.mjs`
 - `scripts/marker-parser.mjs` → `design/scripts/marker-parser.mjs` (the shared
   parser module sync imports, required at runtime)
+- `scripts/export-tokens.mjs` → `design/scripts/export-tokens.mjs` (the W3C/DTCG
+  interchange export: tokens.json → tokens.w3c.json; derived artifact, never
+  edited by hand)
 
 Rule for this copy list: only files that already exist enter it ("só entra no
 copy list arquivo que já existe"). Files still to come join only at their
-Contracts wave: `export-tokens.mjs` only at Contracts wave 6 — until then do
-not copy it and do not list it here. (`mock.css` joined at wave 3 and is listed
-above.)
+Contracts wave: `export-tokens.mjs` joined at Contracts wave 6 (todo 30) and is
+listed above — the rule is satisfied (the file exists since todo 26).
+(`mock.css` joined at wave 3 and is listed above.)
 
 Whenever `tokens.json` changes, regenerate the two generated files from the
 project root:
@@ -214,7 +217,9 @@ never in the example copy.
    `component-variant`, `component-marker`, `component-divergence` and
    `slot-marker`. `--allow-stale` skips ONLY the staleness check;
    `--mark-stale` is the validator's only write (it marks comment pins whose
-   anchor is gone).
+   anchor is gone); `--example-inventory` is the example contract check (exact
+   file list of `inventory.json` + `"_demo": true` on every pin; no
+   `inventory.json` = skip, exit 0).
 4b. **Impeccable audit.** After validating, run the sibling `impeccable`
    skill's technical audit on the canvas (installed layout, win32):
    `<skill-impeccable>/scripts/impeccable.cmd audit design/<canvas>` - the

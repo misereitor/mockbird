@@ -1,0 +1,59 @@
+{
+  "label": "v1",
+  "date": "2026-10-08T11:15:37.150Z",
+  "inventory": {
+    "src": [
+      {
+        "file": "src/01-login.html",
+        "size": 3427
+      },
+      {
+        "file": "src/02-cadastro.html",
+        "size": 3651
+      },
+      {
+        "file": "src/03-modal.html",
+        "size": 2607
+      },
+      {
+        "file": "src/canvas.json",
+        "size": 316
+      },
+      {
+        "file": "src/components/button.html",
+        "size": 218
+      },
+      {
+        "file": "src/components/card.html",
+        "size": 250
+      },
+      {
+        "file": "src/components/components.json",
+        "size": 489
+      },
+      {
+        "file": "src/data.json",
+        "size": 109
+      },
+      {
+        "file": "src/tokens.json",
+        "size": 5050
+      }
+    ],
+    "render": [
+      {
+        "file": "render/01-login.html",
+        "size": 32442
+      },
+      {
+        "file": "render/02-cadastro.html",
+        "size": 32666
+      },
+      {
+        "file": "render/03-modal.html",
+        "size": 31622
+      }
+    ]
+  },
+  "tokensHash": "7b8944815fb6477e9ca3201b1e54d7e3ded6f5f989ac562d195fe435046388f3"
+}

@@ -28,8 +28,13 @@ Extensões próprias além da spec:
   ciclo de revisão, API do mock, solução de problemas), servido junto com o
   viewer (`http://localhost:8765/docs.html`) e linkado no botão 📘 Docs da barra.
 
-`assets/example/` traz o exemplo completo e válido (design system + canvas
-`login` com 2 telas mobile) exigido pela verificação da spec.
+`assets/example/` traz o exemplo completo e válido exigido pela verificação da
+spec: design system + dois canvases (`login` com login/cadastro/overlay e
+`dashboard` com overview interativo), `comments.json` com pins de demonstração
+(`"_demo": true` em todos), o snapshot `snapshots/login/v1` (`src/` com
+`components/` completo + `render/` flat) e `inventory.json` (a lista exata de
+arquivos — conferível com `node design/validate.mjs <example> --example-inventory`;
+`tokens.w3c.json` é derivado e isento por nome).
 
 `assets/craft.md` é a camada de craft que funde na `design` as três skills de
 qualidade instaladas ao lado (`taste`, `emil-design-eng`, `impeccable`):
@@ -37,3 +42,23 @@ design read + dials da taste, bans anti-slop, regras de motion do Emil e o
 loop de verificação do impeccable — adaptadas ao canvas (offline, dois temas
 via tokens). As três seguem instaladas como skills independentes para trabalho
 em código frontend real.
+
+## Comandos (instalado)
+
+Todos os comandos rodam com Node 18+, sem dependências:
+
+- `node design/validate.mjs` — o validador (design-root = modo projeto, canvas =
+  modo tela); flags `--allow-stale`, `--mark-stale` e `--example-inventory`.
+- `node design/serve.mjs [porta] [--share]` — servidor local do viewer: bind
+  `127.0.0.1` por padrão, raiz servida `./design` relativa ao cwd (a mesma raiz
+  do pipeline); `--share` = preview em LAN somente-leitura com degradação
+  declarada (toda rota `/api/*` responde 403).
+- `node design/scripts/gen-tokens.mjs` — regenera `design-system.css` +
+  `utilities.css` a partir de `tokens.json`.
+- `node design/scripts/sync-components.mjs` — rematerializa as regiões de
+  marcador de componente a partir dos partials (`--check` = dry-run).
+- `node design/scripts/export-tokens.mjs` — exporta `tokens.w3c.json` (DTCG
+  puro, artefato derivado para intercâmbio; nunca editar à mão).
+
+Instalação do pack: `node install.mjs --target <agente>` (destino conhecido) ou
+`node install.mjs --dir <pasta>` (qualquer pasta, instalação por projeto).

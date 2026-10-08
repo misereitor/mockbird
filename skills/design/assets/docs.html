@@ -301,6 +301,8 @@
   <h2 id="tokens">Design tokens e utilitários</h2>
   <p>O <code>tokens.json</code> é a <strong>fonte única</strong> de todos os tokens do design system (claro e escuro). A partir dele o gerador escreve dois arquivos gerados, que nunca se edita à mão: <code>design-system.css</code> (as variáveis <code>var(--…)</code>) e <code>utilities.css</code> (o vocabulário fechado de utilitários). Depois de qualquer mudança em <code>tokens.json</code>, regenere os dois:</p>
   <pre><code>node design/scripts/gen-tokens.mjs</code></pre>
+  <p>Para intercâmbio com outras ferramentas existe o export W3C/DTCG puro — só grupos, <code>$type</code> e <code>$value</code>, sem as extensões do pack. O resultado é <code>tokens.w3c.json</code>, um artefato derivado (nunca se edita à mão; regenere quando precisar):</p>
+  <pre><code>node design/scripts/export-tokens.mjs</code></pre>
   <p>A matriz de utilitários tem <strong>140 entradas exatas</strong> (137 classes + 3 helpers <code>[data-state=…]</code>), cobrindo estas famílias:</p>
   <table>
     <tr><th>Família</th><th>Exemplos</th></tr>

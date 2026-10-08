@@ -65,14 +65,17 @@ Depois, **reinicie a sessão** do agente para as skills carregarem.
    vez só, precisa de rede). Se falhar, ela continua sem engine com fallback.
 
 Os comandos que ficam no `design/` do projeto são `node design/validate.mjs`,
-`node design/serve.mjs`, `node design/scripts/gen-tokens.mjs` e `node
-design/scripts/sync-components.mjs` (instalado).
+`node design/serve.mjs [porta] [--share]`, `node design/scripts/gen-tokens.mjs`,
+`node design/scripts/sync-components.mjs` e `node
+design/scripts/export-tokens.mjs` (instalado).
 
 ## Changelog
 
-- **Bind padrão `127.0.0.1`** (mudança de comportamento): `node design/serve.mjs`
-  só atende a própria máquina — a API de escrita (`/api/*`) nunca fica exposta
-  na rede.
+- **Bind padrão `127.0.0.1` + raiz servida `./design`** (mudanças de
+  comportamento): `node design/serve.mjs` só atende a própria máquina — a API de
+  escrita (`/api/*`) nunca fica exposta na rede — e serve `./design` relativa ao
+  cwd (a mesma raiz que o pipeline gen/sync/validate usa), nunca a pasta do
+  próprio script.
 - **`--share` — caminho de migração para teste em celular/LAN**:
   `node design/serve.mjs 8766 --share` faz bind em `0.0.0.0` para abrir
   `http://<ip-da-máquina>:8766/viewer.html?canvas=…` no celular. É
