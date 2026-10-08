@@ -215,6 +215,14 @@ never in the example copy.
    `slot-marker`. `--allow-stale` skips ONLY the staleness check;
    `--mark-stale` is the validator's only write (it marks comment pins whose
    anchor is gone).
+4b. **Impeccable audit.** After validating, run the sibling `impeccable`
+   skill's technical audit on the canvas (installed layout, win32):
+   `<skill-impeccable>/scripts/impeccable.cmd audit design/<canvas>` - the
+   path is resolved from the installed skill dir (`scripts/impeccable` on
+   other platforms). If the engine is absent or the run fails, follow the
+   `impeccable` skill's `reference/degraded/` guidance and note the
+   degradation in the delivery output - the workflow never stalls or throws
+   on the engine, and the validated canvas is delivered the same.
 5. **Show it.** Start the viewer server in the background
    (`node design/serve.mjs`, default port 8765; if the port is busy a server is
    probably already running — reuse it) and give the user the link:

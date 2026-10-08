@@ -99,6 +99,7 @@
     <li><a href="#api-local">API local</a></li>
     <li><a href="#tokens">Design tokens e utilitários</a></li>
     <li><a href="#componentes">Componentes</a></li>
+    <li><a href="#regressao">Regressão</a></li>
     <li><a href="#problemas">Solução de problemas</a></li>
   </ul>
 
@@ -332,6 +333,19 @@
     <li>Valide antes de apresentar: <code>node design/validate.mjs design/&lt;canvas&gt;</code>.</li>
   </ol>
   <div class="dica"><strong>Fonte única:</strong> no pacote, <code>example/components/</code> é cópia byte-idêntica de <code>assets/components/</code>. Os partials se editam só na fonte única; a cópia do exemplo é referência, nunca alvo de edição.</div>
+
+  <h2 id="regressao">Regressão <span class="tag">checklist</span></h2>
+  <p>Checklist executável de regressão do design pack - o mesmo que o agente roda depois de mudanças no runtime, no viewer ou na instalação. Cada item tem nome e id estável (<code>data-check</code>) e traz o assert exato; os itens marcados <strong>(navegador)</strong> exigem o visualizador aberto (manual ou Playwright) e os demais rodam em <strong>node</strong> puro, sem navegador. Um item falho trava a entrega.</p>
+  <ol class="checklist">
+    <li data-check="mock-api"><strong>Mock.data/state/go/toast</strong> - carregue <code>design/mock.js</code> num <code>node:vm</code> com DOM/sessionStorage stub e asserte: <code>await Mock.data('items')</code> devolve os itens do <code>data.json</code> do canvas; <code>Mock.state.set('user', .)</code> → <code>Mock.state.get('user')</code> devolve o valor, persiste em <code>sessionStorage</code> sob <code>mock.</code> e <code>Mock.state.clear()</code> zera; <code>Mock.go('02-cadastro.html')</code> grava <code>location.href</code> preservando <code>?scenario=</code> e guardando o scroll da tela atual; <code>Mock.toast('Salvo!', 2200)</code> cria <code>#mock-toast.mock-toast.show</code> com o texto e remove <code>.show</code> após o tempo.</li>
+    <li data-check="cenarios"><strong>Cenários <code>?scenario=</code></strong> - com <code>location.search='?scenario=vazio'</code>: <code>Mock.scenario()</code> → <code>'vazio'</code> e <code>await Mock.data('items')</code> → <code>[]</code> (o override do <code>data.json</code> vence a base); sem parâmetro <code>Mock.scenario()</code> → <code>''</code> e valem os dados base.</li>
+    <li data-check="export-png"><strong>Export PNG</strong> <em>(navegador)</em> - <code>📷 PNG da tela</code> gera uma URL <code>data:image/png</code> com <code>length &gt; 0</code> (prévia + download); o code path é <code>htmlToImage.toPng</code> sobre <code>vendor/html-to-image.js</code>.</li>
+    <li data-check="mensagem-design"><strong>🎯 formato da mensagem</strong> - a mensagem copiada casa o template literal do viewer: tela inteira <code>[Design: design/&lt;canvas&gt; › &lt;name&gt; (&lt;file&gt;)]</code>; elemento = <code> › &lt;selector&gt; "&lt;snippet&gt;"</code> acrescentado ao bracket (pins persistidos usam o mesmo template).</li>
+    <li data-check="tema-dispositivo"><strong>Tema/dispositivo</strong> <em>(navegador)</em> - 🎛 Tema claro/escuro aplica <code>data-theme</code> dentro de todas as telas; Dispositivo força <code>Celular 390×844</code>/<code>Tablet 834×1112</code>/<code>Desktop 1440×900</code> e <code>Original</code> respeita o tamanho de cada tela.</li>
+    <li data-check="cross-canvas"><strong>Cross-canvas</strong> - <code>Mock.go('../dashboard/01-overview.html')</code> navega para o outro canvas com <code>?scenario=</code> preservado; o <code>Mock.state</code> gravado num canvas é lido no outro (login → dashboard → logout).</li>
+    <li data-check="install-dir"><strong>Install smoke</strong> - <code>node install.mjs --dir &lt;tmp&gt;</code> → exit 0 e inventário de arquivos presente: <code>&lt;tmp&gt;/design/SKILL.md</code>, <code>&lt;tmp&gt;/design/assets/docs.html</code>, <code>&lt;tmp&gt;/design/scripts/validate.mjs</code>, <code>&lt;tmp&gt;/impeccable/scripts/impeccable.cmd</code>.</li>
+  </ol>
+  <div class="dica"><strong>Como rodar:</strong> os asserts de node (mock-api, cenários, mensagem, cross-canvas, install smoke) rodam num harness que carrega o <code>mock.js</code> num <code>vm</code> e confere viewer + exemplo; os itens <em>(navegador)</em> são o passo manual/Playwright. Peça "rode a regressão" na sessão do agente para executar o checklist inteiro.</div>
 
   <h2 id="problemas">Solução de problemas</h2>
   <ul>
