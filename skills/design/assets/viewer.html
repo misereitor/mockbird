@@ -472,6 +472,7 @@
     <h2>Mensagem copiada</h2>
     <p class="hint">Cole no chat do agente para ajustar apenas esta tela:</p>
     <p class="msg-code" id="clipboardMsg"></p>
+    <p class="hint" id="clipboardHint" hidden>Selecione e copie (Ctrl+C)</p>
     <div class="row">
       <button id="copyAgain" type="button">Copiar de novo</button>
       <button class="primary" data-close>Fechar</button>
@@ -2314,13 +2315,42 @@ $('commentForm').addEventListener('submit', async (event) => {
 
 $('copyAgain').addEventListener('click', () => copyToClipboard($('clipboardMsg').textContent))
 
-async function copyToClipboard(text) {
+/** Manual fallback: select the whole message so Ctrl+C copies it. */
+function selectAllClipboardMsg() {
   try {
-    await navigator.clipboard.writeText(text)
-    toast('Comentário copiado para a área de transferência')
+    const range = document.createRange()
+    range.selectNodeContents($('clipboardMsg'))
+    const selection = window.getSelection()
+    selection.removeAllRanges()
+    selection.addRange(range)
+  } catch { /* selection API unavailable; the message stays visible for manual copy */ }
+}
+
+/** Clipboard write is a BONUS - the visible #clipboard overlay is the
+ * contract. Denied/absent Clipboard API (headless automation, insecure
+ * context) must never throw and never banner: the overlay plus the
+ * "Selecione e copie (Ctrl+C)" hint with the message selected is the
+ * graceful fallback. */
+async function copyToClipboard(text) {
+  let copied = false
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard?.writeText(text)
+      copied = true
+    }
   } catch {
-    toast('Não consegui copiar automaticamente — copie o texto exibido')
+    copied = false
   }
+  const hint = $('clipboardHint')
+  if (hint) hint.hidden = copied
+  if (copied) {
+    toast('Comentário copiado para a área de transferência')
+  } else {
+    $('clipboardMsg').textContent = text
+    $('clipboard').hidden = false
+    selectAllClipboardMsg()
+  }
+  return copied
 }
 
 /* ---------------------------------------------------------------- export */
