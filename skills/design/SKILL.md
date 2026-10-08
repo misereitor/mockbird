@@ -251,3 +251,41 @@ API. Never edit `comments.json` by hand. Validate again after any edit.
    explicit user request.
 7. **Variations.** "2 options" means separate screens in the same canvas
    (`Login A`, `Login B`), not separate canvases.
+8. **Handoff.** "Extract section as production component": when the user wants
+   a screen section handed to production, select the section (ideally a
+   component region - the `<!-- component:id -->..<!-- /component:id -->`
+   marker pair) and extract it into `design/handoff/` (installed layout) as
+   EXACTLY three files named after the section: `<nome>.jsx`, `<nome>.html`
+   and `tokens-used.json` - nothing else ever: `design/handoff/` holds exactly
+   the three files of the current extraction (drop a previous extraction's
+   output first). The variants note is
+   a header comment INSIDE each generated file, NEVER a separate file:
+   the first line of the `.jsx` (`// ..`) and of
+   the `.html` (`<!-- .. -->`), and - where JSON cannot hold comments - the
+   top-level `"variants"` string of `tokens-used.json`. The note records the
+   instance's `size=/tone=/state=` args and the registry enums.
+   `<nome>.html` is the extracted markup (sync markers stripped, root `data-*`
+   kept); `<nome>.jsx` is the same markup as a production JSX component
+   (`className`, no markers). `tokens-used.json` is
+   `{"variants": <note>, "tokens": [<token path>, ..]}` - exactly the tokens
+   the extracted markup references: every class resolves through the generated
+   utilities to a `var(--.)` and each var maps to its token path in
+   `tokens.json` (a composite token - `typography.*`, `shadow.*` - counts once
+   at its own path); the list equals the tokens of the classes in the
+   generated files, no more and no less.
+   `handoff/` is not a canvas: it gets NO structural checks, but the BANS
+   still apply - the bans walker covers `handoff/` and includes `.jsx`, so a
+   literal color in generated JSX is flagged `hard-coded-color` like anywhere
+   else; extract with utilities/`var(--.)` only, never literal colors.
+   Impeccable hook: if the `impeccable` engine is available (the `impeccable`
+   skill's launcher - `scripts/impeccable.cmd` on win32, `scripts/impeccable`
+   elsewhere - resolves an engine binary), run `impeccable extract` on the
+   output. ALWAYS when the engine is absent or the run fails - never blocking
+   or throwing - follow `skills/impeccable/reference/degraded/asset-producer.md`
+   (production cleanup by hand: preserve the reference, no redesign) and note
+   the degradation in the output - the generated files' header notes
+   (`tokens-used.json` as its top-level `"degraded"` string) and the delivery
+   message. Fallback for a section WITHOUT a component (plain markup, no
+   marker pair): plain markup + token list, the SAME three-file form
+   (`<nome>.jsx`, `<nome>.html`, `tokens-used.json`); the variants note then
+   records "no component registry entry" instead of variant enums.
