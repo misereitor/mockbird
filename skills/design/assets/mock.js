@@ -94,7 +94,8 @@
    * Scroll preservation (todo 14): each screen owns a sessionStorage slot
    * "scroll.<canvas>.<file>" built from its own path (canvas = folder holding
    * the screen). Saved right before leaving (Mock.go, plus pagehide for plain
-   * navigations) and restored on load. The "scroll." namespace deliberately
+   * navigations) and restored on load (re-applied while async screens settle).
+   * The "scroll." namespace deliberately
    * sits OUTSIDE "mock." - "Reset fluxo" clears only mock.* (Mock.state.clear
    * below and the viewer's routine), so scroll positions survive a reset.
    */
@@ -118,8 +119,28 @@
   function restoreScroll() {
     try {
       const saved = sessionStorage.getItem(scrollKey())
-      if (saved !== null) window.scrollTo(0, Number(saved))
-    } catch { /* ignore */ }
+      if (saved === null) return
+      const y = Number(saved)
+      if (!Number.isFinite(y)) return
+      window.scrollTo(0, y)
+      if (Math.abs((window.scrollY ?? 0) - y) <= 1) return
+      // Screens that render after Mock.data() grow the document later and
+      // clamp the one-shot scroll above - re-apply on every layout growth
+      // until the saved position sticks (bounded, so content that settles
+      // later never hijacks the page).
+      if (typeof ResizeObserver === 'undefined') return
+      let observer = null
+      const stop = () => {
+        if (observer) observer.disconnect()
+        observer = null
+      }
+      observer = new ResizeObserver(() => {
+        window.scrollTo(0, y)
+        if (Math.abs((window.scrollY ?? 0) - y) <= 1) stop()
+      })
+      observer.observe(document.documentElement)
+      setTimeout(stop, 2000)
+    } catch { /* preview degrades to stateless */ }
   }
 
   /*
