@@ -17,10 +17,13 @@
  *             screens listed in that canvas.json (plus the manifest checks below)
  *   project = everything: bans + structural + unknown-transition (per canvas.json
  *             found under the root) + tokens.json/generated-CSS staleness +
- *             components/ + comments.json
+ *             components/ + comments.json + contrast (todo 28: contrastPairs,
+ *             PROJECT-only - never fires in canvas mode)
  *   BOTH    = component checks (presence/variants/marker/divergence, todo 9)
  *             on every non-exempt .html in the walk - independent of canvas.json;
- *             unknown-transition is a SCREEN check and runs in BOTH modes
+ *             unknown-transition is a SCREEN check and runs in BOTH modes;
+ *             input-label (todo 28) is a SCREEN check like img-alt (listed
+ *             screens only, both modes)
  *
  * Exit codes: 0 = no issues, 1 = issues found, 2 = usage/input error.
  */
@@ -55,6 +58,8 @@ const HEX_COLOR =
   /(?<![uU][rR][lL]\()(?<![0-9a-fA-F])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})(?![0-9a-fA-F])/g
 const RGB_COLOR = /rgba?\(/gi
 const REMOTE_URL = /https?:\/\/[^\s"'<>()\\]+/g
+// contrast (todo 28): fg/bg slot accepts a color literal OR a token name
+const COLOR_LITERAL_RE = /^(?:#(?:[0-9a-fA-F]{3,8})|rgba?\()/i
 
 // Component checks (todo 9): variant keys and the tag scan for instance attrs.
 // The scan ALTERNATION consumes comments/script/style wholesale so markup text
@@ -134,7 +139,7 @@ function runCanvasMode(canvasDir, canvasArg) {
   }
   checkComponentInstances(canvasDir) // todo 9: every non-exempt .html, independent of canvas.json
   checkScreenTransitions(manifest.screens, canvasArg) // todo 14: SCREEN check, runs in BOTH modes
-  // Extension point (todo 28): contrast is a PROJECT check - never runs here.
+  // contrast (todo 28) is a PROJECT check - it NEVER runs here (pinned).
 }
 
 function runProjectMode(rootDir, rootArg) {
@@ -160,7 +165,111 @@ function runProjectMode(rootDir, rootArg) {
   if (!allowStale) checkStaleness(rootDir) // --allow-stale skips ONLY staleness
   checkComponentsDir(rootDir)
   checkCommentsShape(rootDir)
-  // Extension point (todo 28): contrastPairs check (tokens.json, project mode only).
+  checkContrast(rootDir) // todo 28: contrastPairs check (tokens.json, project mode only)
+}
+
+// ---------------------------------------------------------------------------
+// contrast (todo 28) - PROJECT-only check (NEVER runs in canvas mode). When the
+// root tokens.json carries $extensions.designPack.contrastPairs, each pair
+// {fg, bg, minRatio} is computed with the WCAG 2.x relative-luminance formula
+// (pure JS). fg/bg accept a color literal (hex/rgb) OR a token name; token refs
+// resolve in EVERY theme and EACH theme must meet minRatio (message names the
+// failing theme). Literal-only pairs are theme-independent (one line).
+// ---------------------------------------------------------------------------
+function parseColorLiteral(value) {
+  if (typeof value !== 'string') return null
+  const s = value.trim()
+  const hex = /^#([0-9a-fA-F]{3,8})$/.exec(s)
+  if (hex) {
+    let h = hex[1]
+    if (h.length === 3 || h.length === 4) h = [...h].map((c) => c + c).join('')
+    if (h.length !== 6 && h.length !== 8) return null
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
+  }
+  const rgb = /^rgba?\(([^)]+)\)$/i.exec(s)
+  if (rgb) {
+    const parts = rgb[1].split(/[\s,/]+/).filter(Boolean).map(Number)
+    if (parts.length < 3 || parts.slice(0, 3).some((n) => !Number.isFinite(n))) return null
+    return parts.slice(0, 3)
+  }
+  return null
+}
+
+/** Resolve a token name (dotted path) to a color inside one theme object. */
+function resolveThemeColor(theme, name) {
+  if (!isPlainObject(theme)) return null
+  let node = theme
+  for (const part of String(name).split('.')) {
+    if (!isPlainObject(node) || !(part in node)) return null
+    node = node[part]
+  }
+  const value = isPlainObject(node) ? node.$value : undefined
+  return typeof value === 'string' ? parseColorLiteral(value) : null
+}
+
+function relativeLuminance([r, g, b]) {
+  const lin = (c) => {
+    const s = c / 255
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+}
+
+function contrastRatio(a, b) {
+  const la = relativeLuminance(a)
+  const lb = relativeLuminance(b)
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)
+}
+
+function checkContrast(rootDir) {
+  let raw = null
+  try {
+    raw = readFileSync(join(rootDir, 'tokens.json'), 'utf8')
+  } catch {
+    return // absence policy: no tokens.json = skip
+  }
+  let tokens = null
+  try {
+    tokens = JSON.parse(raw)
+  } catch {
+    return // invalid tokens.json is gen-tokens' problem; never throws here
+  }
+  const pairs = tokens?.$extensions?.designPack?.contrastPairs
+  if (!Array.isArray(pairs)) return
+  const themes = isPlainObject(tokens) ? Object.keys(tokens).filter((k) => !k.startsWith('$')) : []
+  for (const [index, pair] of pairs.entries()) {
+    checkContrastPair(pair, index, tokens, themes)
+  }
+}
+
+function checkContrastPair(pair, index, tokens, themes) {
+  const where = `tokens.json: contrastPairs[${index}]`
+  if (!isPlainObject(pair) || typeof pair.fg !== 'string' || typeof pair.bg !== 'string' || !(typeof pair.minRatio === 'number' && pair.minRatio > 0)) {
+    return fail('invalid-shape', `${where}: must be { "fg": <color|token>, "bg": <color|token>, "minRatio": <number> }`)
+  }
+  const fgLiteral = COLOR_LITERAL_RE.test(pair.fg.trim())
+  const bgLiteral = COLOR_LITERAL_RE.test(pair.bg.trim())
+  const pairLabel = `${where} (fg "${pair.fg}" on bg "${pair.bg}")`
+  const report = (scope, ratio) =>
+    fail('contrast', `${pairLabel}${scope}: ratio ${ratio.toFixed(2)} < minRatio ${pair.minRatio}`)
+
+  if (fgLiteral && bgLiteral) {
+    const ratio = contrastRatio(parseColorLiteral(pair.fg), parseColorLiteral(pair.bg))
+    if (ratio < pair.minRatio) report('', ratio) // literals: theme-independent, one line
+    return
+  }
+  // At least one token ref: resolve BOTH sides in EVERY theme; each theme must
+  // meet minRatio, and every failure names its theme.
+  for (const themeName of themes) {
+    const fg = fgLiteral ? parseColorLiteral(pair.fg) : resolveThemeColor(tokens[themeName], pair.fg)
+    const bg = bgLiteral ? parseColorLiteral(pair.bg) : resolveThemeColor(tokens[themeName], pair.bg)
+    if (!fg || !bg) {
+      fail('contrast', `${pairLabel} (theme "${themeName}"): cannot resolve ${!fg ? `fg "${pair.fg}"` : `bg "${pair.bg}"`} as a color`)
+      continue
+    }
+    const ratio = contrastRatio(fg, bg)
+    if (ratio < pair.minRatio) report(` (theme "${themeName}")`, ratio)
+  }
 }
 
 /** canvas.json discovery: every dir with canvas.json is a canvas; a dir with
@@ -398,7 +507,36 @@ function runStructuralChecks(full, label) {
   if (!hasViewport) {
     fail('missing-viewport', `${label}: missing <meta name="viewport">`)
   }
-  // Extension point (todo 28): input-label structural check (inputs need labels).
+  checkInputLabels(stripped, label)
+}
+
+// ---------------------------------------------------------------------------
+// input-label (todo 28) - SCREEN check (same scope as img-alt: only screens
+// listed in some canvas.json, both modes). Every <input|select|textarea> needs
+// one of: a non-empty aria-label, an id referenced by some label[for], or a
+// wrapping <label>...</label>. Triage: `stripped` already dropped comments,
+// <script> and <style> bodies, so decoy markup in strings can never fire this.
+// ---------------------------------------------------------------------------
+function checkInputLabels(stripped, label) {
+  const forIds = new Set()
+  const wrapSpans = []
+  for (const m of stripped.matchAll(/<label\b([^>]*)>/gi)) {
+    const forMatch = /(?<![A-Za-z0-9_-])for\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(m[1])
+    if (forMatch) forIds.add(forMatch[1] ?? forMatch[2] ?? '')
+    const close = stripped.indexOf('</label>', m.index + m[0].length)
+    if (close >= 0) wrapSpans.push([m.index + m[0].length, close])
+  }
+  for (const m of stripped.matchAll(/<(input|select|textarea)\b[^>]*>/gi)) {
+    const tag = m[0]
+    const start = m.index
+    const end = m.index + tag.length
+    if (/(?<![A-Za-z0-9_-])aria-label\s*=\s*(?:"[^"]+"|'[^']+')/i.test(tag)) continue
+    const idMatch = /(?<![A-Za-z0-9_-])id\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(tag)
+    const id = idMatch ? (idMatch[1] ?? idMatch[2] ?? '') : ''
+    if (id && forIds.has(id)) continue
+    if (wrapSpans.some(([openEnd, closeStart]) => start >= openEnd && end <= closeStart)) continue
+    fail('input-label', `${label}: <${m[1].toLowerCase()}> without label[for], aria-label or <label> wrap (${tag.slice(0, 60)})`)
+  }
 }
 
 // ---------------------------------------------------------------------------

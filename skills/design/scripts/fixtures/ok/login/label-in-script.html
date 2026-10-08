@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Label em script</title>
+  <link rel="stylesheet" href="../design-system.css">
+  <link rel="stylesheet" href="../utilities.css">
+  <style>
+    body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: system-ui, sans-serif; }
+    .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); padding: var(--dimension-space-4); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Buscar</h1>
+    <label for="q">Termo</label>
+    <input id="q" type="search">
+    <label>Filtro <select name="f"><option>tudo</option></select></label>
+    <input type="text" name="nota" aria-label="Nota">
+  </main>
+  <!-- decoy comment: <input type="text" name="c"> -->
+  <script>
+    const tpl = '<label for="ghost">Fantasma</label><input id="ghost" type="text"><input type="text" name="loose">';
+  </script>
+</body>
+</html>

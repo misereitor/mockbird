@@ -1,0 +1,11 @@
+{
+  "title": "Input label",
+  "screens": [
+    {
+      "id": "form",
+      "name": "Form",
+      "file": "01-s.html",
+      "device": "mobile"
+    }
+  ]
+}

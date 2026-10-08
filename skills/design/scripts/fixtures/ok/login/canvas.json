@@ -6,6 +6,12 @@
       "name": "Login",
       "file": "01-clean.html",
       "device": "mobile"
+    },
+    {
+      "id": "label-in-script",
+      "name": "Label in script",
+      "file": "label-in-script.html",
+      "device": "mobile"
     }
   ]
 }
