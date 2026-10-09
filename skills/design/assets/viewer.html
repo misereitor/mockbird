@@ -128,6 +128,40 @@
   .box .hint { color: var(--ui-muted); font-size: 12px; }
   .box img { max-width: 100%; max-height: 55vh; border: 1px solid var(--ui-border); border-radius: 8px; }
 
+  /* -- menu de contexto do elemento (w8) — mesmo idioma do .box/#fsTop -- */
+  #ctxMenu {
+    position: fixed; z-index: 30; min-width: 236px; max-width: 320px; padding: 6px;
+    background: var(--ui-surface); border: 1px solid var(--ui-border); border-radius: 12px;
+    box-shadow: 0 12px 32px rgb(0 0 0 / .22);
+    display: flex; flex-direction: column;
+    transform-origin: 0 0;
+    transition: opacity 120ms ease-out, transform 120ms ease-out;
+  }
+  @starting-style {
+    #ctxMenu { opacity: 0; transform: scale(0.97); }
+  }
+  #ctxMenu .ctx-target {
+    padding: 6px 10px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--ui-border);
+    color: var(--ui-muted); font-size: 11px; font-family: ui-monospace, Consolas, monospace;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #ctxMenu .ctx-item {
+    height: 32px; min-height: 32px; padding: 0 10px; border: 0; border-radius: 8px;
+    background: transparent; color: var(--ui-text); font-size: 13px; text-align: left;
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    transition: background 150ms ease-out, transform 120ms ease-out;
+  }
+  #ctxMenu .ctx-item:active { transform: scale(0.97); }
+  #ctxMenu .ctx-item:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: -2px; }
+  @media (hover: hover) and (pointer: fine) {
+    #ctxMenu .ctx-item:hover { background: var(--ui-bg); }
+  }
+  /* arraste-para-posicionar: cursor de mira enquanto o comentário é solto */
+  .card-overlay.placing, #fsOverlay.placing { cursor: crosshair; }
+  @media (prefers-reduced-motion: reduce) {
+    #ctxMenu, #ctxMenu .ctx-item { transition: opacity 120ms ease; }
+  }
+
   #fullscreen { position: fixed; inset: 0; z-index: 15; background: var(--ui-bg); }
   #fsTop {
     position: absolute; top: 0; left: 0; right: 0; z-index: 3;
@@ -496,6 +530,13 @@
       <div id="fsHighlight" class="highlight"></div>
     </div>
   </div>
+</div>
+
+<div id="ctxMenu" role="menu" aria-label="Ações do elemento" data-share-hide hidden>
+  <div class="ctx-target" id="ctxTarget" aria-hidden="true"></div>
+  <button type="button" class="ctx-item" id="ctxComment" role="menuitem" title="Comentar este elemento — o comentário vira alfinete ancorado aqui">💬 Comentar elemento</button>
+  <button type="button" class="ctx-item" id="ctxCopy" role="menuitem" title="Copiar o seletor CSS calculado deste elemento">📋 Copiar seletor</button>
+  <button type="button" class="ctx-item" id="ctxComponent" role="menuitem" title="Ver o componente (id · tamanho · tom · estado) deste elemento">🧩 Ver componente</button>
 </div>
 
 <div id="dialog" class="overlay" hidden>
@@ -1765,7 +1806,7 @@ function elementAt(overlay, event) {
   const y = (event.clientY - rect.top) / state.zoom
   const el = doc.elementFromPoint(x, y)
   if (!el) return null
-  return { el, selector: cssSelector(doc, el), snippet: elementSnippet(el) }
+  return { el, selector: cssSelector(doc, el), snippet: elementSnippet(el), point: { x, y } }
 }
 
 function cssSelector(doc, el) {
@@ -1806,8 +1847,9 @@ $('elementForm').addEventListener('submit', async (event) => {
   event.preventDefault()
   const text = $('elementText').value.trim()
   if (!elementTarget || !text) return
-  const { screen, selector, snippet, el } = elementTarget
-  const rect = el?.getBoundingClientRect?.()
+  const { screen, selector, snippet, el, point } = elementTarget
+  // point (drop do arraste) ancora no ponto exato; sem ele usa o rect do elemento
+  const rect = point ?? el?.getBoundingClientRect?.()
   const pin = {
     canvas: screen.canvas ?? state.canvas,
     file: screen.file,
@@ -1815,7 +1857,7 @@ $('elementForm').addEventListener('submit', async (event) => {
     snippet,
     replies: [{ text }],
   }
-  if (rect) pin.rect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+  if (rect) pin.rect = { x: rect.x, y: rect.y, width: rect.width ?? 0, height: rect.height ?? 0 }
   $('elementDialog').hidden = true
   // Channel (a): the pin persists in comments.json (GET/POST /api/comments).
   await persistPin(pin)
@@ -1825,6 +1867,45 @@ $('elementForm').addEventListener('submit', async (event) => {
   $('clipboard').hidden = false
   await copyToClipboard(message)
 })
+
+/* --------------------------------------------- menu de contexto (w8) */
+/* Alvo: {screen, el, selector, snippet, point?} — o mesmo formato do inspect
+ * (elementAt/fsElementAt). point (coords naturais do drop) ancora o alfinete
+ * no ponto exato; sem point o alfinete usa o rect do elemento. */
+
+let ctxTarget = null
+
+function ctxMenuOpen() { return !$('ctxMenu').hidden }
+
+function closeCtxMenu() {
+  const menu = $('ctxMenu')
+  if (menu.hidden) return false
+  menu.hidden = true
+  ctxTarget = null
+  return true
+}
+
+function openCtxMenu(target, clientX, clientY) {
+  if (isReadonly()) return // share: comentar é escrita — o menu nunca abre
+  const menu = $('ctxMenu')
+  ctxTarget = target
+  $('ctxTarget').textContent = `${target.selector}${target.snippet ? ` — "${target.snippet}"` : ''}`
+  menu.hidden = false
+  // clamp na viewport: perto das bordas o menu inteiro continua visível
+  const rect = menu.getBoundingClientRect()
+  const x = Math.max(8, Math.min(clientX, window.innerWidth - rect.width - 8))
+  const y = Math.max(8, Math.min(clientY, window.innerHeight - rect.height - 8))
+  menu.style.left = `${x}px`
+  menu.style.top = `${y}px`
+  $('ctxComment').focus()
+}
+
+/* Fora/cima/roda fecha — mesmo contrato dos menus nativos. */
+window.addEventListener('pointerdown', (event) => {
+  if (ctxMenuOpen() && !event.target.closest('#ctxMenu')) closeCtxMenu()
+}, true)
+window.addEventListener('wheel', () => closeCtxMenu(), { passive: true, capture: true })
+window.addEventListener('resize', () => closeCtxMenu())
 
 function annotationMessage(a) {
   const screen = state.screens.find((s) => s.id === a.screenId)
@@ -2197,6 +2278,16 @@ function fsCurrentScreen() {
   return state.screens.find((s) => String(s.file).split('?')[0].split('/').pop() === base) ?? null
 }
 
+/** Tela atual do fluxo para ancoragem: conhecida ou stub do arquivo atual
+ *  (canvas visitado — o pin grava o arquivo/canvas certos). */
+function fsScreenNow() {
+  if (!fsScreen) return null
+  const known = fsCurrentScreen()
+  if (known) return known
+  const file = fsCurrentFile()
+  return { ...fsScreen, id: file.replace(/\.[^.]+$/, ''), name: file, file }
+}
+
 function openFullscreen(screen) {
   fsScreen = screen
   const [width, height] = screenSize(screen)
@@ -2211,11 +2302,9 @@ function openFullscreen(screen) {
     applyThemeToFrame(frame)
     renderCompChips(frame)
     renderFsPins()
+    closeCtxMenu() // navegação do fluxo invalida o alvo do menu
     // the iframe swallows mouse events: the auto-hide bar must listen inside it
-    try {
-      frame.contentDocument.addEventListener('mousemove', showFsBar)
-      frame.contentDocument.addEventListener('click', showFsBar)
-    } catch { /* opaque frame */ }
+    injectFrameInteraction(frame)
     // sandboxed iframes can't traverse their own history — track it here
     if (fsHistory.navigating) {
       fsHistory.navigating = false
@@ -2319,7 +2408,7 @@ function fsElementAt(event) {
   const y = (event.clientY - rect.top) / scale
   const el = doc.elementFromPoint(x, y)
   if (!el) return null
-  return { el, selector: cssSelector(doc, el), snippet: elementSnippet(el) }
+  return { el, selector: cssSelector(doc, el), snippet: elementSnippet(el), point: { x, y } }
 }
 
 $('fsOverlay').addEventListener('mousemove', (event) => {
@@ -2346,15 +2435,176 @@ $('fsOverlay').addEventListener('click', (event) => {
   const target = fsElementAt(event)
   if (!target) return
   // a navegação do fluxo troca a tela atual: o pin grava o arquivo dela
-  const known = fsCurrentScreen()
-  const screen = known ?? {
-    ...fsScreen,
-    id: fsCurrentFile().replace(/\.[^.]+$/, ''),
-    name: fsCurrentFile(),
-    file: fsCurrentFile(),
-  }
-  openElementDialog(screen, target)
+  openElementDialog(fsScreenNow(), target)
 })
+
+/* Menu de contexto (w8): botão direito num elemento — modo lista (.card-overlay
+ * captura tudo; delegamos em #viewport) e modo fluxo com inspetor (#fsOverlay).
+ * Sem inspetor o iframe engole eventos: a injeção no doc converge aqui. */
+$('viewport').addEventListener('contextmenu', (event) => {
+  const overlay = event.target.closest('.card-overlay')
+  if (!overlay) return
+  event.preventDefault()
+  const card = overlay.closest('.card')
+  const screen = state.screens.find((s) => s.id === card?.dataset.id) ?? null
+  const target = elementAt(overlay, event)
+  if (!screen || !target) return
+  openCtxMenu({ screen, ...target }, event.clientX, event.clientY)
+})
+
+$('fsOverlay').addEventListener('contextmenu', (event) => {
+  event.preventDefault()
+  const target = fsElementAt(event)
+  const screen = fsScreenNow()
+  if (!screen || !target) return
+  openCtxMenu({ screen, ...target }, event.clientX, event.clientY)
+})
+
+/* Ações do menu (w8) — delegam na maquinaria existente (dialogo de elemento,
+ * clipboard com fallback, chips 🧩 + toast). */
+$('ctxComment').addEventListener('click', () => {
+  const target = ctxTarget
+  closeCtxMenu()
+  if (!target) return
+  // sem point: o alfinete ancora no topo do elemento (igual ao inspetor)
+  const { screen, el, selector, snippet } = target
+  openElementDialog(screen, { el, selector, snippet })
+})
+
+$('ctxCopy').addEventListener('click', async () => {
+  const target = ctxTarget
+  closeCtxMenu()
+  if (!target) return
+  await copyToClipboard(target.selector, 'Seletor')
+})
+
+$('ctxComponent').addEventListener('click', () => {
+  const target = ctxTarget
+  closeCtxMenu()
+  const host = target?.el?.closest?.('[data-component]')
+  if (!host) {
+    toast('Este elemento não é uma instância de componente do registry')
+    return
+  }
+  const info = ['data-component', 'data-size', 'data-tone', 'data-state']
+    .map((attr) => host.getAttribute(attr)).filter(Boolean).join(' · ')
+  if (!state.chips) $('chipBtn').click() // liga as 🧩 chips para ver o componente no lugar
+  toast(`Componente: ${info}`, 3600)
+})
+
+/* ------------------------- arrastar-para-posicionar comentário (w8) */
+/* Press + arraste > DRAG_THRESHOLD num elemento → soltar abre o diálogo
+ * ancorado no ponto exato (rect {x,y,w0,h0} = alfinete na mira). Clique
+ * simples (<6px) preserva TODO comportamento existente — o guard só come
+ * o clique que o navegador emite logo após o release de um drag. Todo o
+ * estado vive em coordenadas da página-pai (eventos do iframe são
+ * traduzidos antes de entrar); hit-test reusa elementAt/fsElementAt. */
+
+const DRAG_THRESHOLD = 6
+let dragState = null
+let dragJustEnded = false
+
+function consumeDragClick() {
+  if (!dragJustEnded) return false
+  dragJustEnded = false
+  return true
+}
+
+window.addEventListener('click', (event) => {
+  if (consumeDragClick()) {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+}, true)
+
+function beginDrag(overlay, event, hitTest, getScreen) {
+  if (isReadonly()) return // share: arraste-comentar é escrita — desligado
+  dragState = { overlay, getScreen, hitTest, startX: event.clientX, startY: event.clientY, active: false }
+}
+
+function moveDrag(event) {
+  if (!dragState || dragState.active) return
+  const dx = event.clientX - dragState.startX
+  const dy = event.clientY - dragState.startY
+  if (dx * dx + dy * dy <= DRAG_THRESHOLD * DRAG_THRESHOLD) return
+  dragState.active = true
+  dragState.overlay?.classList.add('placing')
+  closeCtxMenu()
+}
+
+function endDrag(event) {
+  const state = dragState
+  dragState = null
+  if (!state) return
+  state.overlay?.classList.remove('placing')
+  if (!state.active) return
+  dragJustEnded = true
+  setTimeout(() => { dragJustEnded = false }, 400) // sem clique a seguir, o guard expira
+  const target = state.hitTest(event)
+  const screen = state.getScreen()
+  if (!target || !screen) return
+  // alfinete no ponto exato do drop; selector/snippet do elemento sob o ponto
+  openElementDialog(screen, { ...target, point: { ...target.point, width: 0, height: 0 } })
+}
+
+window.addEventListener('pointermove', moveDrag)
+window.addEventListener('pointerup', endDrag)
+
+/* Modo lista: .card-overlay captura o ponteiro — arrastar solta comentário. */
+$('viewport').addEventListener('pointerdown', (event) => {
+  const overlay = event.target.closest('.card-overlay')
+  if (!overlay || event.button !== 0) return
+  const card = overlay.closest('.card')
+  const screen = state.screens.find((s) => s.id === card?.dataset.id) ?? null
+  beginDrag(overlay, event, (e) => elementAt(overlay, e), () => screen)
+})
+
+/* Modo fluxo com inspetor: #fsOverlay (mesmo contrato do modo lista). */
+$('fsOverlay').addEventListener('pointerdown', (event) => {
+  if (event.button !== 0) return
+  beginDrag($('fsOverlay'), event, (e) => fsElementAt(e), () => fsScreenNow())
+})
+
+/** Sem inspetor o iframe engole os eventos: injeta contextmenu/arraste no doc
+ *  da tela, traduz coords para a página-pai e converge na mesma maquinaria
+ *  (fsElementAt faz o hit-test; o clique pós-drag é comido em captura para o
+ *  mock.js da tela não navegar). */
+function injectFrameInteraction(frame) {
+  try {
+    const doc = frame.contentDocument
+    if (!doc?.body) return
+    const toParent = (event) => {
+      const rect = frame.getBoundingClientRect()
+      const scale = rect.width / frame.clientWidth || 1
+      return { clientX: rect.left + event.clientX * scale, clientY: rect.top + event.clientY * scale }
+    }
+    const hit = (e) => fsElementAt(e)
+    const screenNow = () => fsScreenNow()
+    doc.addEventListener('mousemove', showFsBar)
+    doc.addEventListener('click', showFsBar)
+    doc.addEventListener('contextmenu', (event) => {
+      event.preventDefault()
+      const point = toParent(event)
+      const target = hit(point)
+      const screen = screenNow()
+      if (!screen || !target) return
+      openCtxMenu({ screen, ...target }, point.clientX, point.clientY)
+    })
+    doc.addEventListener('pointerdown', (event) => {
+      closeCtxMenu() // clique dentro da tela também descarta o menu aberto
+      if (event.button !== 0) return
+      beginDrag(null, toParent(event), hit, screenNow)
+    })
+    doc.addEventListener('pointermove', (event) => moveDrag(toParent(event)))
+    doc.addEventListener('pointerup', (event) => endDrag(toParent(event)))
+    doc.addEventListener('click', (event) => {
+      if (consumeDragClick()) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }, true) // captura: o clique residual do drag não vira navegação
+  } catch { /* frame opaco; interações comentáveis ficam só no modo inspetor */ }
+}
 
 function updateFsNavButtons() {
   $('fsPrev').disabled = fsHistory.index <= 0
@@ -2362,6 +2612,7 @@ function updateFsNavButtons() {
 }
 
 function closeFullscreen() {
+  closeCtxMenu()
   $('fsFrame').src = 'about:blank'
   $('fsOverlay').hidden = true
   $('fsHighlight').hidden = true
@@ -2605,7 +2856,7 @@ function selectAllClipboardMsg() {
  * context) must never throw and never banner: the overlay plus the
  * "Selecione e copie (Ctrl+C)" hint with the message selected is the
  * graceful fallback. */
-async function copyToClipboard(text) {
+async function copyToClipboard(text, label = 'Comentário') {
   let copied = false
   try {
     if (navigator.clipboard?.writeText) {
@@ -2618,7 +2869,7 @@ async function copyToClipboard(text) {
   const hint = $('clipboardHint')
   if (hint) hint.hidden = copied
   if (copied) {
-    toast('Comentário copiado para a área de transferência')
+    toast(`${label} copiado para a área de transferência`)
   } else {
     $('clipboardMsg').textContent = text
     $('clipboard').hidden = false
@@ -2845,7 +3096,8 @@ for (const closer of document.querySelectorAll('[data-close]')) {
 
 window.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
-    // ESC em camadas: diálogo → inspetor → modo fluxo (uma camada por tecla)
+    // ESC em camadas: menu → diálogo → inspetor → modo fluxo (uma camada por tecla)
+    if (closeCtxMenu()) return
     const dialogOpen = [...document.querySelectorAll('.overlay')].some((overlay) => !overlay.hidden)
     if (dialogOpen) {
       for (const overlay of document.querySelectorAll('.overlay')) overlay.hidden = true
@@ -2853,6 +3105,21 @@ window.addEventListener('keydown', (event) => {
     }
     if (state.inspect) { $('inspectBtn').click(); return }
     if (!$('fullscreen').hidden) closeFullscreen()
+    return
+  }
+  if (ctxMenuOpen()) {
+    // menu aberto: setas navegam, Enter ativa (explícito — evita dupla ativação), zoom espera
+    const items = [...$('ctxMenu').querySelectorAll('.ctx-item')]
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const index = items.indexOf(document.activeElement)
+      const delta = event.key === 'ArrowDown' ? 1 : -1
+      items[(index + delta + items.length) % items.length]?.focus()
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault() // o default do botão não duplica a ativação
+      document.activeElement?.click?.()
+    }
     return
   }
   if (event.target.matches('input, textarea, select')) return
