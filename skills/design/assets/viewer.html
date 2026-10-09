@@ -132,13 +132,38 @@
   #fsTop {
     position: absolute; top: 0; left: 0; right: 0; z-index: 3;
     display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+    flex-wrap: wrap; row-gap: 8px;
     background: var(--ui-surface); border-bottom: 1px solid var(--ui-border);
     transition: opacity .25s, transform .25s;
   }
   #fsTop.hidden-bar { opacity: 0; pointer-events: none; transform: translateY(-10px); }
   #fsTop strong { font-size: 15px; }
-  #fsStage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  #fsFrame { border: 0; background: #fff; }
+  /* modo fluxo: barra compacta (paridade com o cabeçalho, sem virar ruído) */
+  #fsTop button { height: 28px; min-height: 28px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
+  #fsTop select { height: 28px; padding: 0 6px; font-size: 12px; }
+  .fs-size { color: var(--ui-muted); font-size: 12px; }
+  .fs-tools {
+    display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+    margin-left: auto;
+  }
+  .fs-field {
+    display: flex; align-items: center; gap: 4px;
+    color: var(--ui-muted); font-size: 12px;
+  }
+  .fs-sep { width: 1px; height: 20px; background: var(--ui-border); }
+  .fs-badge {
+    display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 9px;
+    background: var(--ui-accent); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px;
+  }
+  body.dark .fs-badge { color: #042f2e; }
+  /* painéis (pendentes/snapshot) ficam acima do modo fluxo (z15) quando ele abre */
+  #fullscreen:not([hidden]) ~ #pendingPanel,
+  #fullscreen:not([hidden]) ~ #snapshotPanel { z-index: 16; }
+  /* mesmo motor de pan/zoom do modo normal: translate + scale sobre a origem 0 0 */
+  #fsStage { position: absolute; inset: 0; overflow: hidden; cursor: grab; }
+  #fsStage.dragging { cursor: grabbing; }
+  #fsWorld { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+  #fsFrame { display: block; border: 0; background: #fff; }
   #fsOverlay { position: absolute; z-index: 2; cursor: crosshair; }
   .highlight {
     position: absolute; display: none; pointer-events: none; z-index: 3;
@@ -425,7 +450,7 @@
 
 <div id="fullscreen" hidden>
   <div id="fsTop">
-    <button id="fsBack">← Voltar</button>
+    <button id="fsBack" title="Voltar ao modo lista">← Voltar</button>
     <button id="fsPrev" title="Tela anterior do fluxo">◀</button>
     <button id="fsNext" title="Tela seguinte do fluxo">▶</button>
     <button id="fsRestart" title="Reiniciar o fluxo do começo">⟲</button>
@@ -433,12 +458,43 @@
     <button id="fsChip" title="Mostrar chips de id/variante sobre cada componente (inspetor)">🧩 Componentes</button>
     <button id="fsTheme" title="Alternar tema claro/escuro">🌙</button>
     <strong id="fsTitle"></strong>
-    <span id="fsSize" style="color: var(--ui-muted); font-size: 12px;"></span>
+    <span id="fsSize" class="fs-size"></span>
+    <div class="fs-tools">
+      <span class="zoomgrp">
+        <button id="fsZoomOut" title="Diminuir zoom" aria-label="Diminuir zoom">−</button>
+        <span id="fsZoomLabel">100%</span>
+        <button id="fsZoomIn" title="Aumentar zoom" aria-label="Aumentar zoom">+</button>
+        <button id="fsZoomFit" title="Ajustar à janela" aria-label="Ajustar zoom à janela">Ajustar</button>
+      </span>
+      <span class="fs-sep"></span>
+      <label class="fs-field" id="fsCanvasField">Canvas
+        <select id="fsCanvas" title="Trocar de canvas (carrega a primeira tela dele)" aria-label="Canvas"></select>
+      </label>
+      <label class="fs-field" id="fsScenarioField" hidden>Cenário
+        <select id="fsScenario" title="Cenário de dados aplicado às telas" aria-label="Cenário"></select>
+      </label>
+      <label class="fs-field">Dispositivo
+        <select id="fsDevice" title="Dispositivo de visualização" aria-label="Dispositivo">
+          <option value="original">Original</option>
+          <option value="mobile">Celular</option>
+          <option value="tablet">Tablet</option>
+          <option value="desktop">Desktop</option>
+        </select>
+      </label>
+      <span class="fs-sep"></span>
+      <button id="fsDocs" title="Abrir a documentação de utilização">📘 Docs</button>
+      <button id="fsExport" title="Exportar a tela atual do fluxo como PNG">⬇ PNG</button>
+      <button id="fsPending" data-share-hide title="Abrir o painel de comentários pendentes (todos os canvases)">💬 Pendentes <span class="fs-badge" id="fsBadge">0</span></button>
+      <button id="fsSnapshot" data-share-hide title="Salvar um snapshot deste canvas e ver os snapshots salvos">Salvar snapshot</button>
+    </div>
   </div>
   <div id="fsStage">
-    <iframe id="fsFrame" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
-    <div id="fsOverlay" class="card-overlay" hidden></div>
-    <div id="fsHighlight" class="highlight"></div>
+    <div id="fsWorld">
+      <iframe id="fsFrame" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+      <div id="fsPins" class="pins" data-share-hide></div>
+      <div id="fsOverlay" class="card-overlay" hidden></div>
+      <div id="fsHighlight" class="highlight"></div>
+    </div>
   </div>
 </div>
 
@@ -669,11 +725,14 @@ async function loadCanvas() {
   renderStrip()
 }
 
-/** Scenario picker: populated from data.json's optional "scenarios" object. */
+/** Scenario picker: populated from data.json's optional "scenarios" object.
+ *  Espelha em #fsScenario (modo fluxo) — os dois selects ficam em sincronia. */
 async function loadScenarioSelect() {
   const label = $('scenarioLabel')
   const select = $('scenarioSelect')
+  const fsSelect = $('fsScenario')
   select.innerHTML = ''
+  fsSelect.innerHTML = ''
   let names = null
   try {
     const data = JSON.parse(await fetchText(`${state.canvas}/data.json`))
@@ -683,25 +742,32 @@ async function loadScenarioSelect() {
   } catch { /* no data.json or no scenarios */ }
   if (!names || names.length === 0) {
     label.hidden = true
+    $('fsScenarioField').hidden = true
     state.scenario = ''
     return
   }
   label.hidden = false
+  $('fsScenarioField').hidden = false
   for (const name of ['', ...names]) {
-    const option = document.createElement('option')
-    option.value = name
-    option.textContent = name === '' ? 'padrão' : name
-    select.appendChild(option)
+    for (const target of [select, fsSelect]) {
+      const option = document.createElement('option')
+      option.value = name
+      option.textContent = name === '' ? 'padrão' : name
+      target.appendChild(option)
+    }
   }
   if (!names.includes(state.scenario)) state.scenario = ''
   select.value = state.scenario
+  fsSelect.value = state.scenario
 }
 
-/** URL for a screen, carrying the cache buster and the chosen scenario. */
+/** URL for a screen, carrying the cache buster and the chosen scenario.
+ *  Telas de canvas visitado no modo fluxo carregam o próprio canvas (screen.canvas). */
 function screenUrl(screen) {
+  const canvas = screen.canvas ?? state.canvas
   const sep = screen.file.includes('?') ? '&' : '?'
   const scenario = state.scenario ? `&scenario=${encodeURIComponent(state.scenario)}` : ''
-  return `${state.canvas}/${screen.file}${sep}_=${state.bust}${scenario}`
+  return `${canvas}/${screen.file}${sep}_=${state.bust}${scenario}`
 }
 
 /** Same rules as design/validate.mjs, minus the filesystem checks (fetch instead). */
@@ -1106,10 +1172,13 @@ function renderPendingPanel() {
   }
 }
 
-/** Live toolbar badge with the open-pin count. */
+/** Live toolbar badge with the open-pin count (cabeçalho + modo fluxo). */
 function updatePendingBadge(count) {
+  const title = `Abrir o painel de comentários pendentes (${count} aberto(s) em todos os canvases)`
   $('pendingBadge').textContent = String(count)
-  $('pendingBtn').title = `Abrir o painel de comentários pendentes (${count} aberto(s) em todos os canvases)`
+  $('pendingBtn').title = title
+  $('fsBadge').textContent = String(count)
+  $('fsPending').title = title
 }
 
 $('pendingBtn').addEventListener('click', () => {
@@ -1740,7 +1809,7 @@ $('elementForm').addEventListener('submit', async (event) => {
   const { screen, selector, snippet, el } = elementTarget
   const rect = el?.getBoundingClientRect?.()
   const pin = {
-    canvas: state.canvas,
+    canvas: screen.canvas ?? state.canvas,
     file: screen.file,
     selector,
     snippet,
@@ -1794,46 +1863,65 @@ function pinPosition(pin, layer) {
   return { left: '50%', top: '24px' }
 }
 
+/** Marcador de pin (badge + ✓/↺) — compartilhado pela camada do card e do fluxo. */
+function pinMarker(pin, index, layer) {
+  const marker = document.createElement('div')
+  marker.className = 'pin'
+  if (pin.status === 'stale') marker.classList.add('stale')
+  else if (pin.status === 'resolved') marker.classList.add('resolved')
+  const pos = pinPosition(pin, layer)
+  marker.style.left = pos.left
+  marker.style.top = pos.top
+  marker.title = `${pin.selector ?? ''}\n${pinText(pin)}${
+    pin.status === 'stale' ? '\nstale — âncora perdida (validate.mjs --mark-stale)' : ''
+  }${pin.status === 'resolved' ? '\nresolvido' : ''}`
+  const badge = document.createElement('span')
+  badge.className = 'pin-badge'
+  badge.textContent = String(index + 1)
+  const act = document.createElement('button')
+  act.className = 'pin-act'
+  act.type = 'button'
+  act.textContent = pin.status === 'resolved' ? '↺' : '✓'
+  act.title = pin.status === 'resolved' ? 'Reabrir comentário' : 'Marcar como resolvido'
+  act.addEventListener('click', (event) => {
+    event.stopPropagation()
+    persistPin({ id: pin.id, status: pin.status === 'resolved' ? 'open' : 'resolved' })
+  })
+  marker.append(badge, act)
+  return marker
+}
+
+/** Preenche uma camada .pins com os pins do arquivo da tela (card ou #fsPins). */
+function renderPinLayer(layer, file, pins = state.comments) {
+  if (!layer) return
+  layer.innerHTML = ''
+  if (isReadonly() || !file) return // share: pins são recurso de /api — nunca renderizam
+  const base = String(file).split('?')[0].split('/').pop()
+  const mine = pins.filter((pin) => String(pin?.file ?? '').split('?')[0].split('/').pop() === base)
+  mine.forEach((pin, index) => layer.appendChild(pinMarker(pin, index, layer)))
+}
+
 function renderPins(screenId) {
   const card = $('strip').querySelector(`.card[data-id="${CSS.escape(screenId)}"]`)
   const layer = card?.querySelector('.pins')
   if (!layer) return
-  layer.innerHTML = ''
-  if (isReadonly()) return // share: pins são recurso de /api — nunca renderizam
   const screen = state.screens.find((s) => s.id === screenId)
-  if (!screen) return
-  const file = String(screen.file).split('?')[0]
-  const mine = state.comments.filter((pin) => String(pin?.file ?? '').split('?')[0] === file)
-  mine.forEach((pin, index) => {
-    const marker = document.createElement('div')
-    marker.className = 'pin'
-    if (pin.status === 'stale') marker.classList.add('stale')
-    else if (pin.status === 'resolved') marker.classList.add('resolved')
-    const pos = pinPosition(pin, layer)
-    marker.style.left = pos.left
-    marker.style.top = pos.top
-    marker.title = `${pin.selector ?? ''}\n${pinText(pin)}${
-      pin.status === 'stale' ? '\nstale — âncora perdida (validate.mjs --mark-stale)' : ''
-    }${pin.status === 'resolved' ? '\nresolvido' : ''}`
-    const badge = document.createElement('span')
-    badge.className = 'pin-badge'
-    badge.textContent = String(index + 1)
-    const act = document.createElement('button')
-    act.className = 'pin-act'
-    act.type = 'button'
-    act.textContent = pin.status === 'resolved' ? '↺' : '✓'
-    act.title = pin.status === 'resolved' ? 'Reabrir comentário' : 'Marcar como resolvido'
-    act.addEventListener('click', (event) => {
-      event.stopPropagation()
-      persistPin({ id: pin.id, status: pin.status === 'resolved' ? 'open' : 'resolved' })
-    })
-    marker.append(badge, act)
-    layer.appendChild(marker)
-  })
+  renderPinLayer(layer, screen ? String(screen.file) : '')
+}
+
+/** Pins do modo fluxo sobre o #fsFrame — a tela exibida agora (navegação troca).
+ *  Em canvas visitado os pins saem de allComments (filtrados pelo canvas dele). */
+function renderFsPins() {
+  const canvasName = fsScreen?.canvas ?? state.canvas
+  const pins = canvasName === state.canvas
+    ? state.comments
+    : state.allComments.filter((pin) => pin && pin.canvas === canvasName)
+  renderPinLayer($('fsPins'), fsCurrentFile(), pins)
 }
 
 function renderAllPins() {
   for (const screen of state.screens) renderPins(screen.id)
+  renderFsPins()
 }
 
 function updateCopyAll() {
@@ -1961,35 +2049,76 @@ function selectedScreen() {
 }
 
 /* ------------------------------------------------------------- pan/zoom */
+/* Motor único (modo lista + modo fluxo): view = {zoom,x,y}, stage = viewport
+ * que recorta, world = camada translate+scale com transform-origin 0 0.
+ * Fit = min(largura, altura) com teto 100%; pan sempre com MIN_VISIBLE px do
+ * mundo visíveis — o mundo nunca "some" da viewport (hide bug). */
+
+const ZOOM_MIN = 0.1
+const ZOOM_MAX = 3
+const MIN_VISIBLE = 80
+const FIT_PAD = 24
+
+/** Limita o pan: qualquer posição mantém ≥ MIN_VISIBLE px do mundo na tela. */
+function clampPan(view, stageEl, worldEl) {
+  const rect = stageEl.getBoundingClientRect()
+  const worldW = worldEl.offsetWidth * view.zoom
+  const worldH = worldEl.offsetHeight * view.zoom
+  if (!worldW || !worldH) return
+  const minX = MIN_VISIBLE - worldW
+  const maxX = rect.width - MIN_VISIBLE
+  const minY = MIN_VISIBLE - worldH
+  const maxY = rect.height - MIN_VISIBLE
+  view.x = minX > maxX ? (minX + maxX) / 2 : Math.min(Math.max(view.x, minX), maxX)
+  view.y = minY > maxY ? (minY + maxY) / 2 : Math.min(Math.max(view.y, minY), maxY)
+}
+
+function applyViewState(view, stageEl, worldEl, labelEl) {
+  clampPan(view, stageEl, worldEl)
+  worldEl.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.zoom})`
+  if (labelEl) labelEl.textContent = `${Math.round(view.zoom * 100)}%`
+}
+
+/** Zoom ancorado no cursor (cx/cy em coordenadas de tela; centro por padrão). */
+function zoomViewBy(view, stageEl, worldEl, labelEl, factor, cx, cy) {
+  const rect = stageEl.getBoundingClientRect()
+  cx ??= rect.left + rect.width / 2
+  cy ??= rect.top + rect.height / 2
+  const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, view.zoom * factor))
+  const wx = (cx - rect.left - view.x) / view.zoom
+  const wy = (cy - rect.top - view.y) / view.zoom
+  view.zoom = next
+  view.x = cx - rect.left - wx * next
+  view.y = cy - rect.top - wy * next
+  applyViewState(view, stageEl, worldEl, labelEl)
+}
+
+/** Fit real: min(fit largura, fit altura), teto 100%, mundo centralizado. */
+function fitViewState(view, stageEl, worldEl, labelEl) {
+  const rect = stageEl.getBoundingClientRect()
+  const worldW = worldEl.offsetWidth
+  const worldH = worldEl.offsetHeight
+  if (!worldW || !worldH) return
+  view.zoom = Math.max(ZOOM_MIN, Math.min(
+    (rect.width - FIT_PAD * 2) / worldW,
+    (rect.height - FIT_PAD * 2) / worldH,
+    1,
+  ))
+  view.x = (rect.width - worldW * view.zoom) / 2
+  view.y = (rect.height - worldH * view.zoom) / 2
+  applyViewState(view, stageEl, worldEl, labelEl)
+}
 
 function applyView() {
-  $('world').style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.zoom})`
-  $('zoomLabel').textContent = `${Math.round(state.zoom * 100)}%`
+  applyViewState(state, $('viewport'), $('world'), $('zoomLabel'))
 }
 
 function zoomBy(factor, cx, cy) {
-  const rect = $('viewport').getBoundingClientRect()
-  cx ??= rect.left + rect.width / 2
-  cy ??= rect.top + rect.height / 2
-  const next = Math.min(3, Math.max(0.1, state.zoom * factor))
-  const wx = (cx - rect.left - state.x) / state.zoom
-  const wy = (cy - rect.top - state.y) / state.zoom
-  state.zoom = next
-  state.x = cx - rect.left - wx * next
-  state.y = cy - rect.top - wy * next
-  applyView()
+  zoomViewBy(state, $('viewport'), $('world'), $('zoomLabel'), factor, cx, cy)
 }
 
 function fitView() {
-  const strip = $('strip')
-  if (!strip || state.screens.length === 0) return
-  const rect = $('viewport').getBoundingClientRect()
-  // fit by HEIGHT so many-screens canvases stay readable; pan horizontally
-  const height = strip.offsetHeight
-  state.zoom = Math.max(0.1, Math.min((rect.height - 32) / height, 1))
-  state.x = 24
-  state.y = Math.max(16, (rect.height - height * state.zoom) / 2)
-  applyView()
+  fitViewState(state, $('viewport'), $('world'), $('zoomLabel'))
 }
 
 $('viewport').addEventListener('wheel', (event) => {
@@ -2041,6 +2170,7 @@ $('themeBtn').addEventListener('click', () => {
 
 $('deviceSelect').addEventListener('change', () => {
   state.device = $('deviceSelect').value
+  $('fsDevice').value = state.device
   savePrefs()
   renderStrip()
   requestAnimationFrame(fitView)
@@ -2052,6 +2182,20 @@ $('deviceSelect').addEventListener('change', () => {
 
 const fsHistory = { entries: [], index: -1, navigating: false }
 let fsScreen = null
+
+/** Arquivo da tela exibida no fsFrame agora (URL vigente do histórico do fluxo). */
+function fsCurrentFile() {
+  const url = String(fsHistory.entries[fsHistory.index] ?? '').split('?')[0]
+  return url ? url.split('/').pop() : ''
+}
+
+/** Tela do canvas sob o fsFrame — a navegação do fluxo troca a tela atual.
+ *  Canvas visitado (screen.canvas ≠ canvas do viewer) não casa com state.screens. */
+function fsCurrentScreen() {
+  if (fsScreen?.canvas && fsScreen.canvas !== state.canvas) return null
+  const base = fsCurrentFile()
+  return state.screens.find((s) => String(s.file).split('?')[0].split('/').pop() === base) ?? null
+}
 
 function openFullscreen(screen) {
   fsScreen = screen
@@ -2066,6 +2210,7 @@ function openFullscreen(screen) {
   frame.onload = () => {
     applyThemeToFrame(frame)
     renderCompChips(frame)
+    renderFsPins()
     // the iframe swallows mouse events: the auto-hide bar must listen inside it
     try {
       frame.contentDocument.addEventListener('mousemove', showFsBar)
@@ -2090,30 +2235,38 @@ function openFullscreen(screen) {
   $('fsInspect').classList.toggle('primary', state.inspect)
   $('fsChip').classList.toggle('primary', state.chips)
   layoutFullscreen()
+  fitFsView()
   showFsBar()
   updateFsNavButtons()
 }
 
-/** Size the frame to the viewport and place the inspect overlay over it. */
+/* Mesmo motor do modo lista, com view própria do fluxo: fit/zoom/pan
+ * sobre #fsWorld (translate+scale, origem 0 0 — ver pan/zoom acima). */
+const fsView = { zoom: 1, x: 0, y: 0 }
+
+function applyFsView() {
+  applyViewState(fsView, $('fsStage'), $('fsWorld'), $('fsZoomLabel'))
+}
+
+function zoomFsBy(factor, cx, cy) {
+  zoomViewBy(fsView, $('fsStage'), $('fsWorld'), $('fsZoomLabel'), factor, cx, cy)
+}
+
+function fitFsView() {
+  fitViewState(fsView, $('fsStage'), $('fsWorld'), $('fsZoomLabel'))
+}
+
+/** Size the frame to the screen's natural size; overlay/highlight/pins are
+ * #fsWorld children (inset 0), so pan/zoom precisa só do transform do world. */
 function layoutFullscreen() {
   if (!fsScreen || $('fullscreen').hidden) return
   const [width, height] = screenSize(fsScreen)
   const frame = $('fsFrame')
   frame.style.width = `${width}px`
   frame.style.height = `${height}px`
-  const stage = $('fsStage').getBoundingClientRect()
-  const scale = Math.max(0.1, Math.min((stage.width - 24) / width, (stage.height - 24) / height, 1.25))
-  frame.style.transform = `scale(${scale})`
-  frame.style.transformOrigin = 'center'
-  const frameRect = frame.getBoundingClientRect()
-  const overlay = $('fsOverlay')
-  Object.assign(overlay.style, {
-    left: `${frameRect.left - stage.left}px`,
-    top: `${frameRect.top - stage.top}px`,
-    width: `${frameRect.width}px`,
-    height: `${frameRect.height}px`,
-  })
-  overlay.hidden = !state.inspect
+  $('fsSize').textContent = `${width}×${height}`
+  applyFsView()
+  $('fsOverlay').hidden = !state.inspect
   $('fsHighlight').hidden = true
 }
 
@@ -2126,6 +2279,32 @@ function showFsBar() {
 }
 
 $('fsStage').addEventListener('mousemove', () => showFsBar())
+
+/* Pan/zoom do fluxo — paridade com o modo lista: ctrl+wheel ancora no cursor,
+ * wheel/drag arrastam o mundo (sempre clampado), botões iguais ao cabeçalho. */
+$('fsStage').addEventListener('wheel', (event) => {
+  event.preventDefault()
+  if (event.ctrlKey || event.metaKey) zoomFsBy(Math.exp(-event.deltaY * 0.0022), event.clientX, event.clientY)
+  else { fsView.x -= event.deltaX; fsView.y -= event.deltaY; applyFsView() }
+}, { passive: false })
+
+$('fsStage').addEventListener('pointerdown', (event) => {
+  if (event.target.closest('.card-overlay')) return
+  const start = { x: event.clientX - fsView.x, y: event.clientY - fsView.y }
+  $('fsStage').classList.add('dragging')
+  const move = (e) => { fsView.x = e.clientX - start.x; fsView.y = e.clientY - start.y; applyFsView() }
+  const up = () => {
+    $('fsStage').classList.remove('dragging')
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', up)
+  }
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', up)
+})
+
+$('fsZoomIn').addEventListener('click', () => zoomFsBy(1.2))
+$('fsZoomOut').addEventListener('click', () => zoomFsBy(1 / 1.2))
+$('fsZoomFit').addEventListener('click', fitFsView)
 
 window.addEventListener('resize', () => layoutFullscreen())
 
@@ -2148,11 +2327,11 @@ $('fsOverlay').addEventListener('mousemove', (event) => {
   const target = fsElementAt(event)
   const highlight = $('fsHighlight')
   if (!target) { highlight.hidden = true; return }
+  // o highlight mora em #fsWorld — o rect natural do iframe já é coordenada do mundo
   const elRect = target.el.getBoundingClientRect()
-  const stage = $('fsStage').getBoundingClientRect()
   Object.assign(highlight.style, {
-    left: `${elRect.left - stage.left}px`,
-    top: `${elRect.top - stage.top}px`,
+    left: `${elRect.left}px`,
+    top: `${elRect.top}px`,
     width: `${elRect.width}px`,
     height: `${elRect.height}px`,
   })
@@ -2165,7 +2344,16 @@ $('fsOverlay').addEventListener('mouseleave', () => { $('fsHighlight').hidden = 
 $('fsOverlay').addEventListener('click', (event) => {
   if (!fsScreen) return
   const target = fsElementAt(event)
-  if (target) openElementDialog(fsScreen, target)
+  if (!target) return
+  // a navegação do fluxo troca a tela atual: o pin grava o arquivo dela
+  const known = fsCurrentScreen()
+  const screen = known ?? {
+    ...fsScreen,
+    id: fsCurrentFile().replace(/\.[^.]+$/, ''),
+    name: fsCurrentFile(),
+    file: fsCurrentFile(),
+  }
+  openElementDialog(screen, target)
 })
 
 function updateFsNavButtons() {
@@ -2219,8 +2407,94 @@ $('fsTheme').addEventListener('click', () => {
   showFsBar()
 })
 
+/* Painéis do modo fluxo — delegam nos botões do cabeçalho (resolver, snapshot
+ * save/list/revert + [Design-Reset: …] e comparar lado a lado/onion ficam
+ * todos iguais ao modo lista; os painéis sobem via CSS acima do fullscreen). */
+$('fsPending').addEventListener('click', () => {
+  $('pendingBtn').click()
+  showFsBar()
+})
+
+$('fsSnapshot').addEventListener('click', () => {
+  $('snapshotBtn').click()
+  showFsBar()
+})
+
+/** Carrega uma tela no fsFrame (o histórico do fluxo reinicia nela). */
+function openFsScreen(screen) {
+  fsScreen = screen
+  const [width, height] = screenSize(screen)
+  $('fsTitle').textContent = screen.name
+  $('fsSize').textContent = `${width}×${height}`
+  fsHistory.entries = [screenUrl(screen)]
+  fsHistory.index = 0
+  fsHistory.navigating = true
+  updateFsNavButtons()
+  $('fsFrame').src = fsHistory.entries[0]
+  layoutFullscreen()
+  fitFsView()
+  renderFsPins()
+}
+
+/* Troca de canvas pelo modo fluxo (escolha documentada): carrega a PRIMEIRA
+ * tela do canvas escolhido dentro do fsFrame, sem sair do modo fluxo. Pins,
+ * painéis e snapshots seguem amarrados ao canvas aberto no visualizador; pin
+ * criado em tela de canvas visitado grava no canvas dela (screen.canvas). */
+$('fsCanvas').addEventListener('change', async () => {
+  const name = $('fsCanvas').value
+  if (!name) return
+  try {
+    const manifest = JSON.parse(await fetchText(`${name}/canvas.json`))
+    const first = Array.isArray(manifest?.screens)
+      ? manifest.screens.find((s) => s && typeof s.file === 'string' && s.file)
+      : null
+    if (!first) { toast(`Canvas "${name}" sem telas`); return }
+    openFsScreen({ ...first, canvas: name })
+    toast(`Canvas: ${name} › ${first.name ?? first.file}`)
+  } catch {
+    toast(`Canvas "${name}" não encontrado`)
+  }
+})
+
+/* Cenário pelo modo fluxo: mesmo ciclo do cabeçalho + re-render com &scenario=. */
+$('fsScenario').addEventListener('change', () => {
+  state.scenario = $('fsScenario').value
+  $('scenarioSelect').value = state.scenario
+  clearFlowState() // estado feito no cenário anterior não pode vazar
+  state.bust = Date.now()
+  savePrefs()
+  renderStrip()
+  toast(state.scenario ? `Cenário: ${state.scenario}` : 'Cenário: padrão')
+  if (fsScreen) openFsScreen(fsCurrentScreen() ?? fsScreen)
+})
+
+/* Dispositivo pelo modo fluxo: re-layout do frame (tamanho natural novo) + fit. */
+$('fsDevice').addEventListener('change', () => {
+  state.device = $('fsDevice').value
+  $('deviceSelect').value = state.device
+  savePrefs()
+  renderStrip()
+  if (fsScreen) {
+    layoutFullscreen()
+    fitFsView()
+  }
+})
+
+/* Docs/PNG pelo modo fluxo — mesmos mecanismos do cabeçalho. */
+$('fsDocs').addEventListener('click', () => {
+  $('docsBtn').click()
+  showFsBar()
+})
+
+$('fsExport').addEventListener('click', () => {
+  showFsBar()
+  const screen = fsCurrentScreen() ?? fsScreen
+  if (screen) withBusyToast('Gerando PNG…', () => exportFsScreen(screen))
+})
+
 $('scenarioSelect').addEventListener('change', () => {
   state.scenario = $('scenarioSelect').value
+  $('fsScenario').value = state.scenario
   clearFlowState() // state made under the previous scenario must not leak in
   state.bust = Date.now()
   savePrefs()
@@ -2443,6 +2717,18 @@ async function exportScreen(screen) {
   toast('PNG da tela exportado')
 }
 
+/** PNG da tela atual do modo fluxo (#fsFrame) — nomeia pelo canvas dela. */
+async function exportFsScreen(screen) {
+  const frame = $('fsFrame')
+  if (!frame?.contentDocument) throw new Error('tela não carregada')
+  const dataUrl = await captureScreen(frame)
+  const canvas = screen.canvas ?? state.canvas
+  const filename = `${canvas}-${screen.id}.png`
+  download(dataUrl, filename)
+  showPreview(dataUrl, filename)
+  toast('PNG da tela exportado')
+}
+
 async function exportCanvasPng() {
   const captures = []
   for (const screen of state.screens) {
@@ -2559,15 +2845,21 @@ for (const closer of document.querySelectorAll('[data-close]')) {
 
 window.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
-    for (const overlay of document.querySelectorAll('.overlay')) overlay.hidden = true
+    // ESC em camadas: diálogo → inspetor → modo fluxo (uma camada por tecla)
+    const dialogOpen = [...document.querySelectorAll('.overlay')].some((overlay) => !overlay.hidden)
+    if (dialogOpen) {
+      for (const overlay of document.querySelectorAll('.overlay')) overlay.hidden = true
+      return
+    }
+    if (state.inspect) { $('inspectBtn').click(); return }
     if (!$('fullscreen').hidden) closeFullscreen()
-    if (state.inspect) $('inspectBtn').click()
     return
   }
   if (event.target.matches('input, textarea, select')) return
-  if (event.key === '+' || event.key === '=') zoomBy(1.2)
-  if (event.key === '-') zoomBy(1 / 1.2)
-  if (event.key === '0') fitView()
+  const fsOpen = !$('fullscreen').hidden
+  if (event.key === '+' || event.key === '=') { if (fsOpen) zoomFsBy(1.2); else zoomBy(1.2) }
+  if (event.key === '-') { if (fsOpen) zoomFsBy(1 / 1.2); else zoomBy(1 / 1.2) }
+  if (event.key === '0') { if (fsOpen) fitFsView(); else fitView() }
 })
 
 /* ------------------------------------------------------- light polling */
@@ -2621,6 +2913,7 @@ async function boot() {
   // element comments persist in comments.json (GET/POST /api/comments)
   if (![...$('deviceSelect').options].some((option) => option.value === state.device)) state.device = 'original'
   $('deviceSelect').value = state.device
+  $('fsDevice').value = state.device
   $('chipBtn').classList.toggle('primary', state.chips)
   $('fsChip').classList.toggle('primary', state.chips)
   $('bar').hidden = false
@@ -2675,23 +2968,30 @@ async function screenCount(name) {
   }
 }
 
-/** Header canvas switcher (hidden when the project has a single canvas). */
+/** Header canvas switcher (hidden when the project has a single canvas).
+ *  Espelha em #fsCanvas (modo fluxo) com a mesma regra de exibição. */
 async function loadCanvasSelect() {
   const label = $('canvasLabel')
   const select = $('canvasSelect')
+  const fsSelect = $('fsCanvas')
   const names = await discoverCanvases()
   select.innerHTML = ''
+  fsSelect.innerHTML = ''
   if (names.length <= 1) {
     label.hidden = true
+    $('fsCanvasField').hidden = true
     return
   }
   label.hidden = false
+  $('fsCanvasField').hidden = false
   for (const name of names) {
-    const option = document.createElement('option')
-    option.value = name
-    option.textContent = name
-    option.selected = name === state.canvas
-    select.appendChild(option)
+    for (const target of [select, fsSelect]) {
+      const option = document.createElement('option')
+      option.value = name
+      option.textContent = name
+      option.selected = name === state.canvas
+      target.appendChild(option)
+    }
   }
 }
 
