@@ -49,7 +49,8 @@
    * .mock-overlay layer (mock.css) with its .mock-backdrop, appended in order
    * so the stack steps up the z-index scale through [data-depth] (mock.css
    * holds the ladder; this file never writes inline styles). Screens stay
-   * full canvas screens: the layer only renders the fetched <body> content,
+   * full canvas screens: the layer renders the fetched <body> content plus the
+   * screen's own <style> rules rewritten to match only inside the layer,
    * so there is a single source of truth and nothing is duplicated by hand.
    */
   const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]'
@@ -194,6 +195,69 @@
     setTimeout(() => body.classList.remove(cls), ENTER_MS)
   }
 
+  // CSS scoper for overlay layers: the fetched screen's <style> rules are
+  // rewritten to match only inside the layer (`.mock-overlay[data-depth] .mock-content`),
+  // so a modal renders with its own styling without repainting the screen behind it.
+  const HTML_ROOT = /^(?:html|body|:root)(?=[\s.,:#\[>+~]|$)/
+
+  function splitSelectors(prelude) {
+    const out = []
+    let depth = 0
+    let start = 0
+    for (let i = 0; i < prelude.length; i++) {
+      const ch = prelude[i]
+      if (ch === '(' || ch === '[') depth++
+      else if (ch === ')' || ch === ']') depth--
+      else if (ch === ',' && depth === 0) {
+        out.push(prelude.slice(start, i))
+        start = i + 1
+      }
+    }
+    out.push(prelude.slice(start))
+    return out
+  }
+
+  function scopeRule(prelude, body, scope) {
+    const base = scope.trim()
+    const selectors = splitSelectors(prelude).map((sel) => {
+      const clean = sel.replace(/\/\*[\s\S]*?\*\//g, '').trim()
+      if (!clean) return ''
+      if (HTML_ROOT.test(clean)) {
+        const rest = clean.replace(HTML_ROOT, '').trim()
+        return rest ? base + ' ' + rest : base
+      }
+      return scope + clean
+    }).filter(Boolean)
+    return selectors.length ? selectors.join(', ') + '{' + body + '}' : ''
+  }
+
+  function scopeCss(css, scope) {
+    let out = ''
+    let i = 0
+    while (i < css.length) {
+      const open = css.indexOf('{', i)
+      if (open === -1) break
+      const prelude = css.slice(i, open).replace(/\/\*[\s\S]*?\*\//g, '').trim()
+      let depth = 1
+      let j = open + 1
+      while (j < css.length && depth > 0) {
+        if (css[j] === '{') depth++
+        else if (css[j] === '}') depth--
+        j++
+      }
+      const body = css.slice(open + 1, j - 1)
+      if (prelude.startsWith('@media') || prelude.startsWith('@supports')) {
+        out += prelude + '{' + scopeCss(body, scope) + '}'
+      } else if (prelude.startsWith('@')) {
+        out += prelude + '{' + body + '}'
+      } else if (prelude) {
+        out += scopeRule(prelude, body, scope)
+      }
+      i = j
+    }
+    return out
+  }
+
   window.Mock = {
     /** Fictitious data from this canvas's data.json: await Mock.data('users') */
     async data(key) {
@@ -309,14 +373,23 @@
       const screen = new DOMParser().parseFromString(html, 'text/html')
       const layer = document.createElement('div')
       layer.className = 'mock-overlay'
-      layer.setAttribute('data-depth', String(Math.min(stack.length, 9)))
+      const depth = String(Math.min(stack.length, 9))
+      layer.setAttribute('data-depth', depth)
       layer.setAttribute('role', 'dialog')
       layer.setAttribute('aria-modal', 'true')
       layer.setAttribute('tabindex', '-1')
       const backdrop = document.createElement('div')
       backdrop.className = 'mock-backdrop'
       const content = document.createElement('div')
+      content.className = 'mock-content'
       content.innerHTML = screen.body ? screen.body.innerHTML : ''
+      let css = ''
+      for (const style of screen.querySelectorAll('style')) css += style.textContent + '\n'
+      if (css.trim()) {
+        const layerStyle = document.createElement('style')
+        layerStyle.textContent = scopeCss(css, `.mock-overlay[data-depth="${depth}"] .mock-content `)
+        layer.appendChild(layerStyle)
+      }
       layer.appendChild(backdrop)
       layer.appendChild(content)
       const record = {
@@ -391,3 +464,27 @@
     window.addEventListener('pagehide', saveScroll)
   } catch { /* preview degrades without pagehide */ }
 })()
+
+// data-* action delegation (works standalone AND inside overlay layers):
+// [data-toast] shows a toast, [data-close] closes the top overlay,
+// [data-go] navigates, [data-overlay] opens an overlay.
+document.addEventListener('click', (event) => {
+  const target = event.target && event.target.closest
+    ? event.target.closest('[data-toast],[data-close],[data-go],[data-overlay]')
+    : null
+  if (!target || typeof target.onclick === 'function') return
+  if (target.tagName === 'A') {
+    const href = target.getAttribute('href') || ''
+    if (!href || href === '#') event.preventDefault()
+  }
+  if (target.hasAttribute('data-toast')) window.Mock.toast(target.getAttribute('data-toast'))
+  if (target.hasAttribute('data-close')) window.Mock.close()
+  if (target.hasAttribute('data-go')) {
+    event.preventDefault()
+    window.Mock.go(target.getAttribute('data-go'))
+  }
+  if (target.hasAttribute('data-overlay')) {
+    event.preventDefault()
+    window.Mock.overlay(target.getAttribute('data-overlay'))
+  }
+})
