@@ -126,6 +126,11 @@ Notes:
    it adjusts just that screen. Scenario, theme and device are remembered per
    canvas. Full usage docs live in `docs.html` (📘 Docs button in the viewer's
    toolbar).
+    **Complex projects**: label screens with `"group"` in `canvas.json` to get
+    titled blocks, toggle **▦ Grade** for a wrapping overview, type `/` to
+    search screens, **📱 Moldura** puts device frames around mobile/tablet
+    screens, screens lazy-load as you scroll, and `Comparar` accepts any two
+    screens side by side (not just snapshots).
 3. The `impeccable` skill **downloads a third-party binary** — its engine,
    from the [pbakaus/impeccable](https://github.com/pbakaus/impeccable)
    releases — on first run (once, needs network). The launcher validates it
@@ -134,9 +139,11 @@ Notes:
    without the engine via fallback.
 
 The commands that live in the project's `design/` are `node design/validate.mjs`,
-`node design/serve.mjs [port] [--share]`, `node design/scripts/gen-tokens.mjs`,
-`node design/scripts/sync-components.mjs` and
-`node design/scripts/export-tokens.mjs` (installed).
+`node design/serve.mjs [port] [--share] [--open[=canvas]] [--no-open]`,
+`node design/scripts/gen-tokens.mjs`, `node design/scripts/sync-components.mjs`
+and `node design/scripts/export-tokens.mjs` (installed). The server opens your
+default browser at the viewer (`--open=<canvas>` lands straight on a canvas,
+`--no-open` suppresses it, the `BROWSER` env var picks a specific browser).
 
 ## Troubleshooting
 
@@ -151,7 +158,8 @@ The commands that live in the project's `design/` are `node design/validate.mjs`
 
 ## Contributing
 
-Issues and pull requests are welcome. A few pointers:
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md)
+for the invariants, test commands and PR checklist. A few pointers:
 
 - Keep the four skills installable side by side — `design`'s craft layer
   references `../taste`, `../emil-design-eng` and `../impeccable`.
@@ -166,6 +174,14 @@ Issues and pull requests are welcome. A few pointers:
 
 ## Changelog
 
+- **Viewer for complex projects (v1.1.0)**: `"group"` blocks in `canvas.json`,
+  ▦ Grade (wrapping overview), screen search (`/`), 📱 Moldura (device
+  frames), lazy-loaded screens and screen-vs-screen in `Comparar` (A/B now
+  accepts live screens, not just snapshots). `serve.mjs` opens the default
+  browser at the viewer (`--open[=canvas]`, `--no-open`, `BROWSER` env) and
+  the viewer hides actions the browser cannot do (`data-require` — declared
+  degradation). Plus: unit tests in the CI, `CONTRIBUTING.md`, issue/PR
+  templates and tag-driven releases (`v*` tag → GitHub release).
 - **CI + plain-JS core (v1.0.0)**: GitHub Actions runs the smoke test, the
   installer, the validator and the security suite on Linux/Windows ×
   Node 18/20/22/24. The plugin's logic moved to `plugin/core.mjs` (plain JS),

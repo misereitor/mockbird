@@ -62,6 +62,8 @@ design/
 
 - `device`: `mobile` = 390×844, `tablet` = 834×1112, `desktop` = 1440×900;
   optional `width`/`height` (integers 100–10000) override it.
+- `group` (optional): label that clusters the screens into titled blocks in
+  the viewer strip — complex projects stay readable (e.g. `"group": "Checkout"`).
 - `transition` (optional): `fade`, `slide-left` or `none` (default). It is the
   screen's enter animation after `Mock.go` — see Workflow step 3 for the
   same-canvas/cross-canvas rule.
@@ -229,9 +231,16 @@ never in the example copy.
    degradation in the delivery output - the workflow never stalls or throws
    on the engine, and the validated canvas is delivered the same.
 5. **Show it.** Start the viewer server in the background
-   (`node design/serve.mjs`, default port 8765; if the port is busy a server is
+   (`node design/serve.mjs --open=<canvas>`, default port 8765 — `--open[=canvas]`
+   opens the default browser straight at that canvas, `--no-open` suppresses
+   it, `BROWSER` env picks a specific browser; without flags the browser opens
+   only from an interactive terminal; if the port is busy a server is
    probably already running — reuse it) and give the user the link:
-   `http://localhost:8765/viewer.html?canvas=<canvas>`. Mention that 🎯
+   `http://localhost:8765/viewer.html?canvas=<canvas>`. Point out the tools
+   for complex projects: `group` blocks in `canvas.json`, ▦ Grade (wrap
+   view), the search box (`/` focuses it), 📱 Moldura (device frames) and
+   screen-vs-screen in `Comparar` (A/B accepts "Telas deste canvas").
+   Mention that 🎯
    Elemento lets them click any element to comment on it specifically.
    Snapshots are review material: `Salvar snapshot` freezes a canvas state
    (`src/` + flat `render/`) for later review, `Comparar` shows any two

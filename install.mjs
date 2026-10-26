@@ -166,9 +166,11 @@ Done. Next steps:
 
 1. Restart your agent's session so the skills show up.
 2. The design skill runs the validator and the viewer with Node 18+:
-   node design/validate.mjs, node design/serve.mjs [port] [--share]
+   node design/validate.mjs, node design/serve.mjs [port] [--share] [--open[=canvas]] [--no-open]
    (127.0.0.1 bind by default; the served root is ./design relative to the
-   cwd; --share = read-only LAN mode with declared degradation),
+   cwd; --share = read-only LAN mode with declared degradation; the server
+   opens your default browser at the viewer — --open=<canvas> lands straight
+   on a canvas, --no-open suppresses it, the BROWSER env var picks a browser),
    node design/scripts/gen-tokens.mjs (regenerates the token CSS),
    node design/scripts/sync-components.mjs (rematerializes components) and
    node design/scripts/export-tokens.mjs (exports tokens.w3c.json).

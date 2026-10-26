@@ -1,0 +1,19 @@
+{
+  "name": "mockbird",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/misereitor/mockbird.git"
+  },
+  "description": "Four Agent Skills that stop AI agents from shipping generic UI: a screen canvas with real interactive HTML mockups, per-project design system, validator and a self-updating OpenCode v2 plugin.",
+  "scripts": {
+    "test": "node --test plugin/core.test.mjs",
+    "smoke": "node plugin/smoke.mjs",
+    "validate": "node skills/design/scripts/validate.mjs skills/design/assets/example",
+    "security": "node skills/design/scripts/fixtures/security-suite.mjs",
+    "ci": "npm test && npm run smoke && npm run validate && npm run security"
+  }
+}

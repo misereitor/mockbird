@@ -1,0 +1,48 @@
+name: Bug report
+description: Something is broken or misbehaving
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: The observed behavior, including any error messages.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: As precisely as possible — what did you run/open?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: "Windows 11 / Ubuntu 24.04 / macOS 15"
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node version
+      placeholder: "node -v"
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent / browser
+      placeholder: "OpenCode v2 + Chrome 141"
+  - type: textarea
+    id: extra
+    attributes:
+      label: Extra context
+      description: Screenshots, the mockbird-plugin.log excerpt, anything else.

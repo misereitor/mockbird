@@ -21,6 +21,9 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      - name: Unit tests (plugin core)
+        run: node --test plugin/core.test.mjs
+
       - name: Plugin smoke test
         run: node plugin/smoke.mjs
 

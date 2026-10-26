@@ -74,7 +74,16 @@
   }
   main#viewport.dragging { cursor: grabbing; }
   #world { position: absolute; top: 0; left: 0; transform-origin: 0 0; width: max-content; }
-  #strip { display: flex; align-items: flex-start; gap: 48px; padding: 48px; }
+  #strip { display: flex; flex-direction: column; align-items: flex-start; gap: 48px; padding: 48px; }
+  /* w9: groups / grid mode / bezels / filter — complex projects */
+  .group { display: flex; flex-direction: column; gap: 14px; }
+  .group-cards { display: flex; align-items: flex-start; gap: 48px; }
+  .group-title { margin: 0; font: 600 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--ui-muted); }
+  body.grid .group-cards { flex-wrap: wrap; }
+  body.bezel .card[data-device="mobile"] .card-frame { border: 10px solid #1a1a1e; border-radius: 34px; box-shadow: 0 12px 32px rgba(0, 0, 0, .18); }
+  body.bezel .card[data-device="tablet"] .card-frame { border: 12px solid #1a1a1e; border-radius: 22px; box-shadow: 0 12px 32px rgba(0, 0, 0, .18); }
+  #filterInput { width: 160px; padding: 4px 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-surface); color: var(--ui-text); font: inherit; font-size: 12px; }
+  #filterInput:focus { outline: 2px solid var(--ui-accent); outline-offset: -1px; }
 
   .card { display: flex; flex-direction: column; gap: 8px; }
   .card-head { display: flex; align-items: baseline; gap: 10px; }
@@ -429,6 +438,9 @@
     <label id="scenarioLabel" hidden>Cenário
       <select id="scenarioSelect"></select>
     </label>
+    <input id="filterInput" type="search" placeholder="Buscar tela… (/)" title="Filtrar telas por nome, id ou grupo — / foca, Esc limpa" autocomplete="off">
+    <button id="gridBtn" title="Alternar entre fita horizontal e grade (quebra em linhas)">▦ Grade</button>
+    <button id="bezelBtn" title="Molduras de dispositivo (celular/tablet) ao redor das telas">📱 Moldura</button>
     <label>Dispositivo
       <select id="deviceSelect">
         <option value="original">Original</option>
@@ -446,7 +458,7 @@
     </span>
     <button id="reloadBtn" title="Reler canvas.json e as telas">⟳ Recarregar</button>
     <button id="resetFlowBtn" title="Voltar todas as telas ao início e limpar os dados do fluxo">⟲ Reset fluxo</button>
-    <button id="recordBtn" title="Gravar o fluxo como vídeo .webm — o navegador pede para compartilhar esta aba; clique de novo para parar e baixar">⏺ Gravar fluxo</button>
+    <button data-require="record" id="recordBtn" title="Gravar o fluxo como vídeo .webm — o navegador pede para compartilhar esta aba; clique de novo para parar e baixar">⏺ Gravar fluxo</button>
     <button id="docsBtn" title="Abrir a documentação de utilização">📘 Docs</button>
     <button id="inspectBtn" data-share-hide title="Comentar um elemento específico da tela (Esc sai do modo)">🎯 Elemento</button>
     <button id="chipBtn" title="Mostrar chips de id/variante sobre cada componente (inspetor)">🧩 Componentes</button>
@@ -697,7 +709,7 @@ const state = {
   zoom: 1, x: 0, y: 0,
   screens: [], selectedId: null, bust: 0,
   inspect: false, comments: [],
-  chips: false,
+  chips: false, grid: false, bezel: false,
   scenario: '', problems: [],
   allComments: [], sweepIndex: -1,
 }
@@ -721,6 +733,24 @@ function syncShareDegradation() {
   for (const el of document.querySelectorAll('[data-share-hide]')) el.hidden = true
 }
 
+/* --------------------------------- capability degradation (browsers, w9) */
+
+/** Degradação declarada (navegador): ações que o navegador não consegue fazer
+ *  somem em vez de quebrar — mesma filosofia do data-share-hide. Marque o
+ *  elemento com data-require="<cap>" e registre a capacidade aqui. */
+const CAPABILITIES = {
+  record: () => typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getDisplayMedia,
+  png: () => typeof HTMLCanvasElement !== 'undefined' && !!document.createElement('canvas').toBlob,
+}
+
+function syncCapabilityDegradation() {
+  for (const el of document.querySelectorAll('[data-require]')) {
+    const ok = CAPABILITIES[el.dataset.require]?.() ?? true
+    el.hidden = !ok
+    if (!ok) el.title = 'Indisponivel neste navegador'
+  }
+}
+
 /* --------------------------------------------- per-canvas preferences */
 
 function prefsKey() {
@@ -740,7 +770,7 @@ function savePrefs() {
   try {
     localStorage.setItem(prefsKey(), JSON.stringify({
       scenario: state.scenario, theme: state.theme, device: state.device,
-      chips: state.chips,
+      chips: state.chips, grid: state.grid, bezel: state.bezel,
     }))
   } catch { /* storage unavailable; prefs stay per-session */ }
 }
@@ -1417,13 +1447,15 @@ let compareSyncing = false
 
 /**
  * Pure planning: A/B selections + mode -> compare spec. Selections: '' or
- * 'atual' = live screens of the canvas; anything else = snapshot label from
- * GET /api/snapshots. A label missing from the list -> clear message (no crash).
+ * 'atual' = live screens of the canvas; 'screen:<file>' = one live screen;
+ * anything else = snapshot label from GET /api/snapshots. A label missing
+ * from the list -> clear message (no crash).
  */
 function buildCompareSpec(selA, selB, mode, snapshots, canvas) {
   const list = Array.isArray(snapshots) ? snapshots : []
   const resolve = (sel) => {
     const value = String(sel ?? '')
+    if (value.startsWith('screen:')) return { kind: 'screen', label: value.slice('screen:'.length) }
     if (value === '' || value === 'atual') return { kind: 'atual', label: 'atual' }
     const found = list.find((snap) => snap && snap.canvas === canvas && snap.label === value)
     return found ? { kind: 'snapshot', label: found.label, date: found.date } : null
@@ -1449,7 +1481,9 @@ function compareSrc(side, file, canvas, bust) {
 }
 
 function compareLabel(side) {
-  return side.kind === 'snapshot' ? `snapshot ${side.label}` : 'atual'
+  if (side.kind === 'snapshot') return `snapshot ${side.label}`
+  if (side.kind === 'screen') return `tela ${side.label}`
+  return 'atual'
 }
 
 /**
@@ -1576,6 +1610,16 @@ async function renderCompareOptions() {
       option.textContent = `${snap.label} — ${snap.date}`
       select.appendChild(option)
     }
+    // w9 comparar telas: telas vivas do canvas também entram como opção A/B
+    const screensGroup = document.createElement('optgroup')
+    screensGroup.label = 'Telas deste canvas'
+    for (const screen of state.screens) {
+      const option = document.createElement('option')
+      option.value = `screen:${String(screen.file).split('?')[0]}`
+      option.textContent = `tela — ${screen.name}`
+      screensGroup.appendChild(option)
+    }
+    select.appendChild(screensGroup)
     if ([...select.options].some((option) => option.value === kept[index])) select.value = kept[index]
   }
   return snapshots
@@ -1600,7 +1644,11 @@ async function snapshotRenderExists(side) {
 /** Lado inteiro: um slot+iframe por tela — dispositivo/tema valem para os dois. */
 function buildCompareSide(side) {
   const frag = document.createDocumentFragment()
-  for (const screen of state.screens) {
+  // w9 comparar telas: lado "screen:<file>" renderiza só aquela tela
+  const screens = side.kind === 'screen'
+    ? state.screens.filter((s) => String(s.file).split('?')[0] === side.label)
+    : state.screens
+  for (const screen of screens) {
     const [width, height] = screenSize(screen)
     const slot = document.createElement('div')
     slot.className = 'compare-slot'
@@ -1623,6 +1671,13 @@ async function renderCompare() {
   for (const side of [compareSpec.a, compareSpec.b]) {
     if (!(await snapshotRenderExists(side))) {
       showCompareMsg(`Snapshot "${side.label}" não encontrado — o render/ dele não está disponível; atualize a lista de snapshots.`)
+      return
+    }
+  }
+  // w9 comparar telas: lado apontando para tela que não existe mais -> aviso claro
+  for (const side of [compareSpec.a, compareSpec.b]) {
+    if (side.kind === 'screen' && !state.screens.some((s) => String(s.file).split('?')[0] === side.label)) {
+      showCompareMsg(`Tela "${side.label}" nao existe mais neste canvas.`)
       return
     }
   }
@@ -1707,9 +1762,30 @@ function renderStrip() {
     select(null)
     return
   }
+  // w9 grupos: canvas.json pode marcar screen.group — blocos com título.
+  const groups = new Map()
   for (const screen of state.screens) {
-    strip.appendChild(cardFor(screen))
+    const key = typeof screen.group === 'string' ? screen.group.trim() : ''
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(screen)
   }
+  for (const [key, screens] of groups) {
+    const section = document.createElement('section')
+    section.className = 'group'
+    if (key) {
+      const title = document.createElement('h2')
+      title.className = 'group-title'
+      title.textContent = key
+      section.appendChild(title)
+    }
+    const cards = document.createElement('div')
+    cards.className = 'group-cards'
+    for (const screen of screens) cards.appendChild(cardFor(screen))
+    section.appendChild(cards)
+    strip.appendChild(section)
+  }
+  applyFilter() // w9 busca: o filtro ativo vale para os grupos recém-criados
+  syncWorldWidth()
   renderAllPins()
   syncShareDegradation() // share: camadas de pins criadas agora também somem
   if (!state.screens.some((s) => s.id === state.selectedId)) select(null)
@@ -1721,6 +1797,8 @@ function cardFor(screen) {
   const card = document.createElement('div')
   card.className = 'card'
   card.dataset.id = screen.id
+  // w9 moldura: classe por largura real do slot (mobile/tablet/desktop)
+  card.dataset.device = width <= 430 ? 'mobile' : width <= 900 ? 'tablet' : 'desktop'
 
   const head = document.createElement('div')
   head.className = 'card-head'
@@ -1747,7 +1825,9 @@ function cardFor(screen) {
   iframe.sandbox = 'allow-scripts allow-same-origin allow-forms'
   iframe.title = screen.name
   const origSrc = screenUrl(screen)
-  iframe.src = origSrc
+  iframe.dataset.src = origSrc // w9 lazy: só carrega quando o card aparece
+  if (lazyObserver) lazyObserver.observe(iframe)
+  else loadFrame(iframe)
   iframe.addEventListener('load', () => {
     applyThemeToFrame(iframe)
     renderCompChips(iframe)
@@ -2176,6 +2256,7 @@ function zoomViewBy(view, stageEl, worldEl, labelEl, factor, cx, cy) {
 
 /** Fit real: min(fit largura, fit altura), teto 100%, mundo centralizado. */
 function fitViewState(view, stageEl, worldEl, labelEl) {
+  syncWorldWidth() // w9: a quebra da grade muda o tamanho medido do mundo
   const rect = stageEl.getBoundingClientRect()
   const worldW = worldEl.offsetWidth
   const worldH = worldEl.offsetHeight
@@ -2188,6 +2269,13 @@ function fitViewState(view, stageEl, worldEl, labelEl) {
   view.x = (rect.width - worldW * view.zoom) / 2
   view.y = (rect.height - worldH * view.zoom) / 2
   applyViewState(view, stageEl, worldEl, labelEl)
+}
+
+/** w9 grade: o mundo só quebra em linhas quando a largura dele é limitada à
+ *  janela (em coordenadas de mundo = viewport / zoom). Na fita, max-content. */
+function syncWorldWidth() {
+  const world = $('world')
+  world.style.width = state.grid ? `${Math.max(640, $('viewport').clientWidth) / state.zoom}px` : ''
 }
 
 function applyView() {
@@ -2878,6 +2966,102 @@ async function copyToClipboard(text, label = 'Comentário') {
   return copied
 }
 
+/* -------------------------------- w9: lazy frames (projetos complexos) */
+
+/** Iframes só ganham src quando o card chega perto da viewport — 40 telas
+ *  deixam de carregar 40 runtimes de uma vez. Export e afins forçam a carga. */
+const lazyObserver = typeof IntersectionObserver === 'function'
+  ? new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        lazyObserver.unobserve(entry.target)
+        loadFrame(entry.target)
+      }
+    }, { rootMargin: '500px' })
+  : null
+
+function loadFrame(iframe) {
+  if (!iframe.dataset.src) return
+  iframe.src = iframe.dataset.src
+  delete iframe.dataset.src
+}
+
+/** Garante conteúdo real nos iframes (export PNG usa contentDocument). */
+async function ensureFramesLoaded(iframes) {
+  for (const iframe of iframes.filter((frame) => frame?.dataset?.src)) {
+    const loaded = new Promise((resolve) => {
+      iframe.addEventListener('load', resolve, { once: true })
+      setTimeout(resolve, 15000) // nunca trava o export para sempre
+    })
+    loadFrame(iframe)
+    await loaded
+  }
+}
+
+/* ---------------------------- w9: grade, moldura, busca e teclado */
+
+$('gridBtn').addEventListener('click', () => {
+  state.grid = !state.grid
+  document.body.classList.toggle('grid', state.grid)
+  $('gridBtn').classList.toggle('primary', state.grid)
+  savePrefs()
+  fitView() // a quebra muda as dimensões do mundo — reencaixa
+})
+
+$('bezelBtn').addEventListener('click', () => {
+  state.bezel = !state.bezel
+  document.body.classList.toggle('bezel', state.bezel)
+  $('bezelBtn').classList.toggle('primary', state.bezel)
+  savePrefs()
+})
+
+function applyFilter() {
+  const query = $('filterInput').value.trim().toLowerCase()
+  for (const card of $('strip').querySelectorAll('.card')) {
+    const screen = state.screens.find((s) => s.id === card.dataset.id) ?? null
+    const haystack = screen ? `${screen.id} ${screen.name} ${screen.group ?? ''}`.toLowerCase() : ''
+    card.hidden = query !== '' && !haystack.includes(query)
+  }
+  for (const group of $('strip').querySelectorAll('.group')) {
+    group.hidden = ![...group.querySelectorAll('.card')].some((card) => !card.hidden)
+  }
+}
+
+$('filterInput').addEventListener('input', applyFilter)
+$('filterInput').addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    $('filterInput').value = ''
+    applyFilter()
+    $('filterInput').blur()
+  }
+})
+
+document.addEventListener('keydown', (event) => {
+  const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(event.target.tagName) || event.target.isContentEditable
+  if (event.key === '/' && !typing) {
+    event.preventDefault()
+    $('filterInput').focus()
+    return
+  }
+  if (typing) return
+  const visible = [...$('strip').querySelectorAll('.card')].filter((card) => !card.hidden)
+  if (visible.length === 0) return
+  const index = visible.findIndex((card) => card.dataset.id === state.selectedId)
+  if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+    event.preventDefault()
+    const next = event.key === 'ArrowRight'
+      ? visible[Math.min(visible.length - 1, index + 1)]
+      : visible[Math.max(0, (index < 0 ? 1 : index) - 1)]
+    if (next) {
+      select(next.dataset.id)
+      centerOnScreen(next.dataset.id)
+    }
+  } else if (event.key === 'Enter' && state.selectedId && $('fullscreen').hidden) {
+    const screen = state.screens.find((s) => s.id === state.selectedId)
+    if (screen) openFullscreen(screen)
+  }
+})
+
 /* ---------------------------------------------------------------- export */
 
 $('exportBtn').addEventListener('click', () => {
@@ -2959,6 +3143,7 @@ async function captureScreen(iframe) {
 }
 
 async function exportScreen(screen) {
+  await ensureFramesLoaded([frameOf(screen.id)]) // w9 lazy: força a carga antes do PNG
   const iframe = frameOf(screen.id)
   if (!iframe?.contentDocument) throw new Error('tela não carregada')
   const dataUrl = await captureScreen(iframe)
@@ -2981,6 +3166,7 @@ async function exportFsScreen(screen) {
 }
 
 async function exportCanvasPng() {
+  await ensureFramesLoaded(state.screens.map((s) => frameOf(s.id))) // w9 lazy
   const captures = []
   for (const screen of state.screens) {
     const iframe = frameOf(screen.id)
@@ -3149,6 +3335,7 @@ setInterval(async () => {
 
 async function boot() {
   syncShareDegradation() // share: degradação declarada antes de qualquer render
+  syncCapabilityDegradation() // navegador: ações sem suporte somem antes de qualquer render
   if (location.protocol === 'file:') {
     document.body.innerHTML = (
       '<div id="selector"><h1>Design canvas</h1>' +
@@ -3177,6 +3364,13 @@ async function boot() {
   state.device = prefs.device ?? 'original'
   // 🧩 inspector toggle persists per canvas (like theme/device)
   state.chips = prefs.chips === true
+  // w9: grade e moldura persistem por canvas (como tema/dispositivo)
+  state.grid = prefs.grid === true
+  state.bezel = prefs.bezel === true
+  document.body.classList.toggle('grid', state.grid)
+  document.body.classList.toggle('bezel', state.bezel)
+  $('gridBtn').classList.toggle('primary', state.grid)
+  $('bezelBtn').classList.toggle('primary', state.bezel)
   // element comments persist in comments.json (GET/POST /api/comments)
   if (![...$('deviceSelect').options].some((option) => option.value === state.device)) state.device = 'original'
   $('deviceSelect').value = state.device

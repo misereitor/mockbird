@@ -129,6 +129,11 @@ Observações:
    só aquela tela. Cenário, tema e dispositivo são lembrados por canvas. A
    documentação completa de uso fica em `docs.html` (botão 📘 Docs na toolbar
    do viewer).
+   **Projetos complexos**: marque as telas com `"group"` no `canvas.json`
+   para ter blocos com título, ative **▦ Grade** para uma visão que quebra em
+   linhas, digite `/` para buscar telas, **📱 Moldura** coloca molduras de
+   dispositivo em telas mobile/tablet, as telas carregam conforme você rola,
+   e o `Comparar` aceita quaisquer duas telas lado a lado (não só snapshots).
 3. O skill `impeccable` **baixa um binário de terceiros** — seu motor, dos
    releases do [pbakaus/impeccable](https://github.com/pbakaus/impeccable) —
    na primeira execução (uma vez, precisa de rede). O launcher valida o
@@ -137,9 +142,12 @@ Observações:
    falhar o skill segue sem o motor via fallback.
 
 Os comandos que vivem no `design/` do projeto são `node design/validate.mjs`,
-`node design/serve.mjs [porta] [--share]`, `node design/scripts/gen-tokens.mjs`,
-`node design/scripts/sync-components.mjs` e
-`node design/scripts/export-tokens.mjs` (instalados).
+`node design/serve.mjs [porta] [--share] [--open[=canvas]] [--no-open]`,
+`node design/scripts/gen-tokens.mjs`, `node design/scripts/sync-components.mjs`
+e `node design/scripts/export-tokens.mjs` (instalados). O servidor abre o
+navegador padrão no viewer (`--open=<canvas>` cai direto num canvas,
+`--no-open` suprime, a variável de ambiente `BROWSER` escolhe um navegador
+específico).
 
 ## Solução de problemas
 
@@ -154,7 +162,8 @@ Os comandos que vivem no `design/` do projeto são `node design/validate.mjs`,
 
 ## Contribuindo
 
-Issues e pull requests são bem-vindos. Alguns pontos:
+Issues e pull requests são bem-vindos — veja [CONTRIBUTING.md](CONTRIBUTING.md)
+para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 - Mantenha as quatro skills instaláveis lado a lado — a camada craft do
   `design` referencia `../taste`, `../emil-design-eng` e `../impeccable`.
@@ -169,6 +178,15 @@ Issues e pull requests são bem-vindos. Alguns pontos:
 
 ## Changelog
 
+- **Viewer para projetos complexos (v1.1.0)**: blocos `"group"` no
+  `canvas.json`, ▦ Grade (visão quebra em linhas), busca de telas (`/`),
+  📱 Moldura (molduras de dispositivo), telas com lazy-load e tela-vs-tela no
+  `Comparar` (A/B agora aceita telas vivas, não só snapshots). O `serve.mjs`
+  abre o navegador padrão no viewer (`--open[=canvas]`, `--no-open`, env
+  `BROWSER`) e o viewer esconde ações que o navegador não consegue fazer
+  (`data-require` — degradação declarada). Mais: testes unitários no CI,
+  `CONTRIBUTING.md`, templates de issue/PR e releases por tag (tag `v*` →
+  release no GitHub).
 - **CI + core em JS puro (v1.0.0)**: GitHub Actions roda o smoke test, o
   instalador, o validador e a suite de segurança em Linux/Windows ×
   Node 18/20/22/24. A lógica do plugin foi para `plugin/core.mjs` (JS puro),

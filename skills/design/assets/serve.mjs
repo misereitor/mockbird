@@ -7,10 +7,15 @@
  * root backs the write API below and the pipeline tools (gen/sync/validate all
  * point at `design/`). Run it from the project root: `node design/serve.mjs`.
  *
- * Usage: node design/serve.mjs [porta] [--share]
+ * Usage: node design/serve.mjs [porta] [--share] [--open[=canvas]] [--no-open]
  *   [porta]  TCP port (default 8765)
  *   --share  bind 0.0.0.0 for LAN preview; every /api/* then answers 403
  *            (read-only degradation — writes and API reads are refused)
+ *   --open[=canvas]  force-open the default browser at the viewer (optionally
+ *            straight at a canvas: --open=login). By default the browser
+ *            opens only from an interactive terminal (TTY); set the BROWSER
+ *            env var to pick a specific browser binary.
+ *   --no-open  never open a browser, just print the URL
  *
  * On start prints ONE parseable line:
  *   URL: <base> TOKEN: <token>
@@ -61,7 +66,7 @@
  * banner. Static routes keep serving normally to the LAN.
  */
 import { createServer } from 'node:http'
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
 import {
   createReadStream,
@@ -80,10 +85,17 @@ import { basename, dirname, extname, join, normalize, relative, resolve, sep } f
 
 const argv = process.argv.slice(2)
 const share = argv.includes('--share')
+const noOpen = argv.includes('--no-open')
+const openArg = argv.find((arg) => arg === '--open' || arg.startsWith('--open='))
+const openCanvas = openArg?.startsWith('--open=') ? openArg.slice('--open='.length) : ''
 const portArg = argv.find((arg) => !arg.startsWith('--'))
 const port = portArg === undefined ? 8765 : Number(portArg)
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
-  console.error('uso: node design/serve.mjs [porta] [--share]')
+  console.error('uso: node design/serve.mjs [porta] [--share] [--open[=canvas]] [--no-open]')
+  process.exit(2)
+}
+if (openCanvas && !/^[a-zA-Z0-9_-]+$/.test(openCanvas)) {
+  console.error('canvas invalido em --open=<canvas>')
   process.exit(2)
 }
 
@@ -1054,7 +1066,37 @@ const server = createServer(async (req, res) => {
   }
 })
 
+/**
+ * Opens the viewer in the user's default browser — native per-OS command, no
+ * dependencies, child detached and hidden (no console windows on Windows).
+ * The BROWSER env var forces a specific browser binary. Never throws: on any
+ * failure the URL stays printed in the terminal.
+ */
+function openBrowser(url) {
+  try {
+    const browser = process.env.BROWSER
+    const [cmd, args] = browser
+      ? [browser, [url]]
+      : process.platform === 'win32' ? ['cmd.exe', ['/c', 'start', '', url]]
+      : process.platform === 'darwin' ? ['open', [url]]
+      : ['xdg-open', [url]]
+    const child = spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true })
+    child.on('error', () => {})
+    child.unref()
+    return true
+  } catch {
+    return false
+  }
+}
+
 server.listen(port, bindHost, () => {
   const host = bindHost === '0.0.0.0' ? '0.0.0.0' : '127.0.0.1'
   console.log(`URL: http://${host}:${port} TOKEN: ${token}`)
+  // Browser policy: --open forces, --no-open forbids, otherwise only from an
+  // interactive terminal (so tests, CI and the plugin never spawn browsers).
+  const shouldOpen = openArg !== undefined ? !noOpen : !noOpen && process.stdout.isTTY
+  if (shouldOpen) {
+    const viewer = `http://127.0.0.1:${port}/viewer.html${openCanvas ? `?canvas=${encodeURIComponent(openCanvas)}` : ''}`
+    openBrowser(viewer)
+  }
 })
