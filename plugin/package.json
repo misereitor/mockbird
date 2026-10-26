@@ -1,9 +1,9 @@
 {
-  "name": "opencode-design-pack",
+  "name": "opencode-mockbird",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Plugin OpenCode v2 do Design Pack: auto-update via git pull, skills registradas direto do repo e espelho do design/ de cada projeto.",
+  "description": "OpenCode v2 plugin for Mockbird: auto-update via git pull, skills registered straight from the repo, and mirroring of each project's design/ folder.",
   "exports": {
     ".": "./index.ts"
   },

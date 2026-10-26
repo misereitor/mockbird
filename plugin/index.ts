@@ -1,21 +1,23 @@
 /**
- * opencode-design-pack — plugin OpenCode v2 do pacote Design Pack.
+ * opencode-mockbird — OpenCode v2 plugin for Mockbird.
  *
- * No `setup()` (que roda toda vez que o OpenCode abre um projeto) ele:
+ * On `setup()` (runs every time OpenCode opens a project) it:
  *
- *   1. atualiza o checkout do pack com `git pull --ff-only` (com throttle);
- *   2. registra as skills direto do repo via `ctx.skill.transform` — fonte
- *      única, sem cópias em ~/.config/opencode/skill, ~/.agents/skills etc.;
- *   3. espelha os arquivos de runtime no `design/` do projeto atual
- *      (arquivos com conteúdo divergente ganham `<arquivo>.bak` com a versão
- *      anterior antes de serem atualizados);
- *   4. registra o comando `/design-sync` para forçar update + sync sob demanda.
+ *   1. updates this checkout with `git pull --ff-only` (throttled);
+ *   2. registers the skills straight from the repo via `ctx.skill.transform`
+ *      — single source of truth, no copies in ~/.config/opencode/skill,
+ *      ~/.agents/skills etc.;
+ *   3. mirrors the runtime files into the current project's `design/` folder
+ *      (files whose content diverges get a `<file>.bak` backup of the local
+ *      version before being updated);
+ *   4. registers the `/design-sync` command for on-demand update + sync.
  *
- * Política de sincronização:
- *   - MIRROR: runtime do pack (viewer, mock, serve, validate, scripts…)
- *     sempre espelhado — o pack é a verdade; `.bak` preserva a versão local.
- *   - SEED: `components/` só é preenchido quando falta — o registry pode
- *     crescer por projeto e nunca deve ser sobrescrito.
+ * Sync policy:
+ *   - MIRROR: the pack's runtime (viewer, mock, serve, validate, scripts…)
+ *     is always mirrored — the repo is the truth; `.bak` keeps the local
+ *     version around.
+ *   - SEED: `components/` is only filled in when missing — the registry can
+ *     grow per project and must never be overwritten.
  */
 import { Plugin, Skill } from "@opencode/plugin"
 import { execFileSync } from "node:child_process"
@@ -37,13 +39,13 @@ const PACK_ROOT = resolve(HERE, "..")
 const SKILLS_DIR = join(PACK_ROOT, "skills")
 const DESIGN_ASSETS = join(SKILLS_DIR, "design", "assets")
 const DESIGN_SCRIPTS = join(SKILLS_DIR, "design", "scripts")
-/** Diagnóstico: console.log do plugin some no log do OpenCode. */
-const LOG_FILE = join(tmpdir(), "design-pack-plugin.log")
+/** Diagnostics: plugin console.log output is swallowed by OpenCode's log. */
+const LOG_FILE = join(tmpdir(), "mockbird-plugin.log")
 
-/** Intervalo mínimo entre dois `git pull` (ms). */
+/** Minimum interval between two `git pull` runs (ms). */
 const PULL_INTERVAL_MS = 10 * 60 * 1000
 
-/** Espelhados sempre no design/ do projeto (com .bak quando divergir). */
+/** Always mirrored into the project's design/ (.bak when content diverges). */
 const MIRROR: ReadonlyArray<readonly [dest: string, src: string]> = [
   ["viewer.html", join(DESIGN_ASSETS, "viewer.html")],
   ["mock.js", join(DESIGN_ASSETS, "mock.js")],
@@ -58,7 +60,7 @@ const MIRROR: ReadonlyArray<readonly [dest: string, src: string]> = [
   ["scripts/export-tokens.mjs", join(DESIGN_SCRIPTS, "export-tokens.mjs")],
 ]
 
-/** Seed: só entra quando falta — nunca sobrescreve o que o projeto evoluiu. */
+/** Seed: only added when missing — never overwrites what a project evolved. */
 const SEED: ReadonlyArray<readonly [dest: string, src: string]> = [
   ["components/button.html", join(DESIGN_ASSETS, "components", "button.html")],
   ["components/card.html", join(DESIGN_ASSETS, "components", "card.html")],
@@ -78,7 +80,7 @@ interface SyncSummary {
   added: string[]
 }
 
-/** Frontmatter YAML mínimo (`key: value`, com continuação indentada). */
+/** Minimal YAML frontmatter (`key: value`, with indented continuations). */
 export function frontmatter(text: string): Record<string, string> {
   const out: Record<string, string> = {}
   const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)
@@ -98,7 +100,7 @@ export function frontmatter(text: string): Record<string, string> {
   return out
 }
 
-/** Lê as skills do repo — sempre do disco, depois do pull. */
+/** Reads the skills from the repo — always from disk, right after the pull. */
 export function loadSkills(): PackSkill[] {
   if (!existsSync(SKILLS_DIR)) return []
   const out: PackSkill[] = []
@@ -126,24 +128,24 @@ function hasRemote(): boolean {
   }
 }
 
-/** `git pull --ff-only` não fatal: offline ou conflito segue com a versão local. */
+/** Non-fatal `git pull --ff-only`: offline or conflicts keep the local version. */
 function pullPack(): string {
-  if (!hasRemote()) return "git pull: sem remoto configurado — usando a versão local"
+  if (!hasRemote()) return "git pull: no remote configured — using the local version"
   try {
     execFileSync("git", ["-C", PACK_ROOT, "pull", "--ff-only", "--no-edit", "--quiet"], {
       encoding: "utf8",
       timeout: 60_000,
       stdio: ["ignore", "pipe", "pipe"],
     })
-    return "git pull: pack atualizado"
+    return "git pull: pack updated"
   } catch (error) {
     const err = error as { stderr?: string; message?: string }
-    const reason = (err.stderr || err.message || "erro desconhecido").trim().split("\n")[0]
-    return `git pull falhou (seguindo com a versão local): ${reason}`
+    const reason = (err.stderr || err.message || "unknown error").trim().split("\n")[0]
+    return `git pull failed (keeping the local version): ${reason}`
   }
 }
 
-/** Espelha o runtime no design/ do projeto. Retorna null se o projeto não usa design/. */
+/** Mirrors the runtime into the project's design/. Null when the project has none. */
 export function syncProject(projectDir: string): SyncSummary | null {
   const designDir = join(projectDir, "design")
   if (!existsSync(designDir)) return null
@@ -175,34 +177,34 @@ export function syncProject(projectDir: string): SyncSummary | null {
 }
 
 function describe(summary: SyncSummary | null): string {
-  if (!summary) return "design/: pasta inexistente neste projeto — nada a sincronizar"
-  const updated = summary.updated.join(", ") || "nenhum"
-  const added = summary.added.join(", ") || "nenhum"
-  return `design/: atualizados = ${updated}; novos = ${added}`
+  if (!summary) return "design/: no design/ folder in this project — nothing to sync"
+  const updated = summary.updated.join(", ") || "none"
+  const added = summary.added.join(", ") || "none"
+  return `design/: updated = ${updated}; added = ${added}`
 }
 
 export default Plugin.define({
-  id: "design-pack",
+  id: "mockbird",
   async setup(ctx) {
     const log = (message: string) => {
-      const line = `[design-pack] ${new Date().toISOString()} ${message}`
+      const line = `[mockbird] ${new Date().toISOString()} ${message}`
       console.log(line)
       try {
         appendFileSync(LOG_FILE, line + "\n")
-      } catch { /* diagnóstico é best-effort */ }
+      } catch { /* diagnostics are best-effort */ }
     }
     const guard = async (phase: string, run: () => Promise<void> | void) => {
       try {
         await run()
       } catch (error) {
-        log(`ERRO em ${phase}: ${(error as Error)?.message ?? error}`)
+        log(`ERROR in ${phase}: ${(error as Error)?.message ?? error}`)
       }
     }
     const interval = Number(ctx.options?.updateIntervalMs ?? PULL_INTERVAL_MS)
     const projectDir = ctx.location.project?.directory ?? ctx.location.directory
     log(`setup: projectDir=${projectDir} location=${ctx.location.directory}`)
 
-    // 1. auto-update (com throttle para não pesar no startup de cada projeto)
+    // 1. auto-update (throttled so every project start stays light)
     await guard("auto-update", async () => {
       const lastPull = Number((await ctx.storage.get("lastPull")) ?? 0)
       if (!Number.isFinite(interval) || Date.now() - lastPull >= interval) {
@@ -211,8 +213,9 @@ export default Plugin.define({
       }
     })
 
-    // 2. skills: fonte única = repo (lido após o pull). O callback é síncrono
-    //    e relê `source.skills`; `reload()` reexecuta os transforms.
+    // 2. skills: single source of truth = the repo (read after the pull). The
+    //    callback is synchronous and reads `source.skills`; `reload()` replays
+    //    the transforms.
     const source = { skills: loadSkills() }
     await guard("skill.transform", async () => {
       await ctx.skill.transform((editor) => {
@@ -227,26 +230,26 @@ export default Plugin.define({
           })
         }
       })
-      log(`skills registradas do repo: ${source.skills.map((s) => s.id).join(", ")}`)
+      log(`skills registered from repo: ${source.skills.map((s) => s.id).join(", ")}`)
     })
 
-    // 3. espelho do runtime no design/ do projeto atual
+    // 3. mirror the runtime into the current project's design/
     await guard("sync", async () => {
       log(describe(syncProject(projectDir)))
     })
 
-    // 4. /design-sync: update forçado + re-sync sob demanda
+    // 4. /design-sync: forced update + re-sync on demand
     await guard("command.transform", async () => {
       await ctx.command.transform((editor) => {
         editor.add({
           name: "design-sync",
-          description: "Atualiza o Design Pack (git pull), recarrega as skills e espelha o design/ deste projeto",
+          description: "Update Mockbird (git pull), reload the skills and mirror this project's design/ folder",
           execute: async ({ sessionID }) => {
             const lines = [pullPack()]
             source.skills = loadSkills()
             await ctx.skill.reload()
             lines.push(describe(syncProject(projectDir)))
-            await ctx.session.synthetic({ sessionID, text: `[design-pack] ${lines.join(" | ")}` })
+            await ctx.session.synthetic({ sessionID, text: `[mockbird] ${lines.join(" | ")}` })
           },
         })
       })

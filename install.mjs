@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Design Pack installer — installs the 4 skills (design, taste,
+ * Mockbird installer - installs the 4 skills (design, taste,
  * emil-design-eng, impeccable) into the skills directory of your coding agent.
  *
  * Zero dependencies. Requires Node 18+.
@@ -13,15 +13,15 @@
  */
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { isAbsolute, join, resolve, sep } from 'node:path'
+import { join, resolve } from 'node:path'
 
 const ALL_SKILLS = ['design', 'taste', 'emil-design-eng', 'impeccable']
 const CRAFT_ONLY = ['taste', 'emil-design-eng', 'impeccable'] // craft.md references these
 
 const TARGETS = {
-  zcode: { dir: join(homedir(), '.agents', 'skills'), note: 'ZCode (padrao aberto ~/.agents/skills)' },
-  agents: { dir: join(homedir(), '.agents', 'skills'), note: 'padrao aberto Agent Skills (OpenCode, ZCode e outros leem daqui)' },
-  opencode: { dir: join(homedir(), '.config', 'opencode', 'skill'), note: 'OpenCode global (se nao detectar, use --dir ~/.agents/skills)' },
+  zcode: { dir: join(homedir(), '.agents', 'skills'), note: 'ZCode (open standard ~/.agents/skills)' },
+  agents: { dir: join(homedir(), '.agents', 'skills'), note: 'Agent Skills open standard (read by OpenCode, ZCode and others)' },
+  opencode: { dir: join(homedir(), '.config', 'opencode', 'skill'), note: 'OpenCode global (if not detected, use --dir ~/.agents/skills)' },
   claude: { dir: join(homedir(), '.claude', 'skills'), note: 'Claude Code global' },
   codex: { dir: join(homedir(), '.codex', 'skills'), note: 'Codex CLI' },
   cursor: { dir: join(homedir(), '.cursor', 'skills'), note: 'Cursor' },
@@ -40,7 +40,7 @@ function parseArgs(argv) {
     else if (arg === '--list') args.list = true
     else if (arg === '--help' || arg === '-h') args.help = true
     else {
-      console.error(`argumento desconhecido: ${arg} (use --help)`)
+      console.error(`unknown argument: ${arg} (see --help)`)
       process.exit(2)
     }
   }
@@ -50,15 +50,15 @@ function parseArgs(argv) {
 const args = parseArgs(process.argv.slice(2))
 
 if (args.help || (!args.target && !args.dir && !args.list)) {
-  console.log(`Design Pack — instala as skills design, taste, emil-design-eng e impeccable.
+  console.log(`Mockbird - installs the skills design, taste, emil-design-eng and impeccable.
 
-Uso:
-  node install.mjs --target <nome>    instala no diretorio de skills do agente
-  node install.mjs --dir <caminho>    instala em qualquer pasta (ex.: .claude/skills do projeto)
-  node install.mjs --only design,taste  instala um subconjunto
-  node install.mjs --list             lista os destinos conhecidos
+Usage:
+  node install.mjs --target <name>    install into that agent's skills directory
+  node install.mjs --dir <path>       install into any folder (e.g. a project's .claude/skills)
+  node install.mjs --only design,taste  install a subset
+  node install.mjs --list             list the known targets
 
-Destinos (--target):`)
+Targets (--target):`)
   for (const [name, target] of Object.entries(TARGETS)) {
     console.log(`  ${name.padEnd(10)} ${target.dir}  (${target.note})`)
   }
@@ -74,7 +74,7 @@ if (args.list) {
 
 const unknown = args.only.filter((s) => !ALL_SKILLS.includes(s))
 if (args.only.length === 0 || unknown.length > 0) {
-  console.error(`--only invalido: ${unknown.join(', ') || '(vazio)'} — opções: ${ALL_SKILLS.join(', ')}`)
+  console.error(`invalid --only: ${unknown.join(', ') || '(empty)'} - options: ${ALL_SKILLS.join(', ')}`)
   process.exit(2)
 }
 
@@ -84,7 +84,7 @@ if (args.dir) {
 } else {
   const target = TARGETS[args.target]
   if (!target) {
-    console.error(`--target "${args.target}" desconhecido — opções: ${Object.keys(TARGETS).join(', ')} (ou use --dir)`)
+    console.error(`unknown --target "${args.target}" - options: ${Object.keys(TARGETS).join(', ')} (or use --dir)`)
     process.exit(2)
   }
   destDir = target.dir
@@ -93,22 +93,22 @@ if (args.dir) {
 const packDir = import.meta.dirname
 const missing = args.only.filter((name) => !existsSync(join(packDir, 'skills', name, 'SKILL.md')))
 if (missing.length > 0) {
-  console.error(`pacote incompleto, faltam: ${missing.join(', ')} (skills/<nome>/SKILL.md)`)
+  console.error(`incomplete package, missing: ${missing.join(', ')} (skills/<name>/SKILL.md)`)
   process.exit(2)
 }
 
 /* ----------------------------------------------------------------- install */
 
-console.log(`Instalando ${args.only.join(', ')}`)
-console.log(`  de  ${packDir}`)
-console.log(`  em  ${destDir}`)
+console.log(`Installing ${args.only.join(', ')}`)
+console.log(`  from  ${packDir}`)
+console.log(`  into  ${destDir}`)
 console.log('')
 
 mkdirSync(destDir, { recursive: true })
 for (const name of args.only) {
   const dest = join(destDir, name)
   if (existsSync(dest)) {
-    console.log(`  ~ ${name} (substituindo a versao anterior)`)
+    console.log(`  ~ ${name} (replacing the previous version)`)
     rmSync(dest, { recursive: true, force: true })
   } else {
     console.log(`  + ${name}`)
@@ -129,11 +129,11 @@ for (const name of args.only) {
     const skillName = /^name:\s*(\S+)/m.exec(frontmatter)?.[1]
     const hasDescription = /^description:\s*\S/m.test(frontmatter)
     const files = countFiles(dir)
-    if (!skillName || !hasDescription) throw new Error('frontmatter sem name/description')
-    console.log(`  ok  ${name.padEnd(16)} ${String(files).padStart(3)} arquivos  (skill "${skillName}")`)
+    if (!skillName || !hasDescription) throw new Error('frontmatter missing name/description')
+    console.log(`  ok  ${name.padEnd(16)} ${String(files).padStart(3)} files  (skill "${skillName}")`)
   } catch (error) {
     failures++
-    console.error(`  ERRO ${name}: ${error.message}`)
+    console.error(`  ERROR ${name}: ${error.message}`)
   }
 }
 if (failures > 0) process.exit(1)
@@ -142,9 +142,9 @@ const craftPresent = args.only.includes('design')
 const craftMissing = CRAFT_ONLY.filter((name) => !args.only.includes(name))
 if (craftPresent && craftMissing.length > 0) {
   console.log(`
-AVISO: a skill design carrega assets/craft.md, que referencia as skills
-irmas (${craftMissing.join(', ')}) pelo caminho relativo ../<nome>. Instale-as
-juntas (rode de novo sem --only) para a camada de craft completa.`)
+WARNING: the design skill loads assets/craft.md, which references the sibling
+skills (${craftMissing.join(', ')}) by relative path ../<name>. Install them
+together (run again without --only) for the full craft layer.`)
 }
 
 function countFiles(dir) {
@@ -161,22 +161,22 @@ function countFiles(dir) {
 }
 
 console.log(`
-Pronto. Proximos passos:
+Done. Next steps:
 
-1. Reinicie a sessao do seu agente para que as skills aparecam.
-2. A skill design roda o validador e o visualizador com Node 18+:
-   node design/validate.mjs, node design/serve.mjs [porta] [--share]
-   (bind 127.0.0.1 por padrao; a raiz servida e ./design relativa ao cwd;
-   --share = LAN somente-leitura com degradacao declarada),
-   node design/scripts/gen-tokens.mjs (regenera o CSS dos tokens),
-   node design/scripts/sync-components.mjs (rematerializa componentes) e
-   node design/scripts/export-tokens.mjs (exporta tokens.w3c.json) (instalado).
-3. A skill impeccable baixa seu engine binario na primeira execucao
-   (uma vez so, precisa de rede; se falhar, ela tem fallback sem engine).
-4. Teste: peca "uma landing page para o app X" ou digite /design, /taste,
-   /impeccable conforme o agente.
+1. Restart your agent's session so the skills show up.
+2. The design skill runs the validator and the viewer with Node 18+:
+   node design/validate.mjs, node design/serve.mjs [port] [--share]
+   (127.0.0.1 bind by default; the served root is ./design relative to the
+   cwd; --share = read-only LAN mode with declared degradation),
+   node design/scripts/gen-tokens.mjs (regenerates the token CSS),
+   node design/scripts/sync-components.mjs (rematerializes components) and
+   node design/scripts/export-tokens.mjs (exports tokens.w3c.json).
+3. The impeccable skill downloads its engine binary on first run
+   (once, needs network; if it fails it falls back to no engine).
+4. Try it: ask for "a landing page for app X" or type /design, /taste,
+   /impeccable depending on your agent.
 
-Para reinstalar ou instalar em outro lugar, as duas flags sao:
-node install.mjs --target <agente> (destino conhecido) ou
-node install.mjs --dir <pasta> (qualquer pasta).
+To reinstall or install elsewhere, the two flags are:
+node install.mjs --target <agent> (known target) or
+node install.mjs --dir <folder> (any folder).
 `)
