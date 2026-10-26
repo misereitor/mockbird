@@ -1,0 +1,13 @@
+{
+  "name": "opencode-design-pack",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Plugin OpenCode v2 do Design Pack: auto-update via git pull, skills registradas direto do repo e espelho do design/ de cada projeto.",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "dependencies": {
+    "@opencode/plugin": "^2.1.4"
+  }
+}

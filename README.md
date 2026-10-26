@@ -24,6 +24,11 @@ sozinhas para trabalho em código frontend real.
 
 ## Instalação
 
+> **Usa OpenCode v2?** O caminho recomendado é o **plugin com auto-update**
+> ([ver seção abaixo](#plugin-para-opencode-v2-auto-update)) — ele mantém as
+> skills e os projetos atualizados sozinhos. O `install.mjs` continua sendo o
+> caminho para os demais agentes e para instalação estática.
+
 Dentro da pasta deste pacote. As duas flags de instalação são `--target
 <agente>` (destino conhecido) e `--dir <pasta>` (qualquer pasta, instalação
 por projeto):
@@ -45,6 +50,53 @@ craft da `design` referencia as irmãs por caminho relativo (`../taste`,
 `../emil-design-eng`, `../impeccable`), então elas precisam morar lado a lado.
 
 Depois, **reinicie a sessão** do agente para as skills carregarem.
+
+## Plugin para OpenCode v2 (auto-update)
+
+O diretório `plugin/` faz o Design Pack se comportar como **plugin do
+OpenCode v2** que se atualiza sozinho. O `setup()` roda toda vez que o
+OpenCode abre um projeto e faz quatro coisas:
+
+1. **Auto-update** — `git pull --ff-only` neste repo (throttle de 10 min entre
+   pulls; offline ou sem remoto segue com a versão local, sem erro).
+2. **Skills sem cópia** — as quatro skills são registradas direto de `skills/`
+   via `ctx.skill.transform`. Fonte única: nada de manter cópias em
+   `~/.agents/skills`, `~/.claude/skills` ou `~/.config/opencode/skill`.
+3. **Espelho do runtime** — os arquivos de runtime (`viewer.html`, `mock.js`,
+   `mock.css`, `docs.html`, `serve.mjs`, `validate.mjs`, `vendor/`,
+   `scripts/`) são espelhados no `design/` do projeto atual. Arquivo com
+   conteúdo divergente recebe `<arquivo>.bak` com a versão anterior antes de
+   ser atualizado. `components/` é só *seed*: entra quando falta, nunca é
+   sobrescrito (o registry cresce por projeto).
+4. **Comando `/design-sync`** — força `git pull`, recarrega as skills e
+   reespelha o `design/` do projeto sob demanda.
+
+Instalação (uma vez por máquina):
+
+```bash
+cd plugin && npm install   # dependência @opencode/plugin (API v2)
+```
+
+E registre o caminho no config global (`~/.config/opencode/opencode.json`):
+
+```jsonc
+{
+  "plugins": ["C:/Projetos/design-pack/plugin"]
+}
+```
+
+A partir daí o fluxo de atualização é só: **commit + push aqui** → no próximo
+OpenCode que abrir em qualquer projeto, o `git pull` traz tudo e o `design/`
+do projeto é espelhado automaticamente.
+
+Observações:
+
+- Projeto sem pasta `design/` não é tocado (o plugin nunca cria `design/` —
+  quem cria é a skill, no primeiro uso).
+- `node plugin/smoke.mjs <projeto>` testa o espelhamento à mão, sem abrir o
+  OpenCode.
+- O `install.mjs` continua valendo para Claude Code, Codex, Cursor, Gemini e
+  instalações por projeto.
 
 ## Primeiro uso
 
@@ -71,6 +123,13 @@ design/scripts/export-tokens.mjs` (instalado).
 
 ## Changelog
 
+- **Plugin OpenCode v2 (`plugin/`)**: o pack agora roda como plugin do
+  OpenCode com auto-update — `git pull` no startup (throttle de 10 min),
+  skills registradas direto do repo (sem cópias) e espelho automático do
+  `design/` de cada projeto (mudanças ganham `<arquivo>.bak`; `components/`
+  só entra quando falta). Comando `/design-sync` para forçar a sincronização.
+  Caminho de migração: registrar `C:/Projetos/design-pack/plugin` em
+  `~/.config/opencode/opencode.json` (`plugins`).
 - **Bind padrão `127.0.0.1` + raiz servida `./design`** (mudanças de
   comportamento): `node design/serve.mjs` só atende a própria máquina — a API de
   escrita (`/api/*`) nunca fica exposta na rede — e serve `./design` relativa ao
