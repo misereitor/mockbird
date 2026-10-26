@@ -11,7 +11,7 @@
  *   node install.mjs --list              show the known targets
  *   node install.mjs --only design,taste install a subset (default: all four)
  */
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -22,7 +22,7 @@ const CRAFT_ONLY = ['taste', 'emil-design-eng', 'impeccable'] // craft.md refere
 const TARGETS = {
   zcode: { dir: join(homedir(), '.agents', 'skills'), note: 'ZCode (open standard ~/.agents/skills)' },
   agents: { dir: join(homedir(), '.agents', 'skills'), note: 'Agent Skills open standard (read by OpenCode, ZCode and others)' },
-  opencode: { dir: join(homedir(), '.config', 'opencode', 'skill'), note: 'OpenCode global (if not detected, use --dir ~/.agents/skills)' },
+  opencode: { dir: join(homedir(), '.config', 'opencode', 'skills'), note: 'OpenCode global (skills/ plural + slash commands in commands/)' },
   claude: { dir: join(homedir(), '.claude', 'skills'), note: 'Claude Code global' },
   codex: { dir: join(homedir(), '.codex', 'skills'), note: 'Codex CLI' },
   cursor: { dir: join(homedir(), '.cursor', 'skills'), note: 'Cursor' },
@@ -58,6 +58,9 @@ Usage:
   node install.mjs --dir <path>       install into any folder (e.g. a project's .claude/skills)
   node install.mjs --only design,taste  install a subset
   node install.mjs --list             list the known targets
+
+OpenCode destinations also get the slash commands (/design, /taste,
+/emil-design-eng, /impeccable) in their commands/ directory.
 
 Targets (--target):`)
   for (const [name, target] of Object.entries(TARGETS)) {
@@ -115,6 +118,38 @@ for (const name of args.only) {
     console.log(`  + ${name}`)
   }
   cpSync(join(packDir, 'skills', name), dest, { recursive: true })
+}
+
+/* ------------------------------------------------------- slash commands */
+
+/* OpenCode v2: skills are NOT slash commands — /design & co. live in a
+ * commands/ directory (~/.config/opencode/commands globally,
+ * .opencode/commands per project). Only OpenCode-shaped destinations get
+ * them; other agents are left alone with a note. */
+function commandsDestFor(dir) {
+  const norm = dir.replace(/\\/g, '/')
+  if (/\/\.opencode\/[^/]+$/.test(norm)) return join(dir, '..', 'commands')
+  if (/\/\.config\/opencode\/[^/]+$/.test(norm)) return join(homedir(), '.config', 'opencode', 'commands')
+  if ((args.target === 'agents' || args.target === 'zcode') && existsSync(join(homedir(), '.config', 'opencode'))) {
+    return join(homedir(), '.config', 'opencode', 'commands')
+  }
+  return null
+}
+
+const commandsSrc = join(packDir, 'commands')
+const commandsDest = commandsDestFor(destDir)
+if (commandsDest && existsSync(commandsSrc)) {
+  console.log('')
+  console.log(`Slash commands into ${commandsDest}`)
+  mkdirSync(commandsDest, { recursive: true })
+  for (const file of readdirSync(commandsSrc)) {
+    if (!file.endsWith('.md')) continue
+    copyFileSync(join(commandsSrc, file), join(commandsDest, file))
+    console.log(`  + /${file.replace(/\.md$/, '')}`)
+  }
+} else {
+  console.log('')
+  console.log('  (slash commands skipped — OpenCode only: use --target opencode or --dir <project>/.opencode/skills)')
 }
 
 /* -------------------------------------------------------------- verify */
@@ -176,8 +211,9 @@ Done. Next steps:
    node design/scripts/export-tokens.mjs (exports tokens.w3c.json).
 3. The impeccable skill downloads its engine binary on first run
    (once, needs network; if it fails it falls back to no engine).
-4. Try it: ask for "a landing page for app X" or type /design, /taste,
-   /impeccable depending on your agent.
+4. Invoke it: type /design, /taste, /emil-design-eng or /impeccable (OpenCode
+   slash commands), mention a skill as @design in your prompt, or just ask —
+   the agent loads the matching skill itself.
 
 To reinstall or install elsewhere, the two flags are:
 node install.mjs --target <agent> (known target) or

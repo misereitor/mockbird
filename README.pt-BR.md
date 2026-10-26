@@ -42,7 +42,7 @@ Na pasta deste pacote. As duas flags de instalação são `--target <agente>`
 (destino conhecido) e `--dir <pasta>` (qualquer pasta, instalação por projeto):
 
 ```bash
-node install.mjs --target opencode   # OpenCode (global: ~/.config/opencode/skill)
+node install.mjs --target opencode   # OpenCode (global: ~/.config/opencode/skills + commands/)
 node install.mjs --target zcode      # ZCode (~/.agents/skills)
 node install.mjs --target claude     # Claude Code (~/.claude/skills)
 node install.mjs --target codex      # Codex CLI (~/.codex/skills)
@@ -52,6 +52,11 @@ node install.mjs --target agents     # padrão aberto (~/.agents/skills)
 node install.mjs --dir .claude/skills  # ou qualquer pasta (instalação por projeto)
 node install.mjs --list              # ver todos os destinos
 ```
+
+Destinos OpenCode também recebem os **slash commands** (`/design`, `/taste`,
+`/emil-design-eng`, `/impeccable`) na pasta `commands/`. Sem eles, invoque as
+skills mencionando (`@design`) ou apenas peça — skills não são slash commands
+no OpenCode v2; o agente carrega a skill certa sozinho.
 
 Recomendação: instale **as quatro juntas** (comportamento padrão). A camada
 craft do `design` referencia as skills irmãs por caminho relativo (`../taste`,
@@ -71,15 +76,17 @@ OpenCode abre um projeto e faz quatro coisas:
 2. **Skills sem cópias** — as quatro skills são registradas direto de
    `skills/` via `ctx.skill.transform`. Fonte única de verdade: nada de
    manter cópias em `~/.agents/skills`, `~/.claude/skills` ou
-   `~/.config/opencode/skill`.
+   `~/.config/opencode/skills`.
 3. **Espelho de runtime** — os arquivos de runtime (`viewer.html`, `mock.js`,
    `mock.css`, `docs.html`, `serve.mjs`, `validate.mjs`, `vendor/`,
    `scripts/`) são espelhados na pasta `design/` do projeto atual. Arquivo
    cujo conteúdo diverge ganha um backup `<arquivo>.bak` da versão local
    antes de ser atualizado. `components/` é apenas *seed*: preenchido quando
    falta, nunca sobrescrito (os registros crescem por projeto).
-4. **Comando `/design-sync`** — força o `git pull`, recarrega as skills e
-   re-espelha o `design/` do projeto sob demanda.
+4. **Slash commands** — `/design`, `/taste`, `/emil-design-eng`,
+   `/impeccable` (um por skill, a partir de `commands/*.md`) mais o
+   `/design-sync`, que força o `git pull`, recarrega as skills e re-espelha
+   o `design/` do projeto sob demanda.
 
 Instale (uma vez por máquina) — **faça clone do repositório** (um download
 ZIP não tem `.git`, então o auto-update ficaria desativado):
@@ -182,6 +189,14 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Slash commands + correção da descoberta no OpenCode (v1.3.0)**: `/design`,
+  `/taste`, `/emil-design-eng` e `/impeccable` agora existem como slash
+  commands de verdade — registrados pelo plugin a partir de `commands/*.md`
+  (um por skill) e instalados pelo `install.mjs` na pasta `commands/` do
+  OpenCode. Skills sozinhas não são slash commands no OpenCode v2 (menções
+  `@design` e o carregamento automático continuam funcionando). Também foi
+  corrigido o caminho de instalação global: `~/.config/opencode/skills`
+  (plural — o V2 nunca descobriu a pasta singular `skill/` antiga).
 - **i18n do viewer/docs (v1.2.0)**: a interface do viewer e o `docs.html`
   falam inglês por padrão e seguem o idioma do navegador (PT-BR incluso) —
   `?lang=pt` / `?lang=en` forçam, o botão 🌐 alterna e mantém seu lugar.

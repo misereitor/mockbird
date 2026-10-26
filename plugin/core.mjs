@@ -84,7 +84,7 @@ export function frontmatter(text) {
   return out
 }
 
-/** Reads the skills from the repo — always from disk, right after the pull. */
+/** Reads the skills from the repo - always from disk, right after the pull. */
 export function loadSkills() {
   if (!existsSync(SKILLS_DIR)) return []
   const out = []
@@ -102,6 +102,31 @@ export function loadSkills() {
     })
   }
   return out
+}
+
+/**
+ * Slash commands (commands/*.md) - one per skill. Skills are NOT slash
+ * commands in OpenCode v2: the plugin registers these via
+ * `ctx.command.transform` and install.mjs copies them into a `commands/`
+ * directory. The Markdown body is the prompt template (`$ARGUMENTS`).
+ */
+export function loadCommands() {
+  const dir = join(PACK_ROOT, "commands")
+  if (!existsSync(dir)) return []
+  const out = []
+  for (const file of readdirSync(dir)) {
+    if (!file.endsWith(".md")) continue
+    const content = readFileSync(join(dir, file), "utf8")
+    const meta = frontmatter(content)
+    const template = content.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/, "").trim()
+    out.push({
+      name: file.replace(/\.md$/, ""),
+      description: meta.description || "",
+      template,
+      path: join(dir, file),
+    })
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name))
 }
 
 export function hasRemote() {

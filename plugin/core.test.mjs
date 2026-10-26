@@ -4,10 +4,11 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, frontmatter, loadSkills, MIRROR, PACK_ROOT, SEED, syncProject } from './core.mjs'
+import { describe, frontmatter, loadCommands, loadSkills, MIRROR, PACK_ROOT, SEED, syncProject } from './core.mjs'
 
 test('frontmatter parses name/description with indented continuations', () => {
   const fm = frontmatter('---\nname: design\ndescription: line one\n  line two\n---\n# body')
@@ -104,4 +105,32 @@ test('describe summarizes the sync for the setup log', () => {
   assert.equal(describe(null), 'design/: no design/ folder in this project — nothing to sync')
   assert.equal(describe({ updated: [], added: [] }), 'design/: updated = none; added = none')
   assert.equal(describe({ updated: ['a'], added: ['b', 'c'] }), 'design/: updated = a; added = b, c')
+})
+
+test('loadCommands ships one slash command per skill', () => {
+  const commands = loadCommands()
+  assert.deepEqual(commands.map((c) => c.name).sort(), ['design', 'emil-design-eng', 'impeccable', 'taste'])
+  for (const command of commands) {
+    assert.ok(command.description.length > 0, `/${command.name} needs a description`)
+    assert.ok(command.template.includes('$ARGUMENTS'), `/${command.name} must forward $ARGUMENTS`)
+    assert.ok(command.template.includes(`\`${command.name}\``), `/${command.name} must point at its skill id`)
+  }
+})
+
+test('install.mjs places slash commands next to OpenCode skill dirs', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mockbird-install-'))
+  try {
+    const skillsDir = join(dir, '.opencode', 'skills')
+    const result = spawnSync(process.execPath, [join(PACK_ROOT, 'install.mjs'), '--dir', skillsDir], {
+      encoding: 'utf8',
+      windowsHide: true,
+    })
+    assert.equal(result.status, 0, result.stderr)
+    for (const name of ['design', 'taste', 'emil-design-eng', 'impeccable']) {
+      assert.ok(existsSync(join(skillsDir, name, 'SKILL.md')), `missing skill ${name}`)
+      assert.ok(existsSync(join(dir, '.opencode', 'commands', `${name}.md`)), `missing slash command /${name}`)
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })

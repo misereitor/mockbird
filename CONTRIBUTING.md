@@ -48,6 +48,11 @@ The CI runs exactly these on Linux/Windows × Node 18/20/22/24.
    `docs.html` keeps its `data-lang="en"`/`data-lang="pt"` blocks in lockstep
    (same ids, working anchors). Never hardcode a UI literal in a single
    language — `npm run check:i18n` enforces all of this.
+9. **One slash command per skill.** `commands/<skill>.md` must exist for
+   every skill in `skills/<skill>/`, with a description and a template that
+   forwards `$ARGUMENTS` and names its skill. Skills are not slash commands
+   in OpenCode v2 — these files (plus the plugin's `ctx.command.transform`)
+   are what makes `/design` work. `npm test` enforces the pairing.
 
 ## Testing changes
 
