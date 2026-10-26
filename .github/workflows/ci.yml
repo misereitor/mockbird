@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 20, 22, 24]
+    runs-on: ${{ matrix.os }}
+    name: node ${{ matrix.node }} / ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Plugin smoke test
+        run: node plugin/smoke.mjs
+
+      - name: Install into a fresh folder (skills + licenses)
+        run: node install.mjs --dir "${{ runner.temp }}/mockbird-install"
+
+      - name: Validator on the example canvas
+        run: node skills/design/scripts/validate.mjs skills/design/assets/example
+
+      - name: Security suite (serve.mjs)
+        run: node skills/design/scripts/fixtures/security-suite.mjs

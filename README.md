@@ -1,5 +1,9 @@
 # Mockbird
 
+[![CI](https://github.com/misereitor/mockbird/actions/workflows/ci.yml/badge.svg)](https://github.com/misereitor/mockbird/actions/workflows/ci.yml)
+
+> Language: **English** · [Português (BR)](README.pt-BR.md)
+
 Four skills that, together, stop the agent from shipping generic layouts and
 start shipping professional-grade interfaces — including a **screen canvas**
 so you can see HTML mockups side by side in your browser.
@@ -21,10 +25,9 @@ work standalone on real frontend code.
 
 ## Requirements
 
-- **Node.js 18+** (the validator and the `design` skill's viewer run on Node;
-  no other dependencies — everything is offline, no CDN).
-  - `plugin/smoke.mjs` imports the plugin's TypeScript entry directly and
-    needs **Node 22.6+** (everything else runs on 18+).
+- **Node.js 18+** (the validator, the `design` skill's viewer and all tooling
+  run on stock Node 18 — no other dependencies, everything is offline,
+  no CDN).
 - An agent with **Agent Skills** support (`SKILL.md` with frontmatter):
   ZCode, OpenCode, Claude Code, Codex, Cursor, Gemini CLI and friends.
 
@@ -123,8 +126,12 @@ Notes:
    it adjusts just that screen. Scenario, theme and device are remembered per
    canvas. Full usage docs live in `docs.html` (📘 Docs button in the viewer's
    toolbar).
-3. The `impeccable` skill downloads its engine binary on first run (once,
-   needs network). If it fails, it continues without the engine via fallback.
+3. The `impeccable` skill **downloads a third-party binary** — its engine,
+   from the [pbakaus/impeccable](https://github.com/pbakaus/impeccable)
+   releases — on first run (once, needs network). The launcher validates it
+   (probe + version-pinned cache), you can preinstall your own via the
+   `IMPECCABLE_BIN` env var, and if the download fails the skill continues
+   without the engine via fallback.
 
 The commands that live in the project's `design/` are `node design/validate.mjs`,
 `node design/serve.mjs [port] [--share]`, `node design/scripts/gen-tokens.mjs`,
@@ -159,6 +166,11 @@ Issues and pull requests are welcome. A few pointers:
 
 ## Changelog
 
+- **CI + plain-JS core (v1.0.0)**: GitHub Actions runs the smoke test, the
+  installer, the validator and the security suite on Linux/Windows ×
+  Node 18/20/22/24. The plugin's logic moved to `plugin/core.mjs` (plain JS),
+  so `node plugin/smoke.mjs` now runs on stock Node 18. First tagged
+  release: `v1.0.0`.
 - **No console windows on Windows**: the auto-update `git` calls now spawn
   hidden (`windowsHide` / `CREATE_NO_WINDOW`) — opening a project no longer
   flashes a CMD window; everything else already ran in-process.

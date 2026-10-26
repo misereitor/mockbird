@@ -1,0 +1,228 @@
+# Mockbird
+
+[![CI](https://github.com/misereitor/mockbird/actions/workflows/ci.yml/badge.svg)](https://github.com/misereitor/mockbird/actions/workflows/ci.yml)
+
+> Idioma: [English](README.md) · **Português (BR)**
+
+Quatro skills que, juntas, fazem o agente parar de entregar layouts genéricos
+e começar a entregar interfaces de nível profissional — incluindo uma **tela
+de canvas** para você ver os mockups HTML lado a lado no navegador.
+
+Os mockups são HTML real e interativo: logins navegam, formulários validam,
+listas reagem. Cada projeto ganha seu próprio design system, e tudo é
+validado antes de você ver.
+
+| Skill | O que faz |
+|---|---|
+| `design` | Canvas de telas que funciona como **preview funcional do sistema**: mockups HTML reais em `design/<canvas>/`, design system por projeto, dados fictícios em `data.json` + runtime `mock.js` (login navega, formulários funcionam, listas reagem), validador e viewer local (zoom, tema claro/escuro, tamanho de dispositivo, **cenários de dados** com seletor, **modo fluxo** em tela cheia com histórico ◀ ▶ ⟲, **gravação de fluxo** em .webm, exportação PNG, comentários por tela **e por elemento** — o modo 🎯 cria pinos numerados com o seletor CSS do ponto comentado; ⟲ Reset flow reinicia o cenário). Sistemas com múltiplos fluxos vivem em **múltiplos canvases** com navegação entre eles e estado compartilhado (o login do canvas A autentica no canvas B) — o viewer tem seletor de canvas. Inclui a **camada craft** que funde as três skills abaixo em cada tela construída. |
+| `taste` | Anti-slop: lê o briefing, define a direção (controles de variância/movimento/densidade), ban clichês de IA (gradientes roxos, três cartões idênticos, travessões, paletas bege+bronze…) e mapeia briefing → design system real. |
+| `emil-design-eng` | A filosofia de polimento e animação do Emil Kowalski (criador do Sonner/Vaul, ex-Vercel/Linear): quando NÃO animar, curvas de easing, durações, os detalhes invisíveis que fazem a UI "parecer certa". |
+| `impeccable` | 24 comandos de design (`/impeccable audit`, `critique`, `polish`, `harden`, `typeset`…) com motor binário próprio. Créditos: Paul Bakaus — https://impeccable.style |
+
+O `design` é o ponto de entrada: quando você pede telas/mockups ele já aplica
+as regras das outras três (via `assets/craft.md`). As três também funcionam
+de forma independente em código frontend real.
+
+## Requisitos
+
+- **Node.js 18+** (o validador, o viewer do skill `design` e todas as
+  ferramentas rodam no Node 18 puro — sem outras dependências, tudo offline,
+  sem CDN).
+- Um agente com suporte a **Agent Skills** (`SKILL.md` com frontmatter):
+  ZCode, OpenCode, Claude Code, Codex, Cursor, Gemini CLI e companhia.
+
+## Instalação
+
+> **Usando OpenCode v2?** O caminho recomendado é o **plugin de auto-update**
+> ([veja abaixo](#plugin-opencode-v2-auto-update)) — ele mantém skills e
+> projetos atualizados sozinhos. O `install.mjs` continua sendo o caminho
+> para os demais agentes e para instalações estáticas.
+
+Na pasta deste pacote. As duas flags de instalação são `--target <agente>`
+(destino conhecido) e `--dir <pasta>` (qualquer pasta, instalação por projeto):
+
+```bash
+node install.mjs --target opencode   # OpenCode (global: ~/.config/opencode/skill)
+node install.mjs --target zcode      # ZCode (~/.agents/skills)
+node install.mjs --target claude     # Claude Code (~/.claude/skills)
+node install.mjs --target codex      # Codex CLI (~/.codex/skills)
+node install.mjs --target cursor     # Cursor (~/.cursor/skills)
+node install.mjs --target gemini     # Gemini CLI (~/.gemini/skills)
+node install.mjs --target agents     # padrão aberto (~/.agents/skills)
+node install.mjs --dir .claude/skills  # ou qualquer pasta (instalação por projeto)
+node install.mjs --list              # ver todos os destinos
+```
+
+Recomendação: instale **as quatro juntas** (comportamento padrão). A camada
+craft do `design` referencia as skills irmãs por caminho relativo (`../taste`,
+`../emil-design-eng`, `../impeccable`), então elas precisam ficar lado a lado.
+
+Depois **reinicie a sessão do seu agente** para as skills carregarem.
+
+## Plugin OpenCode v2 (auto-update)
+
+O diretório `plugin/` faz o Mockbird se comportar como um **plugin do
+OpenCode v2** que se atualiza sozinho. O `setup()` roda toda vez que o
+OpenCode abre um projeto e faz quatro coisas:
+
+1. **Auto-update** — `git pull --ff-only` neste repositório (intervalo mínimo
+   de 10 minutos entre pulls; offline ou sem remote mantém a versão local,
+   sem erros).
+2. **Skills sem cópias** — as quatro skills são registradas direto de
+   `skills/` via `ctx.skill.transform`. Fonte única de verdade: nada de
+   manter cópias em `~/.agents/skills`, `~/.claude/skills` ou
+   `~/.config/opencode/skill`.
+3. **Espelho de runtime** — os arquivos de runtime (`viewer.html`, `mock.js`,
+   `mock.css`, `docs.html`, `serve.mjs`, `validate.mjs`, `vendor/`,
+   `scripts/`) são espelhados na pasta `design/` do projeto atual. Arquivo
+   cujo conteúdo diverge ganha um backup `<arquivo>.bak` da versão local
+   antes de ser atualizado. `components/` é apenas *seed*: preenchido quando
+   falta, nunca sobrescrito (os registros crescem por projeto).
+4. **Comando `/design-sync`** — força o `git pull`, recarrega as skills e
+   re-espelha o `design/` do projeto sob demanda.
+
+Instale (uma vez por máquina) — **faça clone do repositório** (um download
+ZIP não tem `.git`, então o auto-update ficaria desativado):
+
+```bash
+git clone https://github.com/misereitor/mockbird.git
+cd mockbird/plugin && npm install   # dependência @opencode/plugin (API v2)
+```
+
+E registre o caminho na sua configuração global
+(`~/.config/opencode/opencode.json`):
+
+```jsonc
+{
+  "plugins": ["/caminho/para/mockbird/plugin"]   // Windows: "C:/caminho/para/mockbird/plugin"
+}
+```
+
+A partir daí o fluxo de atualização é só: **commit + push aqui** → na próxima
+vez que o OpenCode abrir em qualquer projeto, o `git pull` traz tudo e o
+`design/` do projeto é espelhado automaticamente.
+
+Observações:
+
+- Projetos sem pasta `design/` nunca são tocados (o plugin nunca cria
+  `design/` — o skill cria, no primeiro uso).
+- `node plugin/smoke.mjs <projeto>` testa o espelhamento à mão, sem abrir o
+  OpenCode.
+- Diagnósticos: cada `setup()` escreve o que fez em
+  `%TEMP%\mockbird-plugin.log` (a saída de `console.log` do plugin não aparece
+  no log do OpenCode).
+- O `install.mjs` continua valendo para Claude Code, Codex, Cursor, Gemini e
+  instalações por projeto.
+
+## Primeiro uso
+
+1. Peça as telas ("landing page do app X", "tela de login e cadastro"…) ou
+   digite `/design`. No primeiro uso em um projeto, o skill cria a pasta
+   `design/` (ele pergunta a marca), copia validador + viewer para lá e
+   valida tudo antes de te passar o link.
+2. Abra o link do viewer (algo como
+   `http://localhost:8765/viewer.html?canvas=login`): telas lado a lado,
+   tema claro/escuro, tamanho de dispositivo, cenários de dados, zoom,
+   exportação PNG e um botão "Comment this screen" — o comentário volta para
+   o agente no formato exato
+   `[Design: design/<canvas> › <screen> (<file>)] <pedido>` e ele ajusta
+   só aquela tela. Cenário, tema e dispositivo são lembrados por canvas. A
+   documentação completa de uso fica em `docs.html` (botão 📘 Docs na toolbar
+   do viewer).
+3. O skill `impeccable` **baixa um binário de terceiros** — seu motor, dos
+   releases do [pbakaus/impeccable](https://github.com/pbakaus/impeccable) —
+   na primeira execução (uma vez, precisa de rede). O launcher valida o
+   binário (probe + cache com versão fixa), você pode pré-instalar o seu
+   próprio via a variável de ambiente `IMPECCABLE_BIN`, e se o download
+   falhar o skill segue sem o motor via fallback.
+
+Os comandos que vivem no `design/` do projeto são `node design/validate.mjs`,
+`node design/serve.mjs [porta] [--share]`, `node design/scripts/gen-tokens.mjs`,
+`node design/scripts/sync-components.mjs` e
+`node design/scripts/export-tokens.mjs` (instalados).
+
+## Solução de problemas
+
+- **O OpenCode não detectou as skills**: algumas versões leem `skill/`
+  (singular) e outras `skills/` (plural). Instale no padrão aberto —
+  `node install.mjs --target agents` — que o OpenCode também lê, ou use
+  `node install.mjs --dir <pasta>` apontando para o diretório da sua versão.
+- **Porta 8765 em uso**: `node design/serve.mjs 8766` e ajuste o link.
+- **Skills não aparecem**: confirme que seu agente suporta `SKILL.md` e que a
+  pasta escolhida é a que ele lê (`node install.mjs --list` mostra os
+  caminhos).
+
+## Contribuindo
+
+Issues e pull requests são bem-vindos. Alguns pontos:
+
+- Mantenha as quatro skills instaláveis lado a lado — a camada craft do
+  `design` referencia `../taste`, `../emil-design-eng` e `../impeccable`.
+- O validador, o viewer e o runtime mock viajam dentro da pasta `design/` de
+  cada projeto; mudanças neles são espelhadas pelo plugin (e pela copy list
+  do `SKILL.md`), então atualize os dois lados juntos.
+- `node plugin/smoke.mjs <projeto>` espelha um projeto à mão; rode o
+  validador contra o canvas de exemplo em `skills/design/assets/example/`
+  depois de mexer no `validate.mjs`.
+- Ao contribuir você concorda que suas contribuições são licenciadas sob a
+  licença MIT deste repositório.
+
+## Changelog
+
+- **CI + core em JS puro (v1.0.0)**: GitHub Actions roda o smoke test, o
+  instalador, o validador e a suite de segurança em Linux/Windows ×
+  Node 18/20/22/24. A lógica do plugin foi para `plugin/core.mjs` (JS puro),
+  então `node plugin/smoke.mjs` agora roda no Node 18 puro. Primeira release
+  versionada: `v1.0.0`.
+- **Nada de janelas de console no Windows**: as chamadas `git` do auto-update
+  agora nascem ocultas (`windowsHide` / `CREATE_NO_WINDOW`) — abrir um
+  projeto não pisca mais uma janela de CMD; todo o resto já rodava
+  in-process.
+- **Plugin OpenCode v2 (`plugin/`)**: o Mockbird agora roda como plugin
+  auto-atualizável do OpenCode — `git pull` na abertura (intervalo de 10
+  min), skills registradas direto do repositório (sem cópias) e espelhamento
+  automático do `design/` de cada projeto (arquivos alterados ganham um
+  `<arquivo>.bak`; `components/` só é preenchido quando falta). Comando
+  `/design-sync` força a sincronização. Migração: registre a pasta `plugin/`
+  do repositório clonado em `~/.config/opencode/opencode.json` (`plugins`).
+- **Bind padrão `127.0.0.1` + raiz servida `./design`** (mudança de
+  comportamento): `node design/serve.mjs` serve só a máquina local — a API de
+  escrita (`/api/*`) nunca é exposta à rede — e serve `./design` relativo ao
+  cwd (a mesma raiz que o pipeline gen/sync/validate usa), nunca a pasta do
+  próprio script.
+- **`--share` — caminho de migração para testar no celular/LAN**:
+  `node design/serve.mjs 8766 --share` faz bind em `0.0.0.0` para abrir
+  `http://<ip-da-maquina>:8766/viewer.html?canvas=…` no celular. É
+  **somente leitura com degradação declarada**: toda rota `/api/*` responde
+  **403** (leituras incluídas — nada vaza) e o viewer esconde ações de
+  escrita **e** os recursos alimentados pela `/api` (pinos, painel de
+  comentários pendentes, reply/resolve) com o aviso "read-only mode —
+  comments and snapshots unavailable".
+- **Contrato de degradação (futuro)**: UIs de snapshot/comparação que
+  chegarem depois também precisam ficar escondidas sob `--share` — basta
+  marcá-las com `data-share-hide` no HTML e o `syncShareDegradation()` do
+  viewer as esconde.
+- **Snapshots, comparação e revert (w5)**: o painel **Snapshots** do viewer
+  salva um estado do canvas (`src/` + `render/` achatado), compara dois
+  estados nos modos **Side by side** e **Onion skin** e restaura com o botão
+  **"Revert to this snapshot"** (com confirmação) — uso direto da API:
+  `POST /api/revert {"canvas": "<canvas>", "label": "<label>"}` (400 =
+  manifesto inválido, nada restaurado; 500 = pipeline falhou, rollback).
+
+## Créditos e licenças
+
+- `design` — porta Agent Skills da especificação portátil "design canvas"
+  (originalmente para o harness Kio, `@kio/skill-design`), com o viewer
+  escrito para este pacote. Exportação PNG via
+  [html-to-image](https://github.com/bubkoo/html-to-image) (MIT, embutido em
+  `design/assets/vendor/`).
+- `impeccable` — Paul Bakaus, Apache-2.0, https://impeccable.style
+  ([pbakaus/impeccable](https://github.com/pbakaus/impeccable))
+- `emil-design-eng` — Emil Kowalski, MIT
+  ([emilkowalski/skills](https://github.com/emilkowalski/skills))
+- `taste` — Leonxlnx, MIT
+  ([Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill))
+- Todo o resto deste repositório: MIT (veja [LICENSE](LICENSE)).
+
+Cada skill traz seu próprio arquivo de licença (`skills/<name>/LICENSE`),
+copiado em toda instalação junto com o skill.
