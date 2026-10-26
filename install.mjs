@@ -13,7 +13,8 @@
  */
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const ALL_SKILLS = ['design', 'taste', 'emil-design-eng', 'impeccable']
 const CRAFT_ONLY = ['taste', 'emil-design-eng', 'impeccable'] // craft.md references these
@@ -90,7 +91,7 @@ if (args.dir) {
   destDir = target.dir
 }
 
-const packDir = import.meta.dirname
+const packDir = dirname(fileURLToPath(import.meta.url))
 const missing = args.only.filter((name) => !existsSync(join(packDir, 'skills', name, 'SKILL.md')))
 if (missing.length > 0) {
   console.error(`incomplete package, missing: ${missing.join(', ')} (skills/<name>/SKILL.md)`)

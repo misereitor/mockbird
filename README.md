@@ -23,6 +23,8 @@ work standalone on real frontend code.
 
 - **Node.js 18+** (the validator and the `design` skill's viewer run on Node;
   no other dependencies — everything is offline, no CDN).
+  - `plugin/smoke.mjs` imports the plugin's TypeScript entry directly and
+    needs **Node 22.6+** (everything else runs on 18+).
 - An agent with **Agent Skills** support (`SKILL.md` with frontmatter):
   ZCode, OpenCode, Claude Code, Codex, Cursor, Gemini CLI and friends.
 
@@ -75,17 +77,19 @@ does four things:
 4. **`/design-sync` command** — forces `git pull`, reloads the skills and
    re-mirrors the project's `design/` on demand.
 
-Install (once per machine):
+Install (once per machine) — **clone the repo** (a ZIP download has no `.git`,
+so auto-update would be disabled):
 
 ```bash
-cd plugin && npm install   # @opencode/plugin dependency (v2 API)
+git clone https://github.com/misereitor/mockbird.git
+cd mockbird/plugin && npm install   # @opencode/plugin dependency (v2 API)
 ```
 
 And register the path in your global config (`~/.config/opencode/opencode.json`):
 
 ```jsonc
 {
-  "plugins": ["C:/Projetos/mockbird/plugin"]
+  "plugins": ["/path/to/mockbird/plugin"]   // Windows: "C:/path/to/mockbird/plugin"
 }
 ```
 
@@ -155,12 +159,15 @@ Issues and pull requests are welcome. A few pointers:
 
 ## Changelog
 
+- **No console windows on Windows**: the auto-update `git` calls now spawn
+  hidden (`windowsHide` / `CREATE_NO_WINDOW`) — opening a project no longer
+  flashes a CMD window; everything else already ran in-process.
 - **OpenCode v2 plugin (`plugin/`)**: Mockbird now runs as a self-updating
   OpenCode plugin — `git pull` at startup (10-minute throttle), skills
   registered straight from the repo (no copies) and automatic mirroring of
   each project's `design/` (changed files get a `<file>.bak`; `components/`
   is only filled in when missing). `/design-sync` command forces a sync.
-  Migration path: register `C:/Projetos/mockbird/plugin` in
+  Migration path: register the cloned repo's `plugin/` folder in
   `~/.config/opencode/opencode.json` (`plugins`).
 - **Default bind `127.0.0.1` + served root `./design`** (behavior changes):
   `node design/serve.mjs` only serves the local machine — the write API
@@ -194,9 +201,12 @@ Issues and pull requests are welcome. A few pointers:
   [html-to-image](https://github.com/bubkoo/html-to-image) (MIT, vendored in
   `design/assets/vendor/`).
 - `impeccable` — Paul Bakaus, Apache-2.0, https://impeccable.style
-- `emil-design-eng`, `taste` — collections by Emil Kowalski (MIT) and
-  Leonxlnx (MIT), distributed under their original licenses.
+  ([pbakaus/impeccable](https://github.com/pbakaus/impeccable))
+- `emil-design-eng` — Emil Kowalski, MIT
+  ([emilkowalski/skills](https://github.com/emilkowalski/skills))
+- `taste` — Leonxlnx, MIT
+  ([Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill))
 - Everything else in this repository: MIT (see [LICENSE](LICENSE)).
 
-Each skill keeps its own license; the credits above are preserved on every
-install.
+Each skill ships its own license file (`skills/<name>/LICENSE`), copied on
+every install together with the skill.

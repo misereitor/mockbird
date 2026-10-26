@@ -120,9 +120,16 @@ export function loadSkills(): PackSkill[] {
   return out
 }
 
+/**
+ * Spawn options for external processes. `windowsHide: true` (CREATE_NO_WINDOW)
+ * runs them fully hidden on Windows — without it, every `git` call flashes a
+ * console window when the host app has no terminal attached.
+ */
+const HIDDEN = { windowsHide: true } as const
+
 function hasRemote(): boolean {
   try {
-    return execFileSync("git", ["-C", PACK_ROOT, "remote"], { encoding: "utf8", timeout: 10_000 }).trim().length > 0
+    return execFileSync("git", ["-C", PACK_ROOT, "remote"], { encoding: "utf8", ...HIDDEN, timeout: 10_000 }).trim().length > 0
   } catch {
     return false
   }
@@ -136,6 +143,7 @@ function pullPack(): string {
       encoding: "utf8",
       timeout: 60_000,
       stdio: ["ignore", "pipe", "pipe"],
+      ...HIDDEN,
     })
     return "git pull: pack updated"
   } catch (error) {
