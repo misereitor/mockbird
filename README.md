@@ -127,10 +127,13 @@ Notes:
    canvas. Full usage docs live in `docs.html` (📘 Docs button in the viewer's
    toolbar).
     **Complex projects**: label screens with `"group"` in `canvas.json` to get
-    titled blocks, toggle **▦ Grade** for a wrapping overview, type `/` to
-    search screens, **📱 Moldura** puts device frames around mobile/tablet
-    screens, screens lazy-load as you scroll, and `Comparar` accepts any two
+    titled blocks, toggle **▦ Grid** for a wrapping overview, type `/` to
+    search screens, **📱 Frame** puts device frames around mobile/tablet
+    screens, screens lazy-load as you scroll, and `Compare` accepts any two
     screens side by side (not just snapshots).
+    **Language**: the viewer and its docs are English by default and follow
+    the browser language (Portuguese included) — `?lang=pt` / `?lang=en` force
+    it and the 🌐 button switches on the spot.
 3. The `impeccable` skill **downloads a third-party binary** — its engine,
    from the [pbakaus/impeccable](https://github.com/pbakaus/impeccable)
    releases — on first run (once, needs network). The launcher validates it
@@ -174,6 +177,12 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Viewer/docs i18n (v1.2.0)**: the viewer UI and `docs.html` speak English
+  by default and follow the browser language (PT-BR included) — `?lang=pt` /
+  `?lang=en` force it, the 🌐 button switches and keeps your place. Every
+  string lives in one `I18N` dictionary (EN + PT, kept in sync by an
+  automated check) and `docs.html` carries both languages side by side.
+  `mock.js` error toasts follow the viewer language too.
 - **Viewer for complex projects (v1.1.0)**: `"group"` blocks in `canvas.json`,
   ▦ Grade (wrapping overview), screen search (`/`), 📱 Moldura (device
   frames), lazy-loaded screens and screen-vs-screen in `Comparar` (A/B now

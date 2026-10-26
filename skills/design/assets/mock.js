@@ -258,6 +258,15 @@
     return out
   }
 
+  /** Runtime messages follow the viewer language: the viewer sets data-lang on
+   *  <html> (same hook as data-theme); navigator.language is the fallback. */
+  const mockText = () => {
+    const tag = document.documentElement.getAttribute('data-lang') || navigator.language || ''
+    return tag.toLowerCase().startsWith('pt')
+      ? { cannotOpen: (url) => 'Não foi possível abrir ' + url }
+      : { cannotOpen: (url) => 'Could not open ' + url }
+  }
+
   window.Mock = {
     /** Fictitious data from this canvas's data.json: await Mock.data('users') */
     async data(key) {
@@ -358,7 +367,7 @@
      */
     async overlay(url, opts) {
       if (typeof url !== 'string' || !url.trim()) {
-        window.Mock.toast('Não foi possível abrir ' + String(url ?? ''))
+        window.Mock.toast(mockText().cannotOpen(String(url ?? '')))
         return null
       }
       let html
@@ -367,7 +376,7 @@
         if (!response.ok) throw new Error('HTTP ' + response.status)
         html = await response.text()
       } catch {
-        window.Mock.toast('Não foi possível abrir ' + url)
+        window.Mock.toast(mockText().cannotOpen(url))
         return null
       }
       const screen = new DOMParser().parseFromString(html, 'text/html')

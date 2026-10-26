@@ -237,21 +237,24 @@ never in the example copy.
    only from an interactive terminal; if the port is busy a server is
    probably already running — reuse it) and give the user the link:
    `http://localhost:8765/viewer.html?canvas=<canvas>`. Point out the tools
-   for complex projects: `group` blocks in `canvas.json`, ▦ Grade (wrap
-   view), the search box (`/` focuses it), 📱 Moldura (device frames) and
-   screen-vs-screen in `Comparar` (A/B accepts "Telas deste canvas").
+   for complex projects: `group` blocks in `canvas.json`, ▦ Grid (wrap
+   view), the search box (`/` focuses it), 📱 Frame (device frames) and
+   screen-vs-screen in `Compare` (A/B accepts "Screens in this canvas").
+   The viewer UI is English by default and follows the browser language
+   (`?lang=pt` / `?lang=en` forces it; the 🌐 button switches).
    Mention that 🎯
-   Elemento lets them click any element to comment on it specifically.
-   Snapshots are review material: `Salvar snapshot` freezes a canvas state
-   (`src/` + flat `render/`) for later review, `Comparar` shows any two
-   states side by side or as onion skin, and `Reverter` restores a snapshot.
+   Element lets them click any element to comment on it specifically.
+   Snapshots are review material: `Save snapshot` freezes a canvas state
+   (`src/` + flat `render/`) for later review, `Compare` shows any two
+   states side by side or as onion skin, and `Revert to this snapshot`
+   restores a snapshot.
    Then summarize in one or two sentences what you created.
 6. **Comments.** The `[Design: …]` chat message format below is
 UNCHANGED — persistent pins are an extra channel, never a grammar change.
 A message starting with
 `[Design: design/<canvas> › <name> (<file>)]` is a request about that exact
 screen: edit only that file. A message whose bracket ends with
-`› <selector> "<snippet>"` (the viewer's 🎯 Elemento mode) targets one
+`› <selector> "<snippet>"` (the viewer's 🎯 Element mode) targets one
 element inside it: locate the element by the selector first, then by the
 snippet text, and change only that element (and the tokens only if the
 user agrees). Element comments are dual-channel 🎯: besides the chat

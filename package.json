@@ -1,6 +1,6 @@
 {
   "name": "mockbird",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -14,6 +14,7 @@
     "smoke": "node plugin/smoke.mjs",
     "validate": "node skills/design/scripts/validate.mjs skills/design/assets/example",
     "security": "node skills/design/scripts/fixtures/security-suite.mjs",
-    "ci": "npm test && npm run smoke && npm run validate && npm run security"
+    "check:i18n": "node scripts/i18n-check.mjs",
+    "ci": "npm test && npm run smoke && npm run validate && npm run security && npm run check:i18n"
   }
 }

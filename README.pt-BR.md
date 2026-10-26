@@ -134,6 +134,10 @@ Observações:
    linhas, digite `/` para buscar telas, **📱 Moldura** coloca molduras de
    dispositivo em telas mobile/tablet, as telas carregam conforme você rola,
    e o `Comparar` aceita quaisquer duas telas lado a lado (não só snapshots).
+   **Idioma**: o viewer e os docs são bilíngues — inglês por padrão, seguindo
+   o idioma do navegador (português incluso) — `?lang=pt` / `?lang=en` forçam
+   e o botão 🌐 alterna na hora. Os nomes citados aqui são os da interface em
+   português.
 3. O skill `impeccable` **baixa um binário de terceiros** — seu motor, dos
    releases do [pbakaus/impeccable](https://github.com/pbakaus/impeccable) —
    na primeira execução (uma vez, precisa de rede). O launcher valida o
@@ -178,6 +182,12 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **i18n do viewer/docs (v1.2.0)**: a interface do viewer e o `docs.html`
+  falam inglês por padrão e seguem o idioma do navegador (PT-BR incluso) —
+  `?lang=pt` / `?lang=en` forçam, o botão 🌐 alterna e mantém seu lugar.
+  Toda string vive num dicionário `I18N` único (EN + PT, com verificação
+  automática de sincronia) e o `docs.html` carrega os dois idiomas lado a
+  lado. Os toasts de erro do `mock.js` também seguem o idioma do viewer.
 - **Viewer para projetos complexos (v1.1.0)**: blocos `"group"` no
   `canvas.json`, ▦ Grade (visão quebra em linhas), busca de telas (`/`),
   📱 Moldura (molduras de dispositivo), telas com lazy-load e tela-vs-tela no

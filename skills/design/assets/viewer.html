@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -435,50 +435,51 @@
     <label id="canvasLabel" hidden>Canvas
       <select id="canvasSelect"></select>
     </label>
-    <label id="scenarioLabel" hidden>Cenário
+    <label id="scenarioLabel" hidden><span data-i18n="scenarioLabel">Scenario</span>Cenário
       <select id="scenarioSelect"></select>
     </label>
-    <input id="filterInput" type="search" placeholder="Buscar tela… (/)" title="Filtrar telas por nome, id ou grupo — / foca, Esc limpa" autocomplete="off">
-    <button id="gridBtn" title="Alternar entre fita horizontal e grade (quebra em linhas)">▦ Grade</button>
-    <button id="bezelBtn" title="Molduras de dispositivo (celular/tablet) ao redor das telas">📱 Moldura</button>
-    <label>Dispositivo
+    <input id="filterInput" type="search" placeholder="Search screens… (/)" title="Filter screens by name, id or group — / focuses, Esc clears" data-i18n-placeholder="searchPlaceholder" data-i18n-title="searchTitle" autocomplete="off">
+    <button id="gridBtn" data-i18n-title="gridBtnTitle" title="Toggle between the horizontal strip and a wrapping grid" data-i18n="gridBtn">▦ Grid</button>
+    <button id="bezelBtn" data-i18n-title="bezelBtnTitle" title="Device frames (phone/tablet) around the screens" data-i18n="bezelBtn">📱 Frame</button>
+    <label><span data-i18n="deviceLabel">Device</span>Dispositivo
       <select id="deviceSelect">
-        <option value="original">Original</option>
-        <option value="mobile">Celular</option>
-        <option value="tablet">Tablet</option>
-        <option value="desktop">Desktop</option>
+        <option value="original" data-i18n="devOriginal">Original</option>
+        <option value="mobile" data-i18n="devMobile">Phone</option>
+        <option value="tablet" data-i18n="devTablet">Tablet</option>
+        <option value="desktop" data-i18n="devDesktop">Desktop</option>
       </select>
     </label>
-    <button id="themeBtn" title="Alternar tema claro/escuro">🌙 Escuro</button>
+    <button id="themeBtn" data-i18n-title="themeToggle" title="Toggle light/dark theme" data-i18n="themeDark">🌙 Dark</button>
     <span class="zoomgrp">
-      <button id="zoomOut" title="Diminuir zoom">−</button>
+      <button id="zoomOut" data-i18n-title="zoomOut" title="Zoom out">−</button>
       <span id="zoomLabel">100%</span>
-      <button id="zoomIn" title="Aumentar zoom">+</button>
-      <button id="zoomFit" title="Ajustar à janela">Ajustar</button>
+      <button id="zoomIn" data-i18n-title="zoomIn" title="Zoom in">+</button>
+      <button id="zoomFit" data-i18n-title="zoomFitTitle" title="Fit to window" data-i18n="fitBtn">Fit</button>
     </span>
-    <button id="reloadBtn" title="Reler canvas.json e as telas">⟳ Recarregar</button>
-    <button id="resetFlowBtn" title="Voltar todas as telas ao início e limpar os dados do fluxo">⟲ Reset fluxo</button>
-    <button data-require="record" id="recordBtn" title="Gravar o fluxo como vídeo .webm — o navegador pede para compartilhar esta aba; clique de novo para parar e baixar">⏺ Gravar fluxo</button>
-    <button id="docsBtn" title="Abrir a documentação de utilização">📘 Docs</button>
-    <button id="inspectBtn" data-share-hide title="Comentar um elemento específico da tela (Esc sai do modo)">🎯 Elemento</button>
-    <button id="chipBtn" title="Mostrar chips de id/variante sobre cada componente (inspetor)">🧩 Componentes</button>
-    <button id="commentBtn" data-share-hide disabled>💬 Comentar esta tela</button>
-    <button id="copyAllBtn" data-share-hide title="Ver/copiar todos os comentários de elemento">⧉ Comentários (0)</button>
-    <button id="pendingBtn" data-share-hide title="Abrir o painel de comentários pendentes (todos os canvases)">💬 Pendentes <span id="pendingBadge">0</span></button>
-    <button id="snapshotBtn" data-share-hide title="Salvar um snapshot deste canvas (src/ + render/ flat) e ver os snapshots salvos">Salvar snapshot</button>
-    <button id="exportBtn" disabled>⬇ PNG da tela</button>
-    <button id="exportAllBtn">⬇ PNG do canvas</button>
+    <button id="reloadBtn" data-i18n-title="reloadBtnTitle" title="Reload canvas.json and the screens" data-i18n="reloadBtn">⟳ Reload</button>
+    <button id="resetFlowBtn" data-i18n-title="resetFlowBtnTitle" title="Reset every screen to the start and clear the flow data" data-i18n="resetFlowBtn">⟲ Reset flow</button>
+    <button data-require="record" id="recordBtn" data-i18n-title="recordBtnTitle" title="Record the flow as a .webm video — the browser asks to share this tab; click again to stop and download" data-i18n="recordBtn">⏺ Record flow</button>
+    <button id="docsBtn" data-i18n-title="docsBtnTitle" title="Open the usage docs">📘 Docs</button>
+    <button id="inspectBtn" data-share-hide data-i18n-title="elementBtnTitle" title="Comment a specific element on the screen (Esc leaves the mode)" data-i18n="elementBtn">🎯 Element</button>
+    <button id="chipBtn" data-i18n-title="chipsBtnTitle" title="Show id/variant chips over each component (inspector)" data-i18n="chipsBtn">🧩 Components</button>
+    <button id="commentBtn" data-share-hide disabled data-i18n="commentScreenBtn">💬 Comment this screen</button>
+    <button id="copyAllBtn" data-share-hide data-i18n-title="copyAllBtnTitle" title="View/copy every element comment">⧉ Comments (0)</button>
+    <button id="pendingBtn" data-share-hide data-i18n-title="pendingBtnTitle" title="Open the pending comments panel (all canvases)"><span data-i18n="pendingBtn">💬 Pending</span> <span id="pendingBadge">0</span></button>
+    <button id="snapshotBtn" data-share-hide data-i18n-title="snapshotBtnTitle" title="Save a snapshot of this canvas (src/ + flat render/) and see the saved snapshots" data-i18n="snapshotBtn">Save snapshot</button>
+    <button id="exportBtn" disabled data-i18n="exportScreenBtn">⬇ Screen PNG</button>
+    <button id="exportAllBtn" data-i18n="exportCanvasBtn">⬇ Canvas PNG</button>
+    <button id="langBtn" data-i18n-title="languageTitle" title="Switch language (reloads the page)">🌐 Português</button>
   </div>
 </header>
 
 <details id="problems" hidden>
-  <summary><span id="problemsCount"></span> problema(s) no canvas — clique para ver</summary>
+  <summary><span id="problemsCount"></span><span data-i18n="problemsSummary"> problem(s) in the canvas — click to see</span></summary>
   <ul id="problemsList"></ul>
 </details>
 
 <div id="commentsAlert" role="alert" hidden></div>
 
-<div id="shareBanner" role="status" hidden>modo leitura — comentários e snapshots indisponíveis</div>
+<div id="shareBanner" role="status" hidden data-i18n="shareBanner">read-only mode — comments and snapshots unavailable</div>
 
 <main id="viewport" hidden>
   <div id="world"><div id="strip"></div></div>
@@ -486,52 +487,52 @@
 
 <section id="selector" hidden>
   <h1>Design canvas</h1>
-  <p>Escolha um canvas para visualizar. Eles ficam em pastas com <code>canvas.json</code> ao lado deste visualizador.</p>
+  <p data-i18n-html="selectorIntro">Pick a canvas to preview. They live in folders with a <code>canvas.json</code> next to this viewer.</p>
   <ul id="canvasList"></ul>
   <form id="manualForm">
-    <input id="manualInput" placeholder="nome do canvas (ex.: login)" autocomplete="off">
-    <button class="primary" type="submit">Abrir</button>
+    <input id="manualInput" placeholder="canvas name (e.g. login)" data-i18n-placeholder="manualPlaceholder" autocomplete="off">
+    <button class="primary" type="submit" data-i18n="openBtn">Open</button>
   </form>
 </section>
 
 <div id="fullscreen" hidden>
   <div id="fsTop">
-    <button id="fsBack" title="Voltar ao modo lista">← Voltar</button>
-    <button id="fsPrev" title="Tela anterior do fluxo">◀</button>
-    <button id="fsNext" title="Tela seguinte do fluxo">▶</button>
-    <button id="fsRestart" title="Reiniciar o fluxo do começo">⟲</button>
-    <button id="fsInspect" data-share-hide title="Comentar um elemento da tela (Esc sai do modo)">🎯 Elemento</button>
-    <button id="fsChip" title="Mostrar chips de id/variante sobre cada componente (inspetor)">🧩 Componentes</button>
-    <button id="fsTheme" title="Alternar tema claro/escuro">🌙</button>
+    <button id="fsBack" data-i18n-title="fsBackTitle" title="Back to list mode" data-i18n="fsBackBtn">← Back</button>
+    <button id="fsPrev" data-i18n-title="fsPrevTitle" title="Previous screen in the flow">◀</button>
+    <button id="fsNext" data-i18n-title="fsNextTitle" title="Next screen in the flow">▶</button>
+    <button id="fsRestart" data-i18n-title="fsRestartTitle" title="Restart the flow from the beginning">⟲</button>
+    <button id="fsInspect" data-share-hide data-i18n-title="fsElementBtnTitle" title="Comment an element of the screen (Esc leaves the mode)" data-i18n="elementBtn">🎯 Element</button>
+    <button id="fsChip" data-i18n-title="chipsBtnTitle" title="Show id/variant chips over each component (inspector)" data-i18n="chipsBtn">🧩 Components</button>
+    <button id="fsTheme" data-i18n-title="themeToggle" title="Toggle light/dark theme">🌙</button>
     <strong id="fsTitle"></strong>
     <span id="fsSize" class="fs-size"></span>
     <div class="fs-tools">
       <span class="zoomgrp">
-        <button id="fsZoomOut" title="Diminuir zoom" aria-label="Diminuir zoom">−</button>
+        <button id="fsZoomOut" data-i18n-title="zoomOut" data-i18n-aria="zoomOut" title="Zoom out" aria-label="Zoom out">−</button>
         <span id="fsZoomLabel">100%</span>
-        <button id="fsZoomIn" title="Aumentar zoom" aria-label="Aumentar zoom">+</button>
-        <button id="fsZoomFit" title="Ajustar à janela" aria-label="Ajustar zoom à janela">Ajustar</button>
+        <button id="fsZoomIn" data-i18n-title="zoomIn" data-i18n-aria="zoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+        <button id="fsZoomFit" data-i18n-title="zoomFitTitle" data-i18n-aria="zoomFitAria" title="Fit to window" aria-label="Fit zoom to window" data-i18n="fitBtn">Fit</button>
       </span>
       <span class="fs-sep"></span>
       <label class="fs-field" id="fsCanvasField">Canvas
-        <select id="fsCanvas" title="Trocar de canvas (carrega a primeira tela dele)" aria-label="Canvas"></select>
+        <select id="fsCanvas" data-i18n-title="fsCanvasTitle" data-i18n-aria="canvasLabel" title="Switch canvas (loads its first screen)" aria-label="Canvas"></select>
       </label>
-      <label class="fs-field" id="fsScenarioField" hidden>Cenário
-        <select id="fsScenario" title="Cenário de dados aplicado às telas" aria-label="Cenário"></select>
+      <label class="fs-field" id="fsScenarioField" hidden><span data-i18n="scenarioLabel">Scenario</span>Cenário
+        <select id="fsScenario" data-i18n-title="fsScenarioTitle" title="Data scenario applied to the screens" data-i18n-aria="scenarioLabel" aria-label="Scenario"></select>
       </label>
-      <label class="fs-field">Dispositivo
-        <select id="fsDevice" title="Dispositivo de visualização" aria-label="Dispositivo">
-          <option value="original">Original</option>
-          <option value="mobile">Celular</option>
-          <option value="tablet">Tablet</option>
-          <option value="desktop">Desktop</option>
+      <label class="fs-field"><span data-i18n="deviceLabel">Device</span>Dispositivo
+        <select id="fsDevice" data-i18n-title="fsDeviceTitle" title="Viewing device" data-i18n-aria="deviceLabel" aria-label="Device">
+          <option value="original" data-i18n="devOriginal">Original</option>
+          <option value="mobile" data-i18n="devMobile">Phone</option>
+          <option value="tablet" data-i18n="devTablet">Tablet</option>
+          <option value="desktop" data-i18n="devDesktop">Desktop</option>
         </select>
       </label>
       <span class="fs-sep"></span>
-      <button id="fsDocs" title="Abrir a documentação de utilização">📘 Docs</button>
-      <button id="fsExport" title="Exportar a tela atual do fluxo como PNG">⬇ PNG</button>
-      <button id="fsPending" data-share-hide title="Abrir o painel de comentários pendentes (todos os canvases)">💬 Pendentes <span class="fs-badge" id="fsBadge">0</span></button>
-      <button id="fsSnapshot" data-share-hide title="Salvar um snapshot deste canvas e ver os snapshots salvos">Salvar snapshot</button>
+      <button id="fsDocs" data-i18n-title="docsBtnTitle" title="Open the usage docs">📘 Docs</button>
+      <button id="fsExport" data-i18n-title="fsExportTitle" title="Export the current flow screen as PNG">⬇ PNG</button>
+      <button id="fsPending" data-share-hide data-i18n-title="pendingBtnTitle" title="Open the pending comments panel (all canvases)"><span data-i18n="pendingBtn">💬 Pending</span> <span class="fs-badge" id="fsBadge">0</span></button>
+      <button id="fsSnapshot" data-share-hide data-i18n-title="fsSnapshotBtnTitle" title="Save a snapshot of this canvas and see the saved snapshots" data-i18n="snapshotBtn">Save snapshot</button>
     </div>
   </div>
   <div id="fsStage">
@@ -544,70 +545,70 @@
   </div>
 </div>
 
-<div id="ctxMenu" role="menu" aria-label="Ações do elemento" data-share-hide hidden>
+<div id="ctxMenu" role="menu" data-i18n-aria="ctxMenuAria" aria-label="Element actions" data-share-hide hidden>
   <div class="ctx-target" id="ctxTarget" aria-hidden="true"></div>
-  <button type="button" class="ctx-item" id="ctxComment" role="menuitem" title="Comentar este elemento — o comentário vira alfinete ancorado aqui">💬 Comentar elemento</button>
-  <button type="button" class="ctx-item" id="ctxCopy" role="menuitem" title="Copiar o seletor CSS calculado deste elemento">📋 Copiar seletor</button>
-  <button type="button" class="ctx-item" id="ctxComponent" role="menuitem" title="Ver o componente (id · tamanho · tom · estado) deste elemento">🧩 Ver componente</button>
+  <button type="button" class="ctx-item" id="ctxComment" role="menuitem" data-i18n-title="ctxCommentTitle" title="Comment this element — the comment becomes a pin anchored here" data-i18n="ctxComment">💬 Comment element</button>
+  <button type="button" class="ctx-item" id="ctxCopy" role="menuitem" data-i18n-title="ctxCopyTitle" title="Copy this element’s computed CSS selector" data-i18n="ctxCopy">📋 Copy selector</button>
+  <button type="button" class="ctx-item" id="ctxComponent" role="menuitem" data-i18n-title="ctxComponentTitle" title="View the component (id · size · tone · state) of this element" data-i18n="ctxComponent">🧩 View component</button>
 </div>
 
 <div id="dialog" class="overlay" hidden>
   <form class="box" id="commentForm">
-    <h2 id="commentTitle">Comentar tela</h2>
-    <p class="hint" id="commentHint">Descreva o ajuste desejado. Ao enviar, a mensagem formatada vai para a área de transferência — cole no chat do agente.</p>
-    <textarea id="commentText" placeholder="Ex.: aumentar o espaçamento do formulário e deixar o botão em tela cheia" required></textarea>
+    <h2 id="commentTitle" data-i18n="commentScreenTitle">Comment screen</h2>
+    <p class="hint" id="commentHint" data-i18n="commentHint">Describe the desired change. On submit, the formatted message goes to the clipboard — paste it into the agent chat.</p>
+    <textarea id="commentText" placeholder="e.g. increase the form spacing and make the button full width" data-i18n-placeholder="commentPlaceholder" required></textarea>
     <div class="row">
-      <button type="button" data-close>Cancelar</button>
-      <button type="submit" class="primary">Enviar comentário</button>
+      <button type="button" data-close data-i18n="cancelBtn">Cancel</button>
+      <button type="submit" class="primary" data-i18n="sendCommentBtn">Send comment</button>
     </div>
   </form>
 </div>
 
 <div id="elementDialog" class="overlay" hidden>
   <form class="box" id="elementForm">
-    <h2>Comentar elemento</h2>
+    <h2 data-i18n="commentElementTitle">Comment element</h2>
     <p class="msg-code" id="elementTarget"></p>
-    <p class="hint">Descreva a mudança só neste elemento. O comentário vira um alfinete na tela — copie um ou todos e cole no chat do agente.</p>
-    <textarea id="elementText" placeholder="Ex.: deixar este botão em largura total" required></textarea>
+    <p class="hint" data-i18n="elementHint">Describe the change only in this element. The comment becomes a pin on the screen — copy one or all and paste into the agent chat.</p>
+    <textarea id="elementText" placeholder="e.g. make this button full width" data-i18n-placeholder="elementPlaceholder" required></textarea>
     <div class="row">
-      <button type="button" data-close>Cancelar</button>
-      <button type="submit" class="primary">Comentar elemento</button>
+      <button type="button" data-close data-i18n="cancelBtn">Cancel</button>
+      <button type="submit" class="primary" data-i18n="commentElementTitle">Comment element</button>
     </div>
   </form>
 </div>
 
 <div id="clipboard" class="overlay" hidden>
   <div class="box">
-    <h2>Mensagem copiada</h2>
-    <p class="hint">Cole no chat do agente para ajustar apenas esta tela:</p>
+    <h2 data-i18n="clipboardTitle">Message copied</h2>
+    <p class="hint" data-i18n="clipboardHint">Paste it into the agent’s chat to adjust just this screen:</p>
     <p class="msg-code" id="clipboardMsg"></p>
-    <p class="hint" id="clipboardHint" hidden>Selecione e copie (Ctrl+C)</p>
+    <p class="hint" id="clipboardHint" hidden data-i18n="selectCopyHint">Select and copy (Ctrl+C)</p>
     <div class="row">
-      <button id="copyAgain" type="button">Copiar de novo</button>
-      <button class="primary" data-close>Fechar</button>
+      <button id="copyAgain" type="button" data-i18n="copyAgainBtn">Copy again</button>
+      <button class="primary" data-close data-i18n="closeBtn">Close</button>
     </div>
   </div>
 </div>
 
 <div id="replyDialog" class="overlay" hidden>
   <form class="box" id="replyForm">
-    <h2>Responder comentário</h2>
+    <h2 data-i18n="replyTitle">Reply to comment</h2>
     <p class="hint" id="replyHint"></p>
-    <textarea id="replyText" placeholder="Ex.: ajustado no commit anterior — confira o espaçamento" required></textarea>
+    <textarea id="replyText" placeholder="e.g. fixed in the last commit — check the spacing" data-i18n-placeholder="replyPlaceholder" required></textarea>
     <div class="row">
-      <button type="button" data-close>Cancelar</button>
-      <button type="submit" class="primary">Enviar resposta</button>
+      <button type="button" data-close data-i18n="cancelBtn">Cancel</button>
+      <button type="submit" class="primary" data-i18n="sendReplyBtn">Send reply</button>
     </div>
   </form>
 </div>
 
 <div id="preview" class="overlay" hidden>
   <div class="box">
-    <h2>PNG exportado</h2>
-    <img id="previewImg" alt="Prévia do PNG exportado">
+    <h2 data-i18n="previewTitle">PNG exported</h2>
+    <img id="previewImg" alt="Preview of the exported PNG" data-i18n-alt="previewAlt">
     <div class="row">
-      <button id="previewDownload" type="button">Baixar de novo</button>
-      <button class="primary" data-close>Fechar</button>
+      <button id="previewDownload" type="button" data-i18n="downloadAgainBtn">Download again</button>
+      <button class="primary" data-close data-i18n="closeBtn">Close</button>
     </div>
   </div>
 </div>
@@ -616,15 +617,15 @@
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
-    <strong>Comparação</strong>
+    <strong data-i18n="compareTitle">Comparison</strong>
     <span class="compare-modes" data-share-hide>
-      <button id="modeSide" type="button" class="primary" aria-pressed="true" title="Lado a lado — duas colunas com scroll sincronizado (padrão)">Lado a lado</button>
-      <button id="modeOnion" type="button" aria-pressed="false" title="Onion skin — B empilhado sobre A com opacidade">Onion skin</button>
+      <button id="modeSide" type="button" class="primary" aria-pressed="true" data-i18n-title="modeSideTitle" title="Side by side — two columns with synced scrolling (default)" data-i18n="modeSideBtn">Side by side</button>
+      <button id="modeOnion" type="button" aria-pressed="false" data-i18n-title="modeOnionTitle" title="Onion skin — B stacked over A with opacity">Onion skin</button>
     </span>
-    <label id="opacityWrap" data-share-hide hidden>Opacidade B
+    <label id="opacityWrap" data-share-hide hidden><span data-i18n="opacityLabel">B opacity</span>Opacidade B
       <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.5" data-share-hide>
     </label>
-    <button id="compareClose" type="button" data-share-hide>Fechar</button>
+    <button id="compareClose" type="button" data-share-hide data-i18n="closeBtn">Close</button>
   </div>
   <p id="compareMsg" role="alert" hidden></p>
   <div id="compareStage">
@@ -646,14 +647,14 @@
 
 <aside id="pendingPanel" data-share-hide hidden>
   <div class="pending-top">
-    <strong>Comentários pendentes</strong>
+    <strong data-i18n="pendingPanelHeading">Pending comments</strong>
     <div class="pending-sweep">
-      <button id="sweepPrev" type="button" title="Pendente anterior (sweep)">◀</button>
+      <button id="sweepPrev" type="button" data-i18n-title="sweepPrevTitle" title="Previous pending (sweep)">◀</button>
       <span id="sweepPos">0/0</span>
-      <button id="sweepNext" type="button" title="Próxima pendente (sweep)">▶</button>
-      <button id="sweepResolve" type="button" class="primary" title="Marcar a pendente atual como resolvida">Resolver</button>
+      <button id="sweepNext" type="button" data-i18n-title="sweepNextTitle" title="Next pending (sweep)">▶</button>
+      <button id="sweepResolve" type="button" class="primary" data-i18n-title="resolveTitle" title="Mark as resolved" data-i18n="resolveBtn">Resolve</button>
     </div>
-    <button id="pendingClose" type="button" title="Fechar painel">×</button>
+    <button id="pendingClose" type="button" data-i18n-title="closePanelTitle" title="Close panel">×</button>
   </div>
   <div id="pendingBody"></div>
 </aside>
@@ -661,24 +662,24 @@
 <aside id="snapshotPanel" data-share-hide hidden>
   <div class="pending-top">
     <strong>Snapshots</strong>
-    <button id="snapshotClose" type="button" title="Fechar painel">×</button>
+    <button id="snapshotClose" type="button" data-i18n-title="closePanelTitle" title="Close panel">×</button>
   </div>
   <form id="snapshotForm" data-share-hide>
-    <input id="snapshotLabel" placeholder="label (a-z, 0-9, -)" pattern="[a-z0-9-]+" title="Use apenas letras minúsculas, números e hífen" required autocomplete="off">
-    <button type="submit" class="primary" id="snapshotSave">Salvar snapshot</button>
+    <input id="snapshotLabel" placeholder="label (a-z, 0-9, -)" pattern="[a-z0-9-]+" title="Use only lowercase letters, digits and hyphen" data-i18n-title="snapshotLabelTitle" required autocomplete="off">
+    <button type="submit" class="primary" id="snapshotSave" data-i18n="snapshotBtn">Save snapshot</button>
   </form>
   <div id="snapshotList" data-share-hide></div>
   <div id="comparePick" data-share-hide>
-    <h3>Comparar</h3>
+    <h3 data-i18n="compare">Compare</h3>
     <div class="compare-choices">
       <label>A
-        <select id="compareA" data-share-hide title="Lado A — atual ou um snapshot deste canvas"></select>
+        <select id="compareA" data-share-hide data-i18n-title="compareA" title="Side A — current or a snapshot of this canvas"></select>
       </label>
       <label>B
-        <select id="compareB" data-share-hide title="Lado B — atual ou um snapshot deste canvas"></select>
+        <select id="compareB" data-share-hide data-i18n-title="compareB" title="Side B — current or a snapshot of this canvas"></select>
       </label>
     </div>
-    <button id="compareStart" type="button" class="primary" data-share-hide title="Abrir a comparação A vs B nos modos Lado a lado / Onion skin">Comparar</button>
+    <button id="compareStart" type="button" class="primary" data-share-hide data-i18n-title="compareStartTitle" title="Open the A vs B comparison in Side by side / Onion skin modes" data-i18n="compare">Compare</button>
   </div>
 </aside>
 
@@ -696,13 +697,463 @@ window.__DESIGN_TOKEN__ = null
 window.__DESIGN_READONLY = false
 
 const DEVICES = { mobile: [390, 844], tablet: [834, 1112], desktop: [1440, 900] }
-const DEVICE_LABEL = { mobile: 'celular', tablet: 'tablet', desktop: 'desktop' }
+const DEVICE_LABEL = { mobile: 'devMobile', tablet: 'devTablet', desktop: 'devDesktop' }
 const MIN_SIZE = 100
 const MAX_SIZE = 10000
 
 const $ = (id) => document.getElementById(id)
 const params = new URLSearchParams(location.search)
 const canvasParam = params.get('canvas') ?? ''
+
+/* ---------------------------------------------------------- i18n (w10) */
+/* Dicionário único do viewer — EN é o default (caso com o README público),
+ * PT-BR a alternativa (?lang=pt, com heurística de navigator.language).
+ * Textos estáticos carregam data-i18n* e são preenchidos em applyI18n();
+ * textos dinâmicos chamam t(key, vars) — {var} é interpolada no valor. */
+
+const I18N = {
+  en: {
+    // toolbar
+    scenarioLabel: 'Scenario',
+    searchPlaceholder: 'Search screens… (/)',
+    searchTitle: 'Filter screens by name, id or group — / focuses, Esc clears',
+    gridBtn: '▦ Grid',
+    gridBtnTitle: 'Toggle between the horizontal strip and a wrapping grid',
+    bezelBtn: '📱 Frame',
+    bezelBtnTitle: 'Device frames (phone/tablet) around the screens',
+    deviceLabel: 'Device',
+    devOriginal: 'Original',
+    devMobile: 'Phone',
+    devTablet: 'Tablet',
+    devDesktop: 'Desktop',
+    devCustom: 'custom',
+    themeToggle: 'Toggle light/dark theme',
+    themeDark: '🌙 Dark',
+    themeLight: '☀ Light',
+    zoomOut: 'Zoom out',
+    zoomIn: 'Zoom in',
+    zoomFitTitle: 'Fit to window',
+    zoomFitAria: 'Fit zoom to window',
+    fitBtn: 'Fit',
+    reloadBtn: '⟳ Reload',
+    reloadBtnTitle: 'Reload canvas.json and the screens',
+    resetFlowBtn: '⟲ Reset flow',
+    resetFlowBtnTitle: 'Reset every screen to the start and clear the flow data',
+    recordBtn: '⏺ Record flow',
+    recordBtnTitle: 'Record the flow as a .webm video — the browser asks to share this tab; click again to stop and download',
+    stopRecording: '⏹ Stop recording',
+    docsBtnTitle: 'Open the usage docs',
+    elementBtn: '🎯 Element',
+    elementBtnTitle: 'Comment a specific element on the screen (Esc leaves the mode)',
+    fsElementBtnTitle: 'Comment an element of the screen (Esc leaves the mode)',
+    chipsBtn: '🧩 Components',
+    chipsBtnTitle: 'Show id/variant chips over each component (inspector)',
+    commentScreenBtn: '💬 Comment this screen',
+    commentsCount: '⧉ Comments ({count})',
+    copyAllBtnTitle: 'View/copy every element comment',
+    pendingBtn: '💬 Pending',
+    pendingBtnTitle: 'Open the pending comments panel (all canvases)',
+    pendingPanelTitle: 'Open the pending comments panel ({count} open across all canvases)',
+    snapshotBtn: 'Save snapshot',
+    snapshotBtnTitle: 'Save a snapshot of this canvas (src/ + flat render/) and see the saved snapshots',
+    fsSnapshotBtnTitle: 'Save a snapshot of this canvas and see the saved snapshots',
+    exportScreenBtn: '⬇ Screen PNG',
+    exportCanvasBtn: '⬇ Canvas PNG',
+    languageTitle: 'Switch language (reloads the page)',
+    problemsSummary: ' problem(s) in the canvas — click to see',
+    shareBanner: 'read-only mode — comments and snapshots unavailable',
+    unavailableBrowser: 'Unavailable in this browser',
+    canvasLabel: 'Canvas',
+    // canvas picker
+    selectorIntro: 'Pick a canvas to preview. They live in folders with a <code>canvas.json</code> next to this viewer.',
+    manualPlaceholder: 'canvas name (e.g. login)',
+    openBtn: 'Open',
+    noCanvasFound: 'No canvas found — type the name below.',
+    canvasScreenCount: '{count} screen(s)',
+    // flow mode bar
+    fsBackBtn: '← Back',
+    fsBackTitle: 'Back to list mode',
+    fsPrevTitle: 'Previous screen in the flow',
+    fsNextTitle: 'Next screen in the flow',
+    fsRestartTitle: 'Restart the flow from the beginning',
+    fsCanvasTitle: 'Switch canvas (loads its first screen)',
+    fsScenarioTitle: 'Data scenario applied to the screens',
+    fsDeviceTitle: 'Viewing device',
+    fsExportTitle: 'Export the current flow screen as PNG',
+    // context menu
+    ctxMenuAria: 'Element actions',
+    ctxComment: '💬 Comment element',
+    ctxCommentTitle: 'Comment this element — the comment becomes a pin anchored here',
+    ctxCopy: '📋 Copy selector',
+    ctxCopyTitle: 'Copy this element’s computed CSS selector',
+    ctxComponent: '🧩 View component',
+    ctxComponentTitle: 'View the component (id · size · tone · state) of this element',
+    // dialogs
+    commentScreenTitle: 'Comment screen',
+    commentScreenTitleNamed: 'Comment: {name}',
+    commentHint: 'Describe the desired change. On submit, the formatted message goes to the clipboard — paste it into the agent chat.',
+    commentPlaceholder: 'e.g. increase the form spacing and make the button full width',
+    cancelBtn: 'Cancel',
+    sendCommentBtn: 'Send comment',
+    commentElementTitle: 'Comment element',
+    elementHint: 'Describe the change only in this element. The comment becomes a pin on the screen — copy one or all and paste into the agent chat.',
+    elementPlaceholder: 'e.g. make this button full width',
+    clipboardTitle: 'Message copied',
+    clipboardHint: 'Paste it into the agent’s chat to adjust just this screen:',
+    selectCopyHint: 'Select and copy (Ctrl+C)',
+    copyAgainBtn: 'Copy again',
+    closeBtn: 'Close',
+    replyTitle: 'Reply to comment',
+    replyPlaceholder: 'e.g. fixed in the last commit — check the spacing',
+    sendReplyBtn: 'Send reply',
+    previewTitle: 'PNG exported',
+    previewAlt: 'Preview of the exported PNG',
+    downloadAgainBtn: 'Download again',
+    // compare
+    compare: 'Compare',
+    compareTitle: 'Comparison',
+    modeSideBtn: 'Side by side',
+    modeSideTitle: 'Side by side — two columns with synced scrolling (default)',
+    modeOnionTitle: 'Onion skin — B stacked over A with opacity',
+    opacityLabel: 'B opacity',
+    compareA: 'Side A — current or a snapshot of this canvas',
+    compareB: 'Side B — current or a snapshot of this canvas',
+    compareStartTitle: 'Open the A vs B comparison in Side by side / Onion skin modes',
+    currentScreens: 'current (live screens)',
+    screensGroupLabel: 'Screens in this canvas',
+    screenWord: 'screen',
+    snapshotWord: 'snapshot',
+    currentLabel: 'current',
+    compareInvalidMode: 'Invalid comparison mode: {mode}',
+    snapshotMissing: 'Snapshot "{label}" not found — refresh the snapshot list.',
+    snapshotRenderMissing: 'Snapshot "{label}" not found — its render/ is not available; refresh the snapshot list.',
+    screenGone: 'Screen "{label}" no longer exists in this canvas.',
+    // pending panel
+    pendingPanelHeading: 'Pending comments',
+    sweepPrevTitle: 'Previous pending (sweep)',
+    sweepNextTitle: 'Next pending (sweep)',
+    resolveBtn: 'Resolve',
+    resolveTitle: 'Mark as resolved',
+    closePanelTitle: 'Close panel',
+    openPendingHeading: 'Open pending ({count})',
+    noPending: 'No pending comment — all clear.',
+    staleHeading: 'Stale — anchor lost ({count})',
+    staleHint: 'They do not count as open pending (validate.mjs --mark-stale).',
+    reopenBtn: 'Reopen',
+    reopenTitle: 'Move the comment back to open',
+    replyBtn: 'Reply',
+    replyBtnTitle: 'Add a dated reply',
+    noText: '(no text)',
+    messagesWord: 'message(s)',
+    jumpTitle: 'Go to this comment’s screen',
+    pinStaleLine: 'stale — anchor lost (validate.mjs --mark-stale)',
+    pinResolvedLine: 'resolved',
+    pinReopenTitle: 'Reopen comment',
+    // snapshots
+    snapshotsUnavailable: 'Snapshots unavailable.',
+    noSnapshots: 'No snapshot saved yet.',
+    revertBtn: 'Revert to this snapshot',
+    revertBtnTitle: 'Restore this snapshot’s src/ (full replace) and regenerate tokens/components',
+    revertConfirm: 'Revert snapshot "{label}" of canvas {canvas}?\n\nThe src/ goes back to the snapshot (full replace) and the gen → sync → validate pipeline runs right after. Files outside src/ remain.',
+    revertOk400: 'invalid snapshot manifest — nothing was restored',
+    revertOk404: 'snapshot not found',
+    revertOk500: 'pipeline failed — rolled back to the previous state',
+    snapshotRestored: 'Snapshot "{label}" restored',
+    revertFailed: 'Could not revert ({error})',
+    invalidLabel: 'Invalid label — use only a-z, 0-9 and hyphen',
+    snapshotSaved: 'Snapshot "{label}" saved',
+    snapshotSaveFailed: 'Could not save the snapshot ({error})',
+    labelInvalid400: 'invalid label',
+    canvasMissing404: 'canvas not found',
+    labelExists409: 'label already exists',
+    snapshotLabelTitle: 'Use only lowercase letters, digits and hyphen',
+    // comments API
+    pinsUnavailable: 'comments.json unavailable — persistent pins disabled',
+    commentsInvalid: 'comments.json invalid',
+    pinsOffUntilFix: '{reason} — persistent pins disabled until fixed',
+    commentsInvalidJson: 'comments.json invalid (response is not JSON) — persistent pins disabled',
+    commentsInvalidShape: 'comments.json invalid (unexpected format) — persistent pins disabled',
+    unexpectedResponse: 'unexpected response',
+    pinSaveFailed: 'Could not save the pin ({error}) — the message still goes to the chat',
+    // pins / inspector
+    inspectHint: 'Click an element to comment',
+    selectHint: 'Click to select · double-click for fullscreen',
+    resetStartBtn: '↺ start',
+    resetStartTitle: 'This screen navigated within the flow — click to go back to the start',
+    couldNotLoad: 'Could not load {file}',
+    noElementComments: 'No element comments yet — enable 🎯 Element and click the target',
+    notComponentInstance: 'This element is not a component instance from the registry',
+    componentToast: 'Component: {info}',
+    selectorLabel: 'Selector',
+    commentLabel: 'Comment',
+    copiedClipboard: '{label} copied to the clipboard',
+    // record
+    noScreenRecord: 'This browser does not support screen recording',
+    recordCancelled: 'Recording cancelled',
+    nothingRecorded: 'Nothing was recorded',
+    flowVideoDownloaded: 'Flow video downloaded (.webm)',
+    recordingToast: 'Recording… interact with the flow and click again to stop and download',
+    // export
+    generatingPng: 'Generating PNG…',
+    generatingCanvasPng: 'Generating the canvas PNG…',
+    exportFailed: 'Export failed: {error}',
+    screenNotLoaded: 'screen not loaded',
+    screenPngExported: 'Screen PNG exported',
+    screenNameNotLoaded: 'screen "{name}" not loaded',
+    composeFailed: 'failed to compose the canvas image',
+    canvasPngExported: 'Canvas PNG exported',
+    // misc
+    flowRestarted: 'Flow restarted from the beginning',
+    canvasUpdated: 'Canvas updated',
+    scenarioDefault: 'default',
+    scenarioToast: 'Scenario: {name}',
+    scenarioToastDefault: 'Scenario: default',
+    canvasNoScreens: 'Canvas "{name}" has no screens',
+    canvasNotFound: 'Canvas "{name}" not found',
+    missingCanvasTitle: 'The canvas "{canvas}" does not exist here yet',
+    missingCanvasBody: 'Ask the agent to create the screens (e.g. /design) — the canvas is created with them — or check the name in the URL (?canvas=…) and that the server is running in the project’s design/ folder.',
+    noScreensTitle: 'No screen to show',
+    noScreensBody: 'Fix the problems above and reload.',
+    fileProtocolHtml: 'The viewer needs a local server (browsers block <code>fetch</code> on <code>file://</code>). Run <code>node design/serve.mjs</code> and open <code>http://localhost:8765/viewer.html?canvas=&lt;name&gt;</code>.',
+  },
+  pt: {
+    // toolbar
+    scenarioLabel: 'Cenário',
+    searchPlaceholder: 'Buscar tela… (/)',
+    searchTitle: 'Filtrar telas por nome, id ou grupo — / foca, Esc limpa',
+    gridBtn: '▦ Grade',
+    gridBtnTitle: 'Alternar entre fita horizontal e grade (quebra em linhas)',
+    bezelBtn: '📱 Moldura',
+    bezelBtnTitle: 'Molduras de dispositivo (celular/tablet) ao redor das telas',
+    deviceLabel: 'Dispositivo',
+    devOriginal: 'Original',
+    devMobile: 'Celular',
+    devTablet: 'Tablet',
+    devDesktop: 'Desktop',
+    devCustom: 'personalizado',
+    themeToggle: 'Alternar tema claro/escuro',
+    themeDark: '🌙 Escuro',
+    themeLight: '☀ Claro',
+    zoomOut: 'Diminuir zoom',
+    zoomIn: 'Aumentar zoom',
+    zoomFitTitle: 'Ajustar à janela',
+    zoomFitAria: 'Ajustar zoom à janela',
+    fitBtn: 'Ajustar',
+    reloadBtn: '⟳ Recarregar',
+    reloadBtnTitle: 'Reler canvas.json e as telas',
+    resetFlowBtn: '⟲ Reset fluxo',
+    resetFlowBtnTitle: 'Voltar todas as telas ao início e limpar os dados do fluxo',
+    recordBtn: '⏺ Gravar fluxo',
+    recordBtnTitle: 'Gravar o fluxo como vídeo .webm — o navegador pede para compartilhar esta aba; clique de novo para parar e baixar',
+    stopRecording: '⏹ Parar gravação',
+    docsBtnTitle: 'Abrir a documentação de utilização',
+    elementBtn: '🎯 Elemento',
+    elementBtnTitle: 'Comentar um elemento específico da tela (Esc sai do modo)',
+    fsElementBtnTitle: 'Comentar um elemento da tela (Esc sai do modo)',
+    chipsBtn: '🧩 Componentes',
+    chipsBtnTitle: 'Mostrar chips de id/variante sobre cada componente (inspetor)',
+    commentScreenBtn: '💬 Comentar esta tela',
+    commentsCount: '⧉ Comentários ({count})',
+    copyAllBtnTitle: 'Ver/copiar todos os comentários de elemento',
+    pendingBtn: '💬 Pendentes',
+    pendingBtnTitle: 'Abrir o painel de comentários pendentes (todos os canvases)',
+    pendingPanelTitle: 'Abrir o painel de comentários pendentes ({count} aberto(s) em todos os canvases)',
+    snapshotBtn: 'Salvar snapshot',
+    snapshotBtnTitle: 'Salvar um snapshot deste canvas (src/ + render/ flat) e ver os snapshots salvos',
+    fsSnapshotBtnTitle: 'Salvar um snapshot deste canvas e ver os snapshots salvos',
+    exportScreenBtn: '⬇ PNG da tela',
+    exportCanvasBtn: '⬇ PNG do canvas',
+    languageTitle: 'Trocar o idioma (recarrega a página)',
+    problemsSummary: ' problema(s) no canvas — clique para ver',
+    shareBanner: 'modo leitura — comentários e snapshots indisponíveis',
+    unavailableBrowser: 'Indisponível neste navegador',
+    canvasLabel: 'Canvas',
+    // canvas picker
+    selectorIntro: 'Escolha um canvas para visualizar. Eles ficam em pastas com <code>canvas.json</code> ao lado deste visualizador.',
+    manualPlaceholder: 'nome do canvas (ex.: login)',
+    openBtn: 'Abrir',
+    noCanvasFound: 'Nenhum canvas encontrado — digite o nome abaixo.',
+    canvasScreenCount: '{count} tela(s)',
+    // flow mode bar
+    fsBackBtn: '← Voltar',
+    fsBackTitle: 'Voltar ao modo lista',
+    fsPrevTitle: 'Tela anterior do fluxo',
+    fsNextTitle: 'Tela seguinte do fluxo',
+    fsRestartTitle: 'Reiniciar o fluxo do começo',
+    fsCanvasTitle: 'Trocar de canvas (carrega a primeira tela dele)',
+    fsScenarioTitle: 'Cenário de dados aplicado às telas',
+    fsDeviceTitle: 'Dispositivo de visualização',
+    fsExportTitle: 'Exportar a tela atual do fluxo como PNG',
+    // context menu
+    ctxMenuAria: 'Ações do elemento',
+    ctxComment: '💬 Comentar elemento',
+    ctxCommentTitle: 'Comentar este elemento — o comentário vira alfinete ancorado aqui',
+    ctxCopy: '📋 Copiar seletor',
+    ctxCopyTitle: 'Copiar o seletor CSS calculado deste elemento',
+    ctxComponent: '🧩 Ver componente',
+    ctxComponentTitle: 'Ver o componente (id · tamanho · tom · estado) deste elemento',
+    // dialogs
+    commentScreenTitle: 'Comentar tela',
+    commentScreenTitleNamed: 'Comentar: {name}',
+    commentHint: 'Descreva o ajuste desejado. Ao enviar, a mensagem formatada vai para a área de transferência — cole no chat do agente.',
+    commentPlaceholder: 'Ex.: aumentar o espaçamento do formulário e deixar o botão em tela cheia',
+    cancelBtn: 'Cancelar',
+    sendCommentBtn: 'Enviar comentário',
+    commentElementTitle: 'Comentar elemento',
+    elementHint: 'Descreva a mudança só neste elemento. O comentário vira um alfinete na tela — copie um ou todos e cole no chat do agente.',
+    elementPlaceholder: 'Ex.: deixar este botão em largura total',
+    clipboardTitle: 'Mensagem copiada',
+    clipboardHint: 'Cole no chat do agente para ajustar apenas esta tela:',
+    selectCopyHint: 'Selecione e copie (Ctrl+C)',
+    copyAgainBtn: 'Copiar de novo',
+    closeBtn: 'Fechar',
+    replyTitle: 'Responder comentário',
+    replyPlaceholder: 'Ex.: ajustado no commit anterior — confira o espaçamento',
+    sendReplyBtn: 'Enviar resposta',
+    previewTitle: 'PNG exportado',
+    previewAlt: 'Prévia do PNG exportado',
+    downloadAgainBtn: 'Baixar de novo',
+    // compare
+    compare: 'Comparar',
+    compareTitle: 'Comparação',
+    modeSideBtn: 'Lado a lado',
+    modeSideTitle: 'Lado a lado — duas colunas com scroll sincronizado (padrão)',
+    modeOnionTitle: 'Onion skin — B empilhado sobre A com opacidade',
+    opacityLabel: 'Opacidade B',
+    compareA: 'Lado A — atual ou um snapshot deste canvas',
+    compareB: 'Lado B — atual ou um snapshot deste canvas',
+    compareStartTitle: 'Abrir a comparação A vs B nos modos Lado a lado / Onion skin',
+    currentScreens: 'atual (telas vivas)',
+    screensGroupLabel: 'Telas deste canvas',
+    screenWord: 'tela',
+    snapshotWord: 'snapshot',
+    currentLabel: 'atual',
+    compareInvalidMode: 'Modo de comparação inválido: {mode}',
+    snapshotMissing: 'Snapshot "{label}" não encontrado — atualize a lista de snapshots.',
+    snapshotRenderMissing: 'Snapshot "{label}" não encontrado — o render/ dele não está disponível; atualize a lista de snapshots.',
+    screenGone: 'Tela "{label}" não existe mais neste canvas.',
+    // pending panel
+    pendingPanelHeading: 'Comentários pendentes',
+    sweepPrevTitle: 'Pendente anterior (sweep)',
+    sweepNextTitle: 'Próxima pendente (sweep)',
+    resolveBtn: 'Resolver',
+    resolveTitle: 'Marcar como resolvido',
+    closePanelTitle: 'Fechar painel',
+    openPendingHeading: 'Pendentes abertas ({count})',
+    noPending: 'Nenhum comentário pendente — tudo em dia.',
+    staleHeading: 'Stale — âncora perdida ({count})',
+    staleHint: 'Não contam como pendentes abertas (validate.mjs --mark-stale).',
+    reopenBtn: 'Reabrir',
+    reopenTitle: 'Voltar o comentário para aberto',
+    replyBtn: 'Responder',
+    replyBtnTitle: 'Acrescentar uma resposta com data/hora',
+    noText: '(sem texto)',
+    messagesWord: 'mensagem(ns)',
+    jumpTitle: 'Ir para a tela deste comentário',
+    pinStaleLine: 'stale — âncora perdida (validate.mjs --mark-stale)',
+    pinResolvedLine: 'resolvido',
+    pinReopenTitle: 'Reabrir comentário',
+    // snapshots
+    snapshotsUnavailable: 'Snapshots indisponíveis.',
+    noSnapshots: 'Nenhum snapshot salvo ainda.',
+    revertBtn: 'Reverter para este snapshot',
+    revertBtnTitle: 'Restaurar o src/ deste snapshot (replace integral) e regenerar tokens/componentes',
+    revertConfirm: 'Restaurar o snapshot "{label}" do canvas {canvas}?\n\nO src/ volta ao snapshot (replace integral) e o pipeline gen → sync → validate roda em seguida. Arquivos fora de src/ permanecem.',
+    revertOk400: 'manifest do snapshot inválido — nada foi restaurado',
+    revertOk404: 'snapshot não encontrado',
+    revertOk500: 'pipeline falhou — rollback para o estado anterior',
+    snapshotRestored: 'Snapshot "{label}" restaurado',
+    revertFailed: 'Não consegui reverter ({error})',
+    invalidLabel: 'Label inválido — use apenas a-z, 0-9 e hífen',
+    snapshotSaved: 'Snapshot "{label}" salvo',
+    snapshotSaveFailed: 'Não consegui salvar o snapshot ({error})',
+    labelInvalid400: 'label inválido',
+    canvasMissing404: 'canvas inexistente',
+    labelExists409: 'label já existe',
+    snapshotLabelTitle: 'Use apenas letras minúsculas, números e hífen',
+    // comments API
+    pinsUnavailable: 'comments.json indisponível — pins persistentes desativados',
+    commentsInvalid: 'comments.json inválido',
+    pinsOffUntilFix: '{reason} — pins persistentes desativados até corrigir',
+    commentsInvalidJson: 'comments.json inválido (resposta não é JSON) — pins persistentes desativados',
+    commentsInvalidShape: 'comments.json inválido (formato inesperado) — pins persistentes desativados',
+    unexpectedResponse: 'resposta inesperada',
+    pinSaveFailed: 'Não consegui salvar o pin ({error}) — a mensagem segue para o chat',
+    // pins / inspector
+    inspectHint: 'Clique em um elemento para comentar',
+    selectHint: 'Clique para selecionar · duplo clique para tela cheia',
+    resetStartBtn: '↺ início',
+    resetStartTitle: 'Esta tela navegou dentro do fluxo — clique para voltar ao início',
+    couldNotLoad: 'Não foi possível carregar {file}',
+    noElementComments: 'Nenhum comentário de elemento ainda — ative 🎯 Elemento e clique no alvo',
+    notComponentInstance: 'Este elemento não é uma instância de componente do registry',
+    componentToast: 'Componente: {info}',
+    selectorLabel: 'Seletor',
+    commentLabel: 'Comentário',
+    copiedClipboard: '{label} copiado para a área de transferência',
+    // record
+    noScreenRecord: 'Este navegador não suporta gravação de tela',
+    recordCancelled: 'Gravação cancelada',
+    nothingRecorded: 'Nada foi gravado',
+    flowVideoDownloaded: 'Vídeo do fluxo baixado (.webm)',
+    recordingToast: 'Gravando… interaja com o fluxo e clique de novo para parar e baixar',
+    // export
+    generatingPng: 'Gerando PNG…',
+    generatingCanvasPng: 'Gerando PNG do canvas…',
+    exportFailed: 'Falha ao exportar: {error}',
+    screenNotLoaded: 'tela não carregada',
+    screenPngExported: 'PNG da tela exportado',
+    screenNameNotLoaded: 'tela "{name}" não carregada',
+    composeFailed: 'falha ao compor a imagem do canvas',
+    canvasPngExported: 'PNG do canvas exportado',
+    // misc
+    flowRestarted: 'Fluxo reiniciado do início',
+    canvasUpdated: 'Canvas atualizado',
+    scenarioDefault: 'padrão',
+    scenarioToast: 'Cenário: {name}',
+    scenarioToastDefault: 'Cenário: padrão',
+    canvasNoScreens: 'Canvas "{name}" sem telas',
+    canvasNotFound: 'Canvas "{name}" não encontrado',
+    missingCanvasTitle: 'O canvas "{canvas}" ainda não existe aqui',
+    missingCanvasBody: 'Peça ao agente para criar as telas (ex.: /design) — o canvas é criado junto com elas — ou confira o nome na URL (?canvas=…) e se o servidor está rodando na pasta design/ do projeto.',
+    noScreensTitle: 'Nenhuma tela para mostrar',
+    noScreensBody: 'Corrija os problemas acima e recarregue.',
+    fileProtocolHtml: 'O visualizador precisa de um servidor local (navegadores bloqueiam <code>fetch</code> em <code>file://</code>). Rode <code>node design/serve.mjs</code> e abra <code>http://localhost:8765/viewer.html?canvas=&lt;nome&gt;</code>.',
+  },
+}
+
+const LANG = (() => {
+  const requested = (params.get('lang') ?? '').toLowerCase()
+  if (requested === 'pt' || requested === 'en') return requested
+  return (navigator.language || '').toLowerCase().startsWith('pt') ? 'pt' : 'en'
+})()
+
+function t(key, vars) {
+  let text = I18N[LANG][key] ?? I18N.en[key] ?? key
+  if (vars) for (const [name, value] of Object.entries(vars)) text = text.replaceAll(`{${name}}`, String(value))
+  return text
+}
+
+function applyI18n() {
+  document.documentElement.lang = LANG === 'pt' ? 'pt-BR' : 'en'
+  for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n)
+  for (const el of document.querySelectorAll('[data-i18n-html]')) el.innerHTML = t(el.dataset.i18nHtml)
+  for (const el of document.querySelectorAll('[data-i18n-title]')) el.title = t(el.dataset.i18nTitle)
+  for (const el of document.querySelectorAll('[data-i18n-placeholder]')) el.placeholder = t(el.dataset.i18nPlaceholder)
+  for (const el of document.querySelectorAll('[data-i18n-aria]')) el.setAttribute('aria-label', t(el.dataset.i18nAria))
+  for (const el of document.querySelectorAll('[data-i18n-alt]')) el.alt = t(el.dataset.i18nAlt)
+  const langBtn = $('langBtn')
+  if (langBtn) langBtn.textContent = LANG === 'pt' ? '🌐 English' : '🌐 Português'
+}
+
+applyI18n()
+
+$('langBtn').addEventListener('click', () => {
+  const url = new URL(location.href)
+  url.searchParams.set('lang', LANG === 'pt' ? 'en' : 'pt')
+  location.href = url.toString()
+})
+
 
 const state = {
   canvas: '', theme: 'light', device: 'original',
@@ -747,7 +1198,7 @@ function syncCapabilityDegradation() {
   for (const el of document.querySelectorAll('[data-require]')) {
     const ok = CAPABILITIES[el.dataset.require]?.() ?? true
     el.hidden = !ok
-    if (!ok) el.title = 'Indisponivel neste navegador'
+    if (!ok) el.title = t('unavailableBrowser')
   }
 }
 
@@ -823,7 +1274,7 @@ async function loadScenarioSelect() {
     for (const target of [select, fsSelect]) {
       const option = document.createElement('option')
       option.value = name
-      option.textContent = name === '' ? 'padrão' : name
+      option.textContent = name === '' ? t('scenarioDefault') : name
       target.appendChild(option)
     }
   }
@@ -1003,7 +1454,7 @@ async function loadComments() {
   try {
     response = await fetch(COMMENTS_API, { cache: 'no-store', headers: apiHeaders() })
   } catch {
-    showCommentsAlert('comments.json indisponível — pins persistentes desativados')
+    showCommentsAlert(t('pinsUnavailable'))
     state.comments = []
     state.allComments = []
     renderPendingPanel()
@@ -1011,9 +1462,9 @@ async function loadComments() {
   }
   if (!response.ok) {
     const reason = response.status === 400
-      ? 'comments.json inválido'
+      ? t('commentsInvalid')
       : `GET /api/comments ${response.status}`
-    showCommentsAlert(`${reason} — pins persistentes desativados até corrigir`)
+    showCommentsAlert(`${reason} — ${t('pinsOffUntilFix')}`)
     state.comments = []
     state.allComments = []
     renderPendingPanel()
@@ -1023,14 +1474,14 @@ async function loadComments() {
   try {
     payload = await response.json()
   } catch {
-    showCommentsAlert('comments.json inválido (resposta não é JSON) — pins persistentes desativados')
+    showCommentsAlert(t('commentsInvalidJson'))
     state.comments = []
     state.allComments = []
     renderPendingPanel()
     return
   }
   if (!payload || !Array.isArray(payload.comments)) {
-    showCommentsAlert('comments.json inválido (formato inesperado) — pins persistentes desativados')
+    showCommentsAlert(t('commentsInvalidShape'))
     state.comments = []
     state.allComments = []
     renderPendingPanel()
@@ -1055,7 +1506,7 @@ async function persistPin(body) {
     })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const payload = await response.json()
-    if (!payload || !Array.isArray(payload.comments)) throw new Error('resposta inesperada')
+    if (!payload || !Array.isArray(payload.comments)) throw new Error(t('unexpectedResponse'))
     clearCommentsAlert()
     state.comments = payload.comments.filter((pin) => pin && pin.canvas === state.canvas)
     state.allComments = payload.comments.filter((pin) => pin && typeof pin === 'object')
@@ -1064,7 +1515,7 @@ async function persistPin(body) {
     renderPendingPanel()
     return true
   } catch (error) {
-    toast(`Não consegui salvar o pin (${error?.message ?? error}) — a mensagem segue para o chat`)
+    toast(t('pinSaveFailed', { error: error?.message ?? error }))
     return false
   }
 }
@@ -1120,7 +1571,7 @@ function centerOnScreen(screenId) {
 function pendingLabel(pin) {
   const file = String(pin?.file ?? '').split('?')[0]
   const replies = Array.isArray(pin?.replies) ? pin.replies : []
-  return `${pin?.canvas ?? '?'} › ${file} — ${replies[0]?.text ?? '(sem texto)'}`
+  return `${pin?.canvas ?? '?'} › ${file} — ${replies[0]?.text ?? t('noText')}`
 }
 
 /** One entry: link to the screen + Resolver/Reabrir/Responder actions. */
@@ -1134,33 +1585,33 @@ function pendingEntry(pin) {
   jump.type = 'button'
   jump.className = 'pending-jump'
   jump.textContent = pendingLabel(pin)
-  jump.title = 'Ir para a tela deste comentário'
+  jump.title = t('jumpTitle')
   jump.addEventListener('click', () => jumpToPin(pin))
 
   const meta = document.createElement('div')
   meta.className = 'pending-meta'
   const replies = Array.isArray(pin.replies) ? pin.replies : []
-  meta.textContent = `status: ${pin.status}${replies.length > 1 ? ` · ${replies.length} mensagens` : ''}`
+  meta.textContent = `status: ${pin.status}${replies.length > 1 ? ` · ${replies.length} ${t('messagesWord')}` : ''}`
 
   const actions = document.createElement('div')
   actions.className = 'pending-actions'
 
   const resolve = document.createElement('button')
   resolve.type = 'button'
-  resolve.textContent = 'Resolver'
-  resolve.title = 'Marcar como resolvido'
+  resolve.textContent = t('resolveBtn')
+  resolve.title = t('resolveTitle')
   resolve.addEventListener('click', () => persistPin({ id: pin.id, status: 'resolved' }))
 
   const reopen = document.createElement('button')
   reopen.type = 'button'
-  reopen.textContent = 'Reabrir'
-  reopen.title = 'Voltar o comentário para aberto'
+  reopen.textContent = t('reopenBtn')
+  reopen.title = t('reopenTitle')
   reopen.addEventListener('click', () => persistPin({ id: pin.id, status: 'open' }))
 
   const reply = document.createElement('button')
   reply.type = 'button'
-  reply.textContent = 'Responder'
-  reply.title = 'Acrescentar uma resposta com data/hora'
+  reply.textContent = t('replyBtn')
+  reply.title = t('replyBtnTitle')
   reply.addEventListener('click', () => openReplyDialog(pin))
 
   actions.append(resolve, reopen, reply)
@@ -1206,12 +1657,12 @@ function renderPendingPanel() {
   const section = document.createElement('section')
   section.className = 'pending-section'
   const heading = document.createElement('h3')
-  heading.textContent = `Pendentes abertas (${open.length})`
+  heading.textContent = t('openPendingHeading', { count: open.length })
   section.appendChild(heading)
   if (open.length === 0) {
     const empty = document.createElement('p')
     empty.className = 'pending-empty'
-    empty.textContent = 'Nenhum comentário pendente — tudo em dia.'
+    empty.textContent = t('noPending')
     section.appendChild(empty)
   } else {
     const list = document.createElement('ul')
@@ -1229,11 +1680,11 @@ function renderPendingPanel() {
     const staleSection = document.createElement('section')
     staleSection.className = 'pending-section'
     const staleHeading = document.createElement('h3')
-    staleHeading.textContent = `Stale — âncora perdida (${stale.length})`
+    staleHeading.textContent = t('staleHeading', { count: stale.length })
     staleSection.appendChild(staleHeading)
     const hint = document.createElement('p')
     hint.className = 'pending-empty'
-    hint.textContent = 'Não contam como pendentes abertas (validate.mjs --mark-stale).'
+    hint.textContent = t('staleHint')
     staleSection.appendChild(hint)
     const list = document.createElement('ul')
     list.className = 'pending-list'
@@ -1245,7 +1696,7 @@ function renderPendingPanel() {
 
 /** Live toolbar badge with the open-pin count (cabeçalho + modo fluxo). */
 function updatePendingBadge(count) {
-  const title = `Abrir o painel de comentários pendentes (${count} aberto(s) em todos os canvases)`
+  const title = t('pendingPanelTitle', { count })
   $('pendingBadge').textContent = String(count)
   $('pendingBtn').title = title
   $('fsBadge').textContent = String(count)
@@ -1285,7 +1736,7 @@ async function loadSnapshotList() {
     list.innerHTML = ''
     const warn = document.createElement('p')
     warn.className = 'pending-empty'
-    warn.textContent = 'Snapshots indisponíveis.'
+    warn.textContent = t('snapshotsUnavailable')
     list.appendChild(warn)
     return
   }
@@ -1294,7 +1745,7 @@ async function loadSnapshotList() {
   if (snapshots.length === 0) {
     const empty = document.createElement('p')
     empty.className = 'pending-empty'
-    empty.textContent = 'Nenhum snapshot salvo ainda.'
+    empty.textContent = t('noSnapshots')
     list.appendChild(empty)
     return
   }
@@ -1325,8 +1776,8 @@ async function loadSnapshotList() {
       const revert = document.createElement('button')
       revert.type = 'button'
       revert.className = 'snap-revert'
-      revert.textContent = 'Reverter para este snapshot'
-      revert.title = 'Restaurar o src/ deste snapshot (replace integral) e regenerar tokens/componentes'
+      revert.textContent = t('revertBtn')
+      revert.title = t('revertBtnTitle')
       revert.addEventListener('click', () => revertToSnapshot(String(snap?.canvas ?? ''), String(snap?.label ?? '')))
       li.appendChild(revert)
       ul.appendChild(li)
@@ -1360,7 +1811,7 @@ $('snapshotForm').addEventListener('submit', async (event) => {
   if (isReadonly()) return
   const label = $('snapshotLabel').value.trim()
   if (!/^[a-z0-9-]+$/.test(label)) {
-    toast('Label inválido — use apenas a-z, 0-9 e hífen')
+    toast(t('invalidLabel'))
     return
   }
   try {
@@ -1370,15 +1821,15 @@ $('snapshotForm').addEventListener('submit', async (event) => {
       body: JSON.stringify({ canvas: state.canvas, label }),
     })
     if (!response.ok) {
-      const reasons = { 400: 'label inválido', 404: 'canvas inexistente', 409: 'label já existe' }
+      const reasons = { 400: t('labelInvalid400'), 404: t('canvasMissing404'), 409: t('labelExists409') }
       throw new Error(reasons[response.status] ?? `HTTP ${response.status}`)
     }
-    toast(`Snapshot "${label}" salvo`)
+    toast(t('snapshotSaved', { label }))
     $('snapshotLabel').value = ''
     loadSnapshotList()
     renderCompareOptions()
   } catch (error) {
-    toast(`Nǜo consegui salvar o snapshot (${error?.message ?? error})`)
+    toast(t('snapshotSaveFailed', { error: error?.message ?? error }))
   }
 })
 
@@ -1400,11 +1851,7 @@ function designResetMessage(canvas, label) {
  * overlay as the [Design: …] comments). */
 async function revertToSnapshot(canvas, label) {
   if (isReadonly()) return
-  const ok = window.confirm(
-    `Restaurar o snapshot "${label}" do canvas ${canvas}?\n\n` +
-      'O src/ volta ao snapshot (replace integral) e o pipeline gen → sync → validate roda em seguida. ' +
-      'Arquivos fora de src/ permanecem.',
-  )
+  const ok = window.confirm(t('revertConfirm', { label, canvas }))
   if (!ok) return
   try {
     const response = await fetch(REVERT_API, {
@@ -1414,9 +1861,9 @@ async function revertToSnapshot(canvas, label) {
     })
     if (!response.ok) {
       const reasons = {
-        400: 'manifest do snapshot inválido — nada foi restaurado',
-        404: 'snapshot não encontrado',
-        500: 'pipeline falhou — rollback para o estado anterior',
+        400: t('revertOk400'),
+        404: t('revertOk404'),
+        500: t('revertOk500'),
       }
       throw new Error(reasons[response.status] ?? `HTTP ${response.status}`)
     }
@@ -1424,7 +1871,7 @@ async function revertToSnapshot(canvas, label) {
     $('clipboardMsg').textContent = message
     $('clipboard').hidden = false
     await copyToClipboard(message)
-    toast(`Snapshot "${label}" restaurado`)
+    toast(t('snapshotRestored', { label }))
     if (canvas === state.canvas) {
       state.bust = Date.now()
       await loadCanvas()
@@ -1432,7 +1879,7 @@ async function revertToSnapshot(canvas, label) {
     }
     loadSnapshotList()
   } catch (error) {
-    toast(`Não consegui reverter (${error?.message ?? error})`)
+    toast(t('revertFailed', { error: error?.message ?? error }))
   }
 }
 
@@ -1464,10 +1911,10 @@ function buildCompareSpec(selA, selB, mode, snapshots, canvas) {
   const b = resolve(selB)
   if (!a || !b) {
     const missing = !a ? String(selA ?? '') : String(selB ?? '')
-    return { ok: false, message: `Snapshot "${missing}" não encontrado — atualize a lista de snapshots.` }
+    return { ok: false, message: t('snapshotMissing', { label: missing }) }
   }
   if (!COMPARE_MODES.includes(mode)) {
-    return { ok: false, message: `Modo de comparação inválido: ${String(mode)}` }
+    return { ok: false, message: t('compareInvalidMode', { mode: String(mode) }) }
   }
   return { ok: true, mode, canvas, a, b }
 }
@@ -1481,9 +1928,9 @@ function compareSrc(side, file, canvas, bust) {
 }
 
 function compareLabel(side) {
-  if (side.kind === 'snapshot') return `snapshot ${side.label}`
-  if (side.kind === 'screen') return `tela ${side.label}`
-  return 'atual'
+  if (side.kind === 'snapshot') return `${t('snapshotWord')} ${side.label}`
+  if (side.kind === 'screen') return `${t('screenWord')} ${side.label}`
+  return t('currentLabel')
 }
 
 /**
@@ -1602,7 +2049,7 @@ async function renderCompareOptions() {
     select.innerHTML = ''
     const atual = document.createElement('option')
     atual.value = ''
-    atual.textContent = 'atual (telas vivas)'
+    atual.textContent = t('currentScreens')
     select.appendChild(atual)
     for (const snap of snapshots.filter((snap) => snap && snap.canvas === state.canvas)) {
       const option = document.createElement('option')
@@ -1612,11 +2059,11 @@ async function renderCompareOptions() {
     }
     // w9 comparar telas: telas vivas do canvas também entram como opção A/B
     const screensGroup = document.createElement('optgroup')
-    screensGroup.label = 'Telas deste canvas'
+    screensGroup.label = t('screensGroupLabel')
     for (const screen of state.screens) {
       const option = document.createElement('option')
       option.value = `screen:${String(screen.file).split('?')[0]}`
-      option.textContent = `tela — ${screen.name}`
+      option.textContent = `${t('screenWord')} — ${screen.name}`
       screensGroup.appendChild(option)
     }
     select.appendChild(screensGroup)
@@ -1670,14 +2117,14 @@ async function renderCompare() {
   showCompareMsg('')
   for (const side of [compareSpec.a, compareSpec.b]) {
     if (!(await snapshotRenderExists(side))) {
-      showCompareMsg(`Snapshot "${side.label}" não encontrado — o render/ dele não está disponível; atualize a lista de snapshots.`)
+      showCompareMsg(t('snapshotRenderMissing', { label: side.label }))
       return
     }
   }
   // w9 comparar telas: lado apontando para tela que não existe mais -> aviso claro
   for (const side of [compareSpec.a, compareSpec.b]) {
     if (side.kind === 'screen' && !state.screens.some((s) => String(s.file).split('?')[0] === side.label)) {
-      showCompareMsg(`Tela "${side.label}" nao existe mais neste canvas.`)
+      showCompareMsg(t('screenGone', { label: side.label }))
       return
     }
   }
@@ -1754,10 +2201,8 @@ function renderStrip() {
     empty.id = 'empty'
     const missing = state.problems.some((problem) => problem.startsWith('missing-manifest'))
     empty.innerHTML = missing
-      ? `<strong>O canvas "${state.canvas}" ainda não existe aqui</strong>` +
-        '<span>Peça ao agente para criar as telas (ex.: /design) — o canvas é criado junto com elas —' +
-        ' ou confira o nome na URL (?canvas=…) e se o servidor está rodando na pasta design/ do projeto.</span>'
-      : '<strong>Nenhuma tela para mostrar</strong><span>Corrija os problemas acima e recarregue.</span>'
+      ? `<strong>${t('missingCanvasTitle', { canvas: state.canvas })}</strong><span>${t('missingCanvasBody')}</span>`
+      : `<strong>${t('noScreensTitle')}</strong><span>${t('noScreensBody')}</span>`
     strip.appendChild(empty)
     select(null)
     return
@@ -1811,8 +2256,8 @@ function cardFor(screen) {
   const reset = document.createElement('button')
   reset.className = 'card-reset'
   reset.type = 'button'
-  reset.textContent = '↺ início'
-  reset.title = 'Esta tela navegou dentro do fluxo — clique para voltar ao início'
+  reset.textContent = t('resetStartBtn')
+  reset.title = t('resetStartTitle')
   reset.hidden = true
   reset.addEventListener('click', () => { iframe.src = origSrc })
   head.append(name, size, reset)
@@ -1841,7 +2286,7 @@ function cardFor(screen) {
   const overlay = document.createElement('div')
   overlay.className = 'card-overlay'
   if (state.inspect) overlay.classList.add('inspecting')
-  overlay.title = state.inspect ? 'Clique em um elemento para comentar' : 'Clique para selecionar · duplo clique para tela cheia'
+  overlay.title = state.inspect ? t('inspectHint') : t('selectHint')
   const highlight = document.createElement("div")
   highlight.className = "highlight"
   const pins = document.createElement('div')
@@ -2034,8 +2479,8 @@ function pinMarker(pin, index, layer) {
   marker.style.left = pos.left
   marker.style.top = pos.top
   marker.title = `${pin.selector ?? ''}\n${pinText(pin)}${
-    pin.status === 'stale' ? '\nstale — âncora perdida (validate.mjs --mark-stale)' : ''
-  }${pin.status === 'resolved' ? '\nresolvido' : ''}`
+    pin.status === 'stale' ? `\n${t('pinStaleLine')}` : ''
+  }${pin.status === 'resolved' ? `\n${t('pinResolvedLine')}` : ''}`
   const badge = document.createElement('span')
   badge.className = 'pin-badge'
   badge.textContent = String(index + 1)
@@ -2043,7 +2488,7 @@ function pinMarker(pin, index, layer) {
   act.className = 'pin-act'
   act.type = 'button'
   act.textContent = pin.status === 'resolved' ? '↺' : '✓'
-  act.title = pin.status === 'resolved' ? 'Reabrir comentário' : 'Marcar como resolvido'
+  act.title = pin.status === 'resolved' ? t('pinReopenTitle') : t('resolveTitle')
   act.addEventListener('click', (event) => {
     event.stopPropagation()
     persistPin({ id: pin.id, status: pin.status === 'resolved' ? 'open' : 'resolved' })
@@ -2089,12 +2534,12 @@ function updateCopyAll() {
   const btn = $('copyAllBtn')
   if (isReadonly()) { btn.hidden = true; return } // share: recurso de /api some
   btn.hidden = false
-  btn.textContent = `⧉ Comentários (${state.comments.length})`
+  btn.textContent = t('commentsCount', { count: state.comments.length })
 }
 
 $('copyAllBtn').addEventListener('click', async () => {
   if (state.comments.length === 0) {
-    toast('Nenhum comentário de elemento ainda — ative 🎯 Elemento e clique no alvo')
+    toast(t('noElementComments'))
     return
   }
   const message = state.comments.map(pinMessage).join('\n')
@@ -2109,7 +2554,7 @@ $('inspectBtn').addEventListener('click', () => {
   $('fsInspect').classList.toggle('primary', state.inspect)
   for (const overlay of document.querySelectorAll('.card-overlay')) {
     overlay.classList.toggle('inspecting', state.inspect)
-    overlay.title = state.inspect ? 'Clique em um elemento para comentar' : 'Clique para selecionar · duplo clique para tela cheia'
+    overlay.title = state.inspect ? t('inspectHint') : t('selectHint')
   }
   if (!state.inspect) {
     for (const highlight of document.querySelectorAll(".highlight")) highlight.style.display = 'none'
@@ -2182,14 +2627,14 @@ $('fsChip').addEventListener('click', () => {
 function showBroken(frame, screen) {
   const broken = document.createElement('div')
   broken.className = 'broken'
-  broken.textContent = `Não foi possível carregar ${screen.file}`
+  broken.textContent = t('couldNotLoad', { file: screen.file })
   frame.appendChild(broken)
 }
 
 function sizeLabel(screen, width, height) {
   const device = state.device !== 'original'
-    ? DEVICE_LABEL[state.device]
-    : (screen.device in DEVICES ? DEVICE_LABEL[screen.device] : (Number.isInteger(screen.width) ? 'personalizado' : 'celular'))
+    ? t(DEVICE_LABEL[state.device])
+    : (screen.device in DEVICES ? t(DEVICE_LABEL[screen.device]) : (Number.isInteger(screen.width) ? t('devCustom') : t('devMobile')))
   return `${width}×${height} · ${device}`
 }
 
@@ -2318,14 +2763,16 @@ $('zoomFit').addEventListener('click', fitView)
 
 function applyTheme() {
   document.body.classList.toggle('dark', state.theme === 'dark')
-  $('themeBtn').textContent = state.theme === 'dark' ? '☀ Claro' : '🌙 Escuro'
+  $('themeBtn').textContent = state.theme === 'dark' ? t('themeLight') : t('themeDark')
   for (const iframe of document.querySelectorAll('#strip iframe, #fsFrame, #compareView iframe')) applyThemeToFrame(iframe)
   applyCompChips() // chip palette is copied from the viewer tokens
 }
 
 function applyThemeToFrame(iframe) {
   try {
-    iframe.contentDocument.documentElement.setAttribute('data-theme', state.theme)
+    const root = iframe.contentDocument.documentElement
+    root.setAttribute('data-theme', state.theme)
+    root.setAttribute('data-lang', LANG === 'pt' ? 'pt-BR' : 'en')
   } catch { /* frame not ready or opaque; ignore */ }
 }
 
@@ -2563,7 +3010,7 @@ $('ctxCopy').addEventListener('click', async () => {
   const target = ctxTarget
   closeCtxMenu()
   if (!target) return
-  await copyToClipboard(target.selector, 'Seletor')
+  await copyToClipboard(target.selector, t('selectorLabel'))
 })
 
 $('ctxComponent').addEventListener('click', () => {
@@ -2571,13 +3018,13 @@ $('ctxComponent').addEventListener('click', () => {
   closeCtxMenu()
   const host = target?.el?.closest?.('[data-component]')
   if (!host) {
-    toast('Este elemento não é uma instância de componente do registry')
+    toast(t('notComponentInstance'))
     return
   }
   const info = ['data-component', 'data-size', 'data-tone', 'data-state']
     .map((attr) => host.getAttribute(attr)).filter(Boolean).join(' · ')
   if (!state.chips) $('chipBtn').click() // liga as 🧩 chips para ver o componente no lugar
-  toast(`Componente: ${info}`, 3600)
+  toast(t('componentToast', { info }), 3600)
 })
 
 /* ------------------------- arrastar-para-posicionar comentário (w8) */
@@ -2787,11 +3234,11 @@ $('fsCanvas').addEventListener('change', async () => {
     const first = Array.isArray(manifest?.screens)
       ? manifest.screens.find((s) => s && typeof s.file === 'string' && s.file)
       : null
-    if (!first) { toast(`Canvas "${name}" sem telas`); return }
+    if (!first) { toast(t('canvasNoScreens', { name })); return }
     openFsScreen({ ...first, canvas: name })
     toast(`Canvas: ${name} › ${first.name ?? first.file}`)
   } catch {
-    toast(`Canvas "${name}" não encontrado`)
+    toast(t('canvasNotFound', { name }))
   }
 })
 
@@ -2803,7 +3250,7 @@ $('fsScenario').addEventListener('change', () => {
   state.bust = Date.now()
   savePrefs()
   renderStrip()
-  toast(state.scenario ? `Cenário: ${state.scenario}` : 'Cenário: padrão')
+  toast(state.scenario ? t('scenarioToast', { name: state.scenario }) : t('scenarioToastDefault'))
   if (fsScreen) openFsScreen(fsCurrentScreen() ?? fsScreen)
 })
 
@@ -2828,7 +3275,7 @@ $('fsDocs').addEventListener('click', () => {
 $('fsExport').addEventListener('click', () => {
   showFsBar()
   const screen = fsCurrentScreen() ?? fsScreen
-  if (screen) withBusyToast('Gerando PNG…', () => exportFsScreen(screen))
+  if (screen) withBusyToast(t('generatingPng'), () => exportFsScreen(screen))
 })
 
 $('scenarioSelect').addEventListener('change', () => {
@@ -2838,7 +3285,7 @@ $('scenarioSelect').addEventListener('change', () => {
   state.bust = Date.now()
   savePrefs()
   renderStrip()
-  toast(state.scenario ? `Cenário: ${state.scenario}` : 'Cenário: padrão')
+  toast(state.scenario ? t('scenarioToast', { name: state.scenario }) : t('scenarioToastDefault'))
 })
 
 /* --------------------------------------------------------------- record */
@@ -2853,7 +3300,7 @@ $('recordBtn').addEventListener('click', async () => {
     return
   }
   if (!navigator.mediaDevices?.getDisplayMedia) {
-    toast('Este navegador não suporta gravação de tela')
+    toast(t('noScreenRecord'))
     return
   }
   try {
@@ -2863,7 +3310,7 @@ $('recordBtn').addEventListener('click', async () => {
       preferCurrentTab: true,
     })
   } catch {
-    toast('Gravação cancelada')
+    toast(t('recordCancelled'))
     return
   }
   const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
@@ -2880,26 +3327,26 @@ $('recordBtn').addEventListener('click', async () => {
     recorder = null
     updateRecordBtn()
     if (blob.size === 0) {
-      toast('Nada foi gravado')
+      toast(t('nothingRecorded'))
       return
     }
     const url = URL.createObjectURL(blob)
     download(url, `${state.canvas}-fluxo.webm`, false)
     setTimeout(() => URL.revokeObjectURL(url), 60000)
-    toast('Vídeo do fluxo baixado (.webm)')
+    toast(t('flowVideoDownloaded'))
   }
   recordStream.getVideoTracks()[0].addEventListener('ended', () => {
     if (recorder?.state === 'recording') recorder.stop()
   })
   recorder.start()
   updateRecordBtn()
-  toast('Gravando… interaja com o fluxo e clique de novo para parar e baixar', 60000)
+  toast(t('recordingToast'), 60000)
 })
 
 function updateRecordBtn() {
   const btn = $('recordBtn')
   const recording = !!recorder
-  btn.textContent = recording ? '⏹ Parar gravação' : '⏺ Gravar fluxo'
+  btn.textContent = recording ? t('stopRecording') : t('recordBtn')
   btn.classList.toggle('recording', recording)
 }
 
@@ -2908,7 +3355,7 @@ function updateRecordBtn() {
 $('commentBtn').addEventListener('click', () => {
   const screen = selectedScreen()
   if (!screen) return
-  $('commentTitle').textContent = `Comentar: ${screen.name}`
+  $('commentTitle').textContent = t('commentScreenTitleNamed', { name: screen.name })
   $('commentText').value = ''
   $('dialog').hidden = false
   $('commentText').focus()
@@ -2944,7 +3391,7 @@ function selectAllClipboardMsg() {
  * context) must never throw and never banner: the overlay plus the
  * "Selecione e copie (Ctrl+C)" hint with the message selected is the
  * graceful fallback. */
-async function copyToClipboard(text, label = 'Comentário') {
+async function copyToClipboard(text, label = t('commentLabel')) {
   let copied = false
   try {
     if (navigator.clipboard?.writeText) {
@@ -2957,7 +3404,7 @@ async function copyToClipboard(text, label = 'Comentário') {
   const hint = $('clipboardHint')
   if (hint) hint.hidden = copied
   if (copied) {
-    toast(`${label} copiado para a área de transferência`)
+    toast(t('copiedClipboard', { label }))
   } else {
     $('clipboardMsg').textContent = text
     $('clipboard').hidden = false
@@ -3066,11 +3513,11 @@ document.addEventListener('keydown', (event) => {
 
 $('exportBtn').addEventListener('click', () => {
   const screen = selectedScreen()
-  if (screen) withBusyToast('Gerando PNG…', () => exportScreen(screen))
+  if (screen) withBusyToast(t('generatingPng'), () => exportScreen(screen))
 })
 
 $('exportAllBtn').addEventListener('click', () => {
-  if (state.screens.length > 0) withBusyToast('Gerando PNG do canvas…', exportCanvasPng)
+  if (state.screens.length > 0) withBusyToast(t('generatingCanvasPng'), exportCanvasPng)
 })
 
 async function withBusyToast(message, task) {
@@ -3079,7 +3526,7 @@ async function withBusyToast(message, task) {
     await task()
   } catch (error) {
     console.error(error)
-    toast(`Falha ao exportar: ${error?.message ?? error}`)
+    toast(t('exportFailed', { error: error?.message ?? error }))
   }
 }
 
@@ -3145,24 +3592,24 @@ async function captureScreen(iframe) {
 async function exportScreen(screen) {
   await ensureFramesLoaded([frameOf(screen.id)]) // w9 lazy: força a carga antes do PNG
   const iframe = frameOf(screen.id)
-  if (!iframe?.contentDocument) throw new Error('tela não carregada')
+  if (!iframe?.contentDocument) throw new Error(t('screenNotLoaded'))
   const dataUrl = await captureScreen(iframe)
   const filename = `${state.canvas}-${screen.id}.png`
   download(dataUrl, filename)
   showPreview(dataUrl, filename)
-  toast('PNG da tela exportado')
+  toast(t('screenPngExported'))
 }
 
 /** PNG da tela atual do modo fluxo (#fsFrame) — nomeia pelo canvas dela. */
 async function exportFsScreen(screen) {
   const frame = $('fsFrame')
-  if (!frame?.contentDocument) throw new Error('tela não carregada')
+  if (!frame?.contentDocument) throw new Error(t('screenNotLoaded'))
   const dataUrl = await captureScreen(frame)
   const canvas = screen.canvas ?? state.canvas
   const filename = `${canvas}-${screen.id}.png`
   download(dataUrl, filename)
   showPreview(dataUrl, filename)
-  toast('PNG da tela exportado')
+  toast(t('screenPngExported'))
 }
 
 async function exportCanvasPng() {
@@ -3170,7 +3617,7 @@ async function exportCanvasPng() {
   const captures = []
   for (const screen of state.screens) {
     const iframe = frameOf(screen.id)
-    if (!iframe?.contentDocument) throw new Error(`tela "${screen.name}" não carregada`)
+    if (!iframe?.contentDocument) throw new Error(t('screenNameNotLoaded', { name: screen.name }))
     const [width, height] = screenSize(screen)
     captures.push({ screen, width, height, dataUrl: await captureScreen(iframe) })
   }
@@ -3197,7 +3644,7 @@ async function exportCanvasPng() {
     const image = new Image()
     await new Promise((resolve, reject) => {
       image.onload = resolve
-      image.onerror = () => reject(new Error('falha ao compor a imagem do canvas'))
+      image.onerror = () => reject(new Error(t('composeFailed')))
       image.src = capture.dataUrl
     })
     ctx.drawImage(image, x, margin + titleBlock, capture.width * scale, capture.height * scale)
@@ -3209,7 +3656,7 @@ async function exportCanvasPng() {
   download(url, filename, false)
   showPreview(canvas.toDataURL('image/png'), filename)
   setTimeout(() => URL.revokeObjectURL(url), 30000)
-  toast('PNG do canvas exportado')
+  toast(t('canvasPngExported'))
 }
 
 function download(url, filename, revoke = true) {
@@ -3239,7 +3686,7 @@ $('previewDownload').addEventListener('click', () => {
 /* ----------------------------------------------------------------- misc */
 
 $('docsBtn').addEventListener('click', () => {
-  window.open('docs.html', '_blank')
+  window.open(`docs.html?lang=${LANG}`, '_blank')
 })
 
 $('reloadBtn').addEventListener('click', () => {
@@ -3262,7 +3709,7 @@ $('resetFlowBtn').addEventListener('click', () => {
   clearFlowState()
   state.bust = Date.now()
   renderStrip()
-  toast('Fluxo reiniciado do início')
+  toast(t('flowRestarted'))
 })
 
 function fitSoon() { requestAnimationFrame(fitView) }
@@ -3325,7 +3772,7 @@ setInterval(async () => {
     if (lastManifestText !== null && text !== lastManifestText) {
       state.bust = Date.now()
       await loadCanvas()
-      toast('Canvas atualizado')
+      toast(t('canvasUpdated'))
     }
     lastManifestText = text
   } catch { /* server or manifest gone; the banner already reports it */ }
@@ -3337,11 +3784,7 @@ async function boot() {
   syncShareDegradation() // share: degradação declarada antes de qualquer render
   syncCapabilityDegradation() // navegador: ações sem suporte somem antes de qualquer render
   if (location.protocol === 'file:') {
-    document.body.innerHTML = (
-      '<div id="selector"><h1>Design canvas</h1>' +
-      '<p>O visualizador precisa de um servidor local (navegadores bloqueiam <code>fetch</code> em ' +
-      '<code>file://</code>). Rode <code>node design/serve.mjs</code> e abra ' +
-      '<code>http://localhost:8765/viewer.html?canvas=&lt;nome&gt;</code>.</p></div>')
+    document.body.innerHTML = `<div id="selector"><h1>Design canvas</h1><p>${t('fileProtocolHtml')}</p></div>`
     return
   }
   if (!canvasParam) {
@@ -3471,7 +3914,7 @@ async function listCanvases() {
     const li = document.createElement('li')
     const button = document.createElement('button')
     button.className = 'primary'
-    button.textContent = count === null ? name : `${name} · ${count} tela${count === 1 ? '' : 's'}`
+    button.textContent = count === null ? name : `${name} · ${t('canvasScreenCount', { count })}`
     button.addEventListener('click', () => { location.search = `?canvas=${encodeURIComponent(name)}` })
     li.appendChild(button)
     list.appendChild(li)
@@ -3479,7 +3922,7 @@ async function listCanvases() {
   if (names.length === 0) {
     const li = document.createElement('li')
     li.style.color = 'var(--ui-muted)'
-    li.textContent = 'Nenhum canvas encontrado — digite o nome abaixo.'
+    li.textContent = t('noCanvasFound')
     list.appendChild(li)
   }
 }

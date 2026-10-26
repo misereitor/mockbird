@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -75,13 +75,300 @@
 
 <header class="top">
   <strong>📘 Design canvas</strong>
-  <div class="links">
-    <button class="btn" id="toggle">🌙 Tema</button>
-    <a class="btn" href="viewer.html">↗ Abrir o visualizador</a>
+    <div class="links">
+    <button class="btn" id="langBtn">🌐 Português</button>
+    <button class="btn" id="toggle">🌙 Theme</button>
+    <a class="btn" id="viewerLink" href="viewer.html">↗ Open the viewer</a>
   </div>
 </header>
 
 <div class="wrap">
+
+  <div data-lang="en">
+    <h1>Design canvas</h1>
+    <p class="lead">Real HTML screens, a working preview of the system in the browser and commented review — no Figma, no Penpot, everything offline inside the project.</p>
+
+    <ul class="toc">
+      <li><a href="#comecando">Getting started (the agent flow)</a></li>
+      <li><a href="#visualizador">The viewer, control by control</a></li>
+      <li><a href="#revisao">Commenting and iterating (the review cycle)</a></li>
+      <li><a href="#snapshots">Snapshots and comparison</a></li>
+      <li><a href="#fluxo">Flow mode (test the system for real)</a></li>
+      <li><a href="#cenarios">Data scenarios</a></li>
+      <li><a href="#exportar">Exporting: PNG and video</a></li>
+      <li><a href="#interativo">How the screens become interactive (mock API)</a></li>
+      <li><a href="#estrutura">File structure</a></li>
+      <li><a href="#api-local">Local API</a></li>
+      <li><a href="#tokens">Design tokens and utilities</a></li>
+      <li><a href="#componentes">Components</a></li>
+      <li><a href="#regressao">Regression</a></li>
+      <li><a href="#problemas">Troubleshooting</a></li>
+    </ul>
+
+    <h2 id="comecando">Getting started (the agent flow)</h2>
+    <p>You don't build anything by hand — you describe, the agent builds:</p>
+    <ol>
+      <li>In the agent session, <strong>inside the project folder</strong>, ask for the screens: <em>"I want the login and sign-up screens of my system, opening into a dashboard with a product list"</em> (or type <code>/design</code>).</li>
+      <li>The first time the agent <strong>asks about the brand</strong> (primary color, font style, tone) and creates <code>design/design-system.css</code> + <code>design-system.md</code>. Every later canvas reuses them.</li>
+      <li>The agent creates one <strong>canvas per flow</strong> (e.g. <code>login/</code>, <code>dashboard/</code>), validates everything and returns the link: <code>http://localhost:8765/viewer.html?canvas=login</code>.</li>
+      <li>Open the link, test the working system and comment whatever you want changed (next section). The agent adjusts and the viewer reloads by itself.</li>
+    </ol>
+    <div class="dica"><strong>Tip:</strong> start with a small, concrete flow. The whole cycle (generate → test → comment → adjust) becomes visible in minutes.</div>
+
+    <h2 id="visualizador">The viewer, control by control</h2>
+    <table>
+      <tr><th>Control</th><th>What it does</th></tr>
+      <tr><td><strong>Canvas</strong></td><td>Jump between the project flows (appears with 2+ canvases). Each canvas remembers its own preferences.</td></tr>
+      <tr><td><strong>Scenario</strong></td><td>Swap the fictitious data (e.g. <code>empty</code>, <code>critical</code>). The choice survives navigation and is remembered per canvas.</td></tr>
+      <tr><td><strong>Device</strong></td><td><code>Original</code> respects each screen's size; <code>Phone</code>/<code>Tablet</code>/<code>Desktop</code> forces every screen to the same size.</td></tr>
+      <tr><td><strong>🌙 Theme</strong></td><td>Light/dark applied inside every screen (they use the design system tokens).</td></tr>
+      <tr><td><strong>Zoom</strong></td><td><kbd>−</kbd>/<kbd>+</kbd>/<kbd>Fit</kbd> buttons, <kbd>Ctrl</kbd> + mouse wheel, keys <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Drag the background to pan.</td></tr>
+      <tr><td><strong>Search</strong></td><td>Filters screens by name, id or group (<kbd>/</kbd> focuses the box, <kbd>Esc</kbd> clears it) — with arrow keys to step through the visible screens and <kbd>Enter</kbd> to open one.</td></tr>
+      <tr><td><strong>▦ Grid</strong></td><td>Toggles between the horizontal strip and a wrapping grid — a whole project overview at once.</td></tr>
+      <tr><td><strong>📱 Frame</strong></td><td>Device frames (phone/tablet) around the mobile screens.</td></tr>
+      <tr><td><strong>⟳ Reload</strong></td><td>Re-reads the files on the spot (the viewer also detects changes by itself every 2.5&nbsp;s).</td></tr>
+      <tr><td><strong>⟲ Reset flow</strong></td><td>Clears the whole system state (login, created items…) and brings every screen back to the start.</td></tr>
+      <tr><td><strong>Selection</strong></td><td>One click selects a screen (enables comment and Screen PNG). Double-click opens flow mode.</td></tr>
+      <tr><td><strong>🌐 Language</strong></td><td>Switches the interface between English and Portuguese (also via <code>?lang=en</code>/<code>?lang=pt</code> in the URL).</td></tr>
+    </table>
+
+    <h2 id="revisao">Commenting and iterating (the review cycle)</h2>
+    <h3>Comment on the whole screen</h3>
+    <ol>
+      <li>Select the screen (one click) and click <strong>💬 Comment this screen</strong>.</li>
+      <li>Write the request. The viewer copies a formatted message — <strong>paste it into the agent chat</strong>:</li>
+    </ol>
+    <pre><code>[Design: design/login › Login (01-login.html)] increase the form spacing</code></pre>
+    <h3>Comment on a specific element <span class="tag">🎯</span></h3>
+    <ol>
+      <li>Click <strong>🎯 Element</strong> (the cursor becomes a crosshair; <kbd>Esc</kbd> leaves).</li>
+      <li>Hover: every element gets highlighted with its selector and a text snippet.</li>
+      <li>Click the element and write the adjustment. It becomes a <strong>numbered pin</strong> on the screen.</li>
+      <li>Mark as many as you want and send them all at once with <strong>⧉ Comments (n)</strong>:</li>
+    </ol>
+    <pre><code>[Design: design/login › Login (01-login.html) › body &gt; main &gt; form &gt; button "Entrar"] make this button full width</code></pre>
+    <p>The agent locates the element by selector (then by snippet) and edits <strong>only that spot</strong>. Pins have <kbd>×</kbd> to remove and never appear in the exported PNG.</p>
+    <div class="dica"><strong>Full cycle:</strong> comment → paste into chat → agent edits → the viewer updates by itself. Without leaving the browser.</div>
+
+    <h3 id="comentarios">Persistent comments (pins) <span class="tag">🎯</span></h3>
+    <p><strong>Dual-channel rule 🎯:</strong> every element comment does <strong>two things at once</strong>: (1) writes a <strong>persistent pin</strong> — the numbered pin on the screen, which survives reload and shows up in the <strong>⧉ Comments (n)</strong> panel — and (2) copies the <code>[Design: …]</code> chat message for you to paste into the agent. The pin is the <strong>persistent record</strong> (status per element, pending panel, toolbar count); the chat message is the <strong>channel that instructs the agent</strong>. <strong>The chat message format is unchanged</strong> — pins are one extra channel, never a grammar change.</p>
+    <p>Pins live in <code>design/comments.json</code>, written <strong>only by the server</strong> (never edit it by hand):</p>
+    <pre><code>{
+  "comments": [
+    {
+      "id": "p-1a2b3c4d5e6f",
+      "canvas": "login",
+      "file": "01-login.html",
+      "selector": "body &gt; main &gt; form &gt; button",
+      "snippet": "Entrar",
+      "rect": { "x": 12, "y": 340, "width": 120, "height": 44 },
+      "status": "open",
+      "replies": [ { "text": "make this button full width", "createdAt": "2026-10-07T12:00:00.000Z" } ],
+      "createdAt": "2026-10-07T12:00:00.000Z",
+      "_demo": true
+    }
+  ]
+}</code></pre>
+    <p>Pin schema: <code>{id, canvas, file, selector?, snippet?, rect?, status, replies, createdAt, _demo?}</code> — <code>id</code> generated by the server (<code>p-&lt;hex&gt;</code>); creation requires <code>canvas</code>+<code>file</code>; updates go by <code>id</code> (<code>status</code> + <code>replies</code>, which are appended). The comment text is the first item of <code>replies</code> (the pin has no <code>text</code> field); each reply is <code>{text, createdAt}</code> (the legacy <code>at</code> form is still accepted on input and normalized to <code>createdAt</code>). <code>status</code> is <code>"open" | "resolved" | "stale"</code>. <code>_demo?: boolean</code> is optional — it marks demo pins (fixtures/example) and is only persisted when explicitly declared as <code>true</code>; any other type is refused by the API (400).</p>
+    <p><strong>Staleness rule — named writers:</strong> the <code>stale</code> status has exactly <strong>two writers</strong>: <code>node design/validate.mjs --mark-stale</code> (the validator's only write — marks the pins whose anchor vanished from the screen) and the <strong>revert API</strong> (<code>POST /api/revert</code>, which marks the pins affected by the restore). Writing <code>stale</code> through any other path is refused (400 <code>invalid</code>) — even in a regular pin POST. In the panel, <code>stale</code> pins are highlighted and <strong>do not count</strong> as open pending. Under <code>--share</code> pins, the panel and the count stay hidden (see <a href="#api-local">Local API</a>).</p>
+
+    <h2 id="snapshots">Snapshots and comparison</h2>
+    <p>A <strong>snapshot</strong> freezes a canvas state as <strong>review material</strong>: the viewer's <strong>Snapshots</strong> panel (<strong>Save snapshot</strong> button) writes <code>design/snapshots/&lt;canvas&gt;/&lt;label&gt;/</code> with two forms of the same state:</p>
+    <ul>
+      <li><code>src/</code> — the <strong>source form</strong> (what the agent edits): the canvas screens byte by byte (component markers intact), <code>canvas.json</code>, <code>data.json</code>, the global <code>tokens.json</code> and the <strong>COMPLETE</strong> <code>components/</code> (registry + every partial).</li>
+      <li><code>render/</code> — the <strong>presentation form</strong>: one <strong>flat, self-contained</strong> HTML per screen (inline CSS/JS/data, zero <code>../</code>), ready to open via <code>file://</code> and for A/B comparison.</li>
+    </ul>
+    <p>Each snapshot has a <code>manifest.json</code> (inventory of <code>src/</code>+<code>render/</code> + <code>tokensHash</code>) that revert validates <strong>before</strong> touching any file.</p>
+
+    <h3>Comparing two states</h3>
+    <p>In the same list pick sides A and B (a snapshot or the <code>current</code> state) and click <strong>Compare</strong>. There are <strong>two modes</strong>:</p>
+    <ul>
+      <li><strong>Side by side</strong> (default) — two columns with synced scrolling;</li>
+      <li><strong>Onion skin</strong> — side B stacked over A in an overlay, with intensity on the <code>input#opacity</code> control (0 = only A, 1 = only B).</li>
+    </ul>
+    <p>Both sides also accept <strong>live screens of the canvas</strong> ("Screens in this canvas" group) — comparing two screens side by side, not just snapshot states.</p>
+
+    <h3>Reverting to a snapshot</h3>
+    <p>The <strong>"Revert to this snapshot"</strong> button (with a confirmation step) calls <code>POST /api/revert</code> with <code>{canvas, label}</code> and restores the snapshot's <code>src/</code> as a <strong>full replace</strong> (never a merge); then it <strong>always</strong> runs the pipeline <code>node design/scripts/gen-tokens.mjs</code> → <code>node design/scripts/sync-components.mjs</code> → <code>node design/validate.mjs</code> (exit 0 required) and marks as <code>stale</code> the pins whose anchor vanished. The viewer then copies the confirmation message:</p>
+    <pre><code>[Design-Reset: design/&lt;canvas&gt; — snapshot "&lt;label&gt;" restored]</code></pre>
+    <p>This message is <strong>state confirmation only</strong>: the agent edits nothing — it acknowledges and moves on.</p>
+    <p><strong>Restore limits:</strong> the restore is a <strong>full replace</strong> per <code>src/</code> artifact — screens, <code>canvas.json</code>, <code>data.json</code>, <code>tokens.json</code> and the complete <code>components/</code> fully replace their counterparts in the served root, and files outside <code>src/</code> survive untouched. The globals (<code>tokens.json</code>, <code>components/</code>) return exactly to the snapshot state and <strong>affect the other canvases</strong>: the unit is the canvas snapshot (the whole <code>src/</code>), and the global tokens/components restore is a full replace.</p>
+    <p><strong>Revert codes:</strong> <strong>400</strong> = invalid or desynced manifest, detected BEFORE the restore — the root stays intact and nothing was restored; <strong>500</strong> = the pipeline failed after the restore, with a full rollback to the previous state; <strong>404</strong> = snapshot not found.</p>
+
+    <h2 id="fluxo">Flow mode (test the system for real)</h2>
+    <p><strong>Double-click</strong> a screen to open flow mode: the screen at full size, <strong>interactive</strong> — you log in, navigate, create records. The bar floats at the top and <strong>gets out of the way by itself</strong> after a few seconds without mouse movement; any movement over the screen brings it back. On the bar:</p>
+    <ul>
+      <li><strong>◀ ▶</strong> — back and forth through the flow's navigation history.</li>
+      <li><strong>⟲</strong> — restart the flow from the beginning (per screen).</li>
+      <li><strong>🎯 Element</strong> — turns on element-comment mode <em>inside flow mode</em>, with the screen full size (the best place for it).</li>
+      <li><strong>🌙</strong> — toggles light/dark without leaving the flow.</li>
+      <li><strong>← Back</strong> — closes flow mode.</li>
+    </ul>
+    <p>A canvas can navigate into another (login → dashboard): the whole system is navigable, and state (who logged in, what was created) crosses canvases. The <strong>⟲ Reset flow</strong> button on the bar resets everything.</p>
+
+    <h2 id="cenarios">Data scenarios</h2>
+    <p>Each canvas's <code>data.json</code> can hold named scenarios that override the base data — that's how you validate states without touching code:</p>
+    <pre><code>{
+  "items": [ …default data… ],
+  "scenarios": {
+    "empty":    { "items": [] },
+    "critical": { "items": [ { "qty": 0, … } ] }
+  }
+}</code></pre>
+    <p>Pick one in the viewer and check that each scenario composes well (empty list, everything under the minimum, API failure). Switching scenarios clears the flow state — every round starts clean.</p>
+
+    <h2 id="exportar">Exporting: PNG and video</h2>
+    <table>
+      <tr><th>Button</th><th>What it generates</th></tr>
+      <tr><td><strong>⬇ Screen PNG</strong></td><td>The selected screen, styled (current theme), with background — downloads and shows a preview.</td></tr>
+      <tr><td><strong>⬇ Canvas PNG</strong></td><td>Every screen side by side, with each screen's name and size.</td></tr>
+      <tr><td><strong>⏺ Record flow</strong></td><td>A <code>.webm</code> video of the flow: the browser asks to share the tab — accept it, interact, then click again (or stop sharing) to download. Great for sending a demo to a client.</td></tr>
+    </table>
+
+    <h2 id="interativo">How the screens become interactive</h2>
+    <p>The screens include a tiny offline runtime, <code>mock.js</code>, fictitious data in <code>data.json</code> and the runtime styles in <code>mock.css</code> (the screens link <code>../mock.css</code>; the JavaScript only toggles classes — it never injects CSS):</p>
+    <h3 id="api-do-mock">Mock API</h3>
+    <table>
+      <tr><th>API</th><th>What it does</th></tr>
+      <tr><td><code>await Mock.data('items')</code></td><td>Reads the canvas's <code>data.json</code> data (with the chosen scenario applied).</td></tr>
+      <tr><td><code>Mock.state</code> (<code>.set('user', …)</code>, <code>.get('user')</code>, <code>.clear()</code>)</td><td>Flow state shared across the whole project (login in one canvas, read in another). <code>.clear()</code> zeroes it — that's what the viewer's "⟲ Reset flow" calls.</td></tr>
+      <tr><td><code>Mock.go('03-detalhe.html')</code></td><td>Navigates to another flow screen — even in another canvas: <code>Mock.go('../dashboard/01-overview.html')</code>. Preserves <code>?scenario=</code> and saves the current screen's scroll position.</td></tr>
+      <tr><td><code>Mock.toast('Saved!')</code></td><td>Visual feedback for a simulated action.</td></tr>
+      <tr><td><code>Mock.overlay('03-modal.html')</code></td><td>Opens a canvas screen as a modal layer: renders the screen's content over a backdrop, traps focus inside the layer, <kbd>Esc</kbd> closes the top layer and a backdrop click closes it when <code>dismissible</code> (default <code>true</code>). A missing file becomes an error toast, no layer.</td></tr>
+      <tr><td><code>Mock.close()</code></td><td>Closes the top modal layer; focus returns to the element that opened it.</td></tr>
+      <tr><td><code>Mock.scenario()</code></td><td>Returns the active scenario from <code>?scenario=</code> (empty string on base data) — use it to branch content per scenario.</td></tr>
+    </table>
+    <h3>Transitions between screens</h3>
+    <p>Each screen can declare its enter animation in <code>canvas.json</code>:</p>
+    <pre><code>{ "id": "overview", "name": "Overview", "file": "01-overview.html", "device": "tablet", "transition": "fade" }</code></pre>
+    <p><code>"transition"</code> is <code>fade</code>, <code>slide-left</code> or <code>none</code> (the default when absent; the validator rejects any other value with the <code>unknown-transition</code> code). When navigating with <code>Mock.go</code>, the target screen gets the <code>mock-enter-fade</code>/<code>mock-enter-slide-left</code> class on <code>&lt;body&gt;</code>, which removes itself in under 300&nbsp;ms — <code>prefers-reduced-motion</code> disables the animation entirely. The class is resolved by the target file name in the <code>canvas.json</code> of the <strong>current</strong> canvas: it works for hops inside the same canvas (including a self-nav like <code>Mock.go('01-overview.html')</code>, the "reload list" pattern), while <code>Mock.go('../dashboard/01-overview.html')</code> (canvas switch) is plain navigation with <strong>no</strong> enter class.</p>
+    <h3>Preserved scroll</h3>
+    <p>Each screen's scroll position is kept in <code>sessionStorage</code> under the <code>scroll.&lt;canvas&gt;.&lt;screen&gt;</code> key: saved on <code>Mock.go</code> (and on <code>pagehide</code>, for plain navigations) and restored when the screen returns. The <code>scroll.*</code> keys deliberately stay outside the <code>mock.*</code> namespace — "⟲ Reset flow" clears only <code>mock.*</code> state, and scroll survives the reset.</p>
+    <h3>No-JS fallback (and the CSS rule)</h3>
+    <p>An overlay trigger is a plain link to the modal screen — <code>&lt;a href="03-modal.html"&gt;Delete account&lt;/a&gt;</code>. With JS, the click opens the screen as a modal layer; without JS, the browser follows the <code>href</code> and opens the modal screen itself (which is a complete, valid canvas screen). No duplicated markup on the host page: the layer renders the screen's own <code>&lt;body&gt;</code>. And every runtime style lives in <code>mock.css</code> — the JavaScript never injects CSS, only toggles the <code>.mock-toast</code>, <code>.mock-overlay</code>, <code>.mock-backdrop</code> and <code>.mock-enter-*</code> classes.</p>
+    <p>Rules the agent respects: no CDN or remote URL (inline SVG icons, system fonts), design system tokens for every color/spacing, both themes always working, and the screen keeps composing even if JavaScript fails.</p>
+
+    <h2 id="estrutura">File structure</h2>
+    <pre><code>design/
+  design-system.css      design system tokens (light and dark)
+  design-system.md       brand decisions in words
+  viewer.html            the viewer (this tool)
+  docs.html              this documentation
+  serve.mjs              local server (node design/serve.mjs [port])
+  validate.mjs           validator (node design/validate.mjs design/&lt;canvas&gt;)
+  mock.js                interactivity runtime
+  mock.css               runtime styles (toast/overlay/transitions)
+  vendor/html-to-image.js  PNG export (vendored, no CDN)
+  index.json             canvas list {"canvases": ["login", …]}
+  comments.json          persistent comment pins (written only by the server)
+  &lt;canvas&gt;/              one flow per folder (login, dashboard, …)
+    canvas.json          title + screens in order
+    data.json            fictitious data + scenarios (optional)
+    01-&lt;screen&gt;.html     one complete HTML document per screen</code></pre>
+    <p><code>canvas.json</code> defines order and size: <code>device</code> is <code>mobile</code> (390×844), <code>tablet</code> (834×1112) or <code>desktop</code> (1440×900), with optional <code>width</code>/<code>height</code>; each screen's enter transition is declared there too (<code>"transition": "fade"|"slide-left"|"none"</code> — see the mock API), and the optional <code>"group"</code> field clusters the screens into titled blocks in the viewer (complex projects stay readable).</p>
+
+    <h2 id="api-local">Local API</h2>
+    <p>Besides serving files, <code>serve.mjs</code> exposes a <strong>write API</strong> at <code>/api/*</code> (comments and snapshots) used by the viewer. The served root is <code>./design</code> relative to the directory the server runs from (behavior change — it used to be the script's own folder); it is the same root the pipeline (<code>gen-tokens</code>/<code>sync-components</code>/<code>validate</code>) uses.</p>
+    <p>Usage: <code>node design/serve.mjs [port] [--share] [--open[=canvas]] [--no-open]</code> — default port <code>8765</code>, bind <code>127.0.0.1</code>. On start the server prints one parseable line <code>URL: &lt;base&gt; TOKEN: &lt;token&gt;</code>, and opens your default browser at the viewer (<code>--open=&lt;canvas&gt;</code> lands straight on a canvas, <code>--no-open</code> suppresses it, the <code>BROWSER</code> env var picks a specific browser; without flags it only opens from an interactive terminal). Every <code>/api/*</code> route requires the <code>X-Design-Token</code> header with that run's token; the token is injected into <code>viewer.html</code> by an in-memory rewrite (the <code>window.__DESIGN_TOKEN__ = null</code> placeholder in the file on disk stays intact).</p>
+    <p>Hardening applies only to <code>/api/*</code> (static routes are never intercepted — LAN serving stays possible): <code>Host</code> must be <code>localhost</code>/<code>127.0.0.1</code> (port ignored); a present cross-site <code>Origin</code> → 403 (absent = allowed); <code>canvas</code>, <code>label</code> and <code>id</code> fields follow <code>^[a-z0-9-]+$</code>; a traversal-looking value (<code>..</code>, <code>/</code>, <code>\</code>) → 403; bodies over 256&nbsp;KB → 413. Errors answer JSON <code>{"error": code}</code>.</p>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Body</th><th>Response</th><th>Codes</th></tr>
+      <tr>
+        <td><code>GET</code></td><td><code>/api/comments</code></td><td>—</td>
+        <td><code>{ comments: [pin, …] }</code> — pin: <code>{id, canvas, file, selector?, snippet?, rect?, status, replies, createdAt, _demo?}</code>; <code>status</code> = <code>"open"|"resolved"|"stale"</code>; replies = <code>[{text, createdAt}]</code> (the legacy <code>at</code> form is normalized on input). Persisted in <code>design/comments.json</code> — full schema under <a href="#comentarios">Persistent comments</a></td>
+        <td><strong>200</strong>; <strong>400</strong> (invalid <code>comments.json</code>); <strong>403</strong> (no token, Host/Origin)</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td><td><code>/api/comments</code></td>
+        <td>pin <code>{id?, canvas?, file?, selector?, snippet?, rect?, status?, replies?, _demo?}</code> — creates (requires <code>canvas</code>+<code>file</code>) or updates (by <code>id</code>: <code>status</code> + <code>replies</code>, which are appended)</td>
+        <td><code>{ comments: [...] }</code> (updated list)</td>
+        <td><strong>200</strong>; <strong>400</strong> (schema/malformed body; writing <code>stale</code> — refused: the only <code>stale</code> writers are <code>validate.mjs --mark-stale</code> and the revert API, see <a href="#comentarios">Persistent comments</a>); <strong>403</strong> (no token, Host/Origin, traversal); <strong>404</strong> (canvas/file not found); <strong>413</strong></td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td><td><code>/api/snapshots</code></td><td>—</td>
+        <td><code>{ snapshots: [{canvas, label, date}] }</code> (per-canvas list — feeds the viewer's list)</td>
+        <td><strong>200</strong>; <strong>403</strong> (no token, Host/Origin)</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td><td><code>/api/snapshot</code></td><td><code>{canvas, label}</code></td>
+        <td><code>{ snapshot: {canvas, label, date} }</code> — writes <code>snapshots/&lt;canvas&gt;/&lt;label&gt;/{src, render, manifest.json}</code> (<code>src/</code> = source form: canvas screens + <code>tokens.json</code> + COMPLETE <code>components/</code>; <code>render/</code> = flat self-contained per screen; <code>manifest.json</code> = <code>{label, date, inventory:{src,render}, tokensHash}</code>)</td>
+        <td><strong>200</strong>; <strong>400</strong> (schema); <strong>403</strong> (no token, Host/Origin, traversal); <strong>404</strong> (canvas not found); <strong>409</strong> (duplicate label); <strong>413</strong>; <strong>500</strong> (write failure + directory rollback)</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td><td><code>/api/revert</code></td>
+        <td><code>{canvas, label}</code></td>
+        <td><code>{ reverted: {canvas, label}, pipeline: {gen, sync, validate} }</code> — restores the snapshot's <code>src/</code> as a full replace (unit = the canvas snapshot, see <a href="#snapshots">Snapshots and comparison</a>), always runs <code>gen-tokens</code> → <code>sync-components</code> → <code>validate</code> and marks <code>stale</code> the affected pins</td>
+        <td><strong>200</strong>; <strong>400</strong> (invalid body; invalid/desynced manifest — detected BEFORE any restore, root intact); <strong>403</strong> (no token, Host/Origin, traversal); <strong>404</strong> (snapshot not found); <strong>413</strong>; <strong>500</strong> (write/pipeline failure + full rollback)</td>
+      </tr>
+    </table>
+    <p>JSON error codes (pinned taxonomy, body <code>{"error": code}</code>): <code>invalid</code> (400), <code>forbidden</code> and <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500) — success is <strong>200</strong> with the JSON body documented in the table. <code>GET /api/snapshots</code> ignores invalid or desynced manifests in the listing — full validation (schema + inventory against the files on disk) happens at revert. With <code>--share</code> the bind becomes <code>0.0.0.0</code> (LAN preview) and <strong>every <code>/api/*</code> route answers 403</strong> (reads included — nothing leaks).</p>
+
+    <p><strong>Changelog (w4)</strong>: the server's default bind became <code>127.0.0.1</code> (this machine only) — the write API is never exposed on the network. To test on a phone or another LAN device, <code>--share</code> is the migration path: <code>node design/serve.mjs 8766 --share</code> (bind <code>0.0.0.0</code>). Under <code>--share</code> the viewer enters <strong>read-only mode with declared degradation</strong>: besides the 403 on every <code>/api/*</code> route, it hides write actions and <code>/api</code>-fed features (pins on screens, pending panel, reply/resolve) and shows the banner "read-only mode — comments and snapshots unavailable". The contract holds for the future: <strong>snapshot/comparison</strong> UIs must also stay hidden under <code>--share</code> — marking them with <code>data-share-hide</code> in the HTML is enough, since the viewer hides them via <code>syncShareDegradation()</code>.</p>
+
+    <h2 id="tokens">Design tokens and utilities</h2>
+    <p><code>tokens.json</code> is the <strong>single source</strong> of every design system token (light and dark). From it the generator writes two generated files, never edited by hand: <code>design-system.css</code> (the <code>var(--…)</code> variables) and <code>utilities.css</code> (the closed utility vocabulary). After any change to <code>tokens.json</code>, regenerate both:</p>
+    <pre><code>node design/scripts/gen-tokens.mjs</code></pre>
+    <p>For interchange with other tools there is a pure W3C/DTCG export — only groups, <code>$type</code> and <code>$value</code>, without the pack's extensions. The result is <code>tokens.w3c.json</code>, a derived artifact (never edit it by hand; regenerate when needed):</p>
+    <pre><code>node design/scripts/export-tokens.mjs</code></pre>
+    <p>The utility matrix has <strong>140 exact entries</strong> (137 classes + 3 <code>[data-state=…]</code> helpers), covering these families:</p>
+    <table>
+      <tr><th>Family</th><th>Examples</th></tr>
+      <tr><td>Colors (background, text, border)</td><td><code>bg-accent</code>, <code>text-muted</code>, <code>border-border</code></td></tr>
+      <tr><td>Spacing</td><td><code>p-2</code>, <code>m-0</code>, <code>gap-3</code> and directional (<code>px-</code>, <code>mt-</code>, <code>gap-x-</code>…)</td></tr>
+      <tr><td>Sizing</td><td><code>w-full</code>, <code>h-screen</code>, <code>min-h-0</code>…</td></tr>
+      <tr><td>Radius</td><td><code>rounded-sm</code>, <code>rounded-md</code>, <code>rounded-lg</code></td></tr>
+      <tr><td>Typography</td><td><code>font-body</code>, <code>text-heading</code>, <code>leading-body</code>…</td></tr>
+      <tr><td>Shadow</td><td><code>shadow-card</code></td></tr>
+      <tr><td>States</td><td>hooks <code>[data-state="hover"]</code>, <code>[data-state="active"]</code>, <code>[data-state="disabled"]</code></td></tr>
+    </table>
+    <div class="dica"><strong>Banned classes:</strong> the Tailwind palette (<code>bg-zinc-900</code>) and arbitrary values (<code>text-[13px]</code>). The vocabulary is closed and every color comes from the tokens.</div>
+
+    <h2 id="componentes">Components</h2>
+    <p>The screens reuse <strong>component instances</strong> from <code>design/components/</code> (the <code>components.json</code> registry plus one partial per component). An instance is never loose component markup: it is the partial wrapped by a pair of markers, with <strong>three mandatory arguments</strong> (the only accepted ones):</p>
+    <pre><code>&lt;!-- component:button size=md tone=primary state=default --&gt;…&lt;!-- /component:button --&gt;</code></pre>
+    <p>The values must come from the registry enums: <code>size</code> is <code>sm|md|lg</code>, <code>tone</code> is <code>primary|ghost</code> and <code>state</code> is <code>default|hover|active|disabled</code>. Fillable spaces (slots) are marker pairs inside the region, and the content between them is preserved byte by byte:</p>
+    <pre><code>&lt;!-- slot:label --&gt;Enter&lt;!-- /slot:label --&gt;</code></pre>
+    <h3>Precedence: marker-args-win</h3>
+    <p>The marker arguments are the <strong>source of truth</strong> for the variant. On every sync the region is rematerialized from the partial: <code>data-size</code>, <code>data-tone</code>, <code>data-state</code> and the root variant classes are re-emitted <em>from the marker</em>. The slot content and any extra <code>data-*</code> attributes you put on the root survive intact.</p>
+    <h3>Sync: <code>sync</code> and <code>--check</code></h3>
+    <p>After editing a partial in <code>design/components/</code> (or a marker's arguments), run this before showing any screen:</p>
+    <pre><code>node design/scripts/sync-components.mjs</code></pre>
+    <p>With <code>--check</code> the command becomes a dry run: it prints a <code>file:line</code> diff of each divergent region, exits with code 1 if there is divergence and 0 when clean, and never writes. The validator also applies the component rules to any non-exempt <code>.html</code> (regardless of <code>canvas.json</code>) with the codes <code>component-unknown</code>, <code>component-variant</code>, <code>component-marker</code>, <code>component-divergence</code> and <code>slot-marker</code>.</p>
+    <h3>Example: changing the Button variant</h3>
+    <p>Instruction received: <em>"change the Button variant"</em>. The documented path is editing the marker and running the sync, never rewriting markup by hand:</p>
+    <ol>
+      <li>On the screen, find the button marker and change the argument on the marker itself (e.g. <code>size=md</code> becomes <code>size=lg</code>): <code>&lt;!-- component:button size=lg tone=primary state=default --&gt;…</code></li>
+      <li>Run <code>node design/scripts/sync-components.mjs</code>: the instance gets <code>data-size="lg"</code> and the <code>lg</code> variant classes (the marker wins).</li>
+      <li>Validate before showing: <code>node design/validate.mjs design/&lt;canvas&gt;</code>.</li>
+    </ol>
+    <div class="dica"><strong>Single source:</strong> in the pack, <code>example/components/</code> is a byte-identical copy of <code>assets/components/</code>. Partials are edited only at the single source; the example copy is a reference, never an edit target.</div>
+
+    <h2 id="regressao">Regression <span class="tag">checklist</span></h2>
+    <p>An executable Mockbird regression checklist — the same one the agent runs after changes to the runtime, the viewer or the install. Each item has a stable name and id (<code>data-check</code>) and carries the exact assert; items marked <strong>(browser)</strong> need the viewer open (manual or Playwright) and the rest run in <strong>pure node</strong>, no browser. A failing item blocks delivery.</p>
+    <ol class="checklist">
+      <li data-check="mock-api"><strong>Mock.data/state/go/toast</strong> - load <code>design/mock.js</code> in a <code>node:vm</code> with a DOM/sessionStorage stub and assert: <code>await Mock.data('items')</code> returns the <code>data.json</code> items; <code>Mock.state.set('user', .)</code> → <code>Mock.state.get('user')</code> returns the value, persists in <code>sessionStorage</code> under <code>mock.</code> and <code>Mock.state.clear()</code> zeroes it; <code>Mock.go('02-cadastro.html')</code> writes <code>location.href</code> preserving <code>?scenario=</code> and saving the current screen's scroll; <code>Mock.toast('Saved!', 2200)</code> creates <code>#mock-toast.mock-toast.show</code> with the text and removes <code>.show</code> after the time.</li>
+      <li data-check="cenarios"><strong>Scenarios <code>?scenario=</code></strong> - with <code>location.search='?scenario=empty'</code>: <code>Mock.scenario()</code> → <code>'empty'</code> and <code>await Mock.data('items')</code> → <code>[]</code> (the <code>data.json</code> override beats the base); with no parameter <code>Mock.scenario()</code> → <code>''</code> and the base data applies.</li>
+      <li data-check="export-png"><strong>Export PNG</strong> <em>(browser)</em> - <code>⬇ Screen PNG</code> produces a <code>data:image/png</code> URL with <code>length &gt; 0</code> (preview + download); the code path is <code>htmlToImage.toPng</code> over <code>vendor/html-to-image.js</code>.</li>
+      <li data-check="mensagem-design"><strong>🎯 message format</strong> - the copied message matches the viewer's literal template: whole screen <code>[Design: design/&lt;canvas&gt; › &lt;name&gt; (&lt;file&gt;)]</code>; element = <code> › &lt;selector&gt; "&lt;snippet&gt;"</code> appended to the bracket (persisted pins use the same template).</li>
+      <li data-check="tema-dispositivo"><strong>Theme/device</strong> <em>(browser)</em> - the light/dark theme applies <code>data-theme</code> inside every screen; Device forces <code>Phone 390×844</code>/<code>Tablet 834×1112</code>/<code>Desktop 1440×900</code> and <code>Original</code> respects each screen's size.</li>
+      <li data-check="cross-canvas"><strong>Cross-canvas</strong> - <code>Mock.go('../dashboard/01-overview.html')</code> navigates to the other canvas with <code>?scenario=</code> preserved; <code>Mock.state</code> written in one canvas is read in the other (login → dashboard → logout).</li>
+      <li data-check="install-dir"><strong>Install smoke</strong> - <code>node install.mjs --dir &lt;tmp&gt;</code> → exit 0 and a present file inventory: <code>&lt;tmp&gt;/design/SKILL.md</code>, <code>&lt;tmp&gt;/design/assets/docs.html</code>, <code>&lt;tmp&gt;/design/scripts/validate.mjs</code>, <code>&lt;tmp&gt;/impeccable/scripts/impeccable.cmd</code>.</li>
+    </ol>
+    <div class="dica"><strong>How to run:</strong> the node asserts (mock-api, scenarios, message, cross-canvas, install smoke) run in a harness that loads <code>mock.js</code> in a <code>vm</code> and checks the viewer + example; the <em>(browser)</em> items are the manual/Playwright step. Ask "run the regression" in the agent session to execute the whole checklist.</div>
+
+    <h2 id="problemas">Troubleshooting</h2>
+    <ul>
+      <li><strong>"The canvas X does not exist here yet"</strong> — the canvas is created by the agent along with the screens: ask for the screens in the project session. Also check that the server is running in the project's <code>design/</code> folder and that the name in the URL (<code>?canvas=…</code>) is right.</li>
+      <li><strong>Port 8765 busy</strong> — start on another one: <code>node design/serve.mjs 8766</code> and adjust the link.</li>
+      <li><strong>The bar doesn't show 🎯 / ⟲ / ⏺</strong> — the project's <code>viewer.html</code> is outdated; copy the current version from the skill (ask the agent: "update the design/ files with the skill version").</li>
+      <li><strong>Red problems banner</strong> — click to expand: each line says the code and the file. Fix it (or have the agent fix it) and reload.</li>
+      <li><strong>Weird preferences</strong> — scenario/theme/device are per canvas in the browser; clearing the site data resets them.</li>
+    </ul>
+
+    <p style="margin-top:48px; color: var(--muted); font-size: 13px;">Design canvas · everything runs locally, offline, with no dependencies beyond Node for the server and the validator.</p>
+  </div>
+
+  <div data-lang="pt">
 
   <h1>Design canvas</h1>
   <p class="lead">Telas reais em HTML, um preview funcional do sistema no navegador e revisão comentada — sem Figma, sem Penpot, tudo offline dentro do projeto.</p>
@@ -121,9 +408,13 @@
     <tr><td><strong>Dispositivo</strong></td><td><code>Original</code> respeita o tamanho de cada tela; <code>Celular</code>/<code>Tablet</code>/<code>Desktop</code> força todas para o mesmo tamanho.</td></tr>
     <tr><td><strong>🌙 Tema</strong></td><td>Claro/escuro aplicado dentro de todas as telas (elas usam os tokens do design system).</td></tr>
     <tr><td><strong>Zoom</strong></td><td>Botões <kbd>−</kbd>/<kbd>+</kbd>/<kbd>Ajustar</kbd>, <kbd>Ctrl</kbd> + roda do mouse, teclas <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Arraste o fundo para mover.</td></tr>
+      <tr><td><strong>Busca</strong></td><td>Filtra telas por nome, id ou grupo (<kbd>/</kbd> foca o campo, <kbd>Esc</kbd> limpa) — com setas para percorrer as telas visíveis e <kbd>Enter</kbd> para abrir.</td></tr>
+      <tr><td><strong>▦ Grade</strong></td><td>Alterna entre a fita horizontal e a grade que quebra em linhas — o projeto inteiro visível de uma vez.</td></tr>
+      <tr><td><strong>📱 Moldura</strong></td><td>Molduras de dispositivo (celular/tablet) ao redor das telas mobile.</td></tr>
     <tr><td><strong>⟳ Recarregar</strong></td><td>Relê os arquivos na hora (o visualizador também detecta mudanças sozinho a cada 2,5&nbsp;s).</td></tr>
     <tr><td><strong>⟲ Reset fluxo</strong></td><td>Limpa todo o estado do sistema (login, itens criados…) e traz todas as telas de volta ao início.</td></tr>
     <tr><td><strong>Seleção</strong></td><td>Um clique na tela a seleciona (habilita comentário e PNG da tela). Duplo clique abre o modo fluxo.</td></tr>
+      <tr><td><strong>🌐 Idioma</strong></td><td>Alterna a interface entre português e inglês (também via <code>?lang=pt</code>/<code>?lang=en</code> na URL).</td></tr>
   </table>
 
   <h2 id="revisao">Comentar e iterar (o ciclo de revisão)</h2>
@@ -180,6 +471,7 @@
     <li><strong>Lado a lado</strong> (padrão) — duas colunas com scroll sincronizado;</li>
     <li><strong>Onion skin</strong> — o lado B empilhado sobre o A em overlay, com a intensidade no controle <code>input#opacity</code> (0 = só o A, 1 = só o B).</li>
   </ul>
+    <p>Os dois lados também aceitam <strong>telas vivas do canvas</strong> (grupo "Telas deste canvas") — comparar duas telas lado a lado, não só estados de snapshot.</p>
 
   <h3>Reverter para um snapshot</h3>
   <p>O botão <strong>"Reverter para este snapshot"</strong> (com passo de confirmação) chama <code>POST /api/revert</code> com <code>{canvas, label}</code> e restaura o <code>src/</code> do snapshot em <strong>replace integral</strong> (nunca merge); depois roda <strong>sempre</strong> o pipeline <code>node design/scripts/gen-tokens.mjs</code> → <code>node design/scripts/sync-components.mjs</code> → <code>node design/validate.mjs</code> (exit 0 exigido) e marca como <code>stale</code> os pins cuja âncora sumiu. O visualizador copia então a mensagem de confirmação:</p>
@@ -258,11 +550,11 @@
     canvas.json          título + telas em ordem
     data.json            dados fictícios + cenários (opcional)
     01-&lt;tela&gt;.html       um documento HTML completo por tela</code></pre>
-  <p><code>canvas.json</code> define a ordem e o tamanho: <code>device</code> é <code>mobile</code> (390×844), <code>tablet</code> (834×1112) ou <code>desktop</code> (1440×900), com <code>width</code>/<code>height</code> opcionais; a transição de entrada de cada tela também é declarada ali (<code>"transition": "fade"|"slide-left"|"none"</code> — ver API do mock).</p>
+  <p><code>canvas.json</code> define a ordem e o tamanho: <code>device</code> é <code>mobile</code> (390×844), <code>tablet</code> (834×1112) ou <code>desktop</code> (1440×900), com <code>width</code>/<code>height</code> opcionais; a transição de entrada de cada tela também é declarada ali (<code>"transition": "fade"|"slide-left"|"none"</code> — ver API do mock), e o campo opcional <code>"group"</code> agrupa as telas em blocos com título no visualizador (projetos complexos ficam legíveis).</p>
 
   <h2 id="api-local">API local</h2>
   <p>Além de servir os arquivos, o <code>serve.mjs</code> expõe uma <strong>API de escrita</strong> em <code>/api/*</code> (comentários e snapshots) usada pelo visualizador. A raiz servida é <code>./design</code> relativo ao diretório de onde o servidor é executado (mudança de comportamento — antes era a pasta do próprio script); é a mesma raiz que o pipeline (<code>gen-tokens</code>/<code>sync-components</code>/<code>validate</code>) usa.</p>
-  <p>Uso: <code>node design/serve.mjs [porta] [--share]</code> — porta padrão <code>8765</code>, bind <code>127.0.0.1</code>. No start o servidor imprime uma linha parseável <code>URL: &lt;base&gt; TOKEN: &lt;token&gt;</code>. Toda rota <code>/api/*</code> exige o header <code>X-Design-Token</code> com esse token da execução; o token é injetado no <code>viewer.html</code> por rewrite em memória (o placeholder <code>window.__DESIGN_TOKEN__ = null</code> do arquivo em disco fica intacto).</p>
+  <p>Uso: <code>node design/serve.mjs [porta] [--share] [--open[=canvas]] [--no-open]</code> — porta padrão <code>8765</code>, bind <code>127.0.0.1</code>. No start o servidor imprime uma linha parseável <code>URL: &lt;base&gt; TOKEN: &lt;token&gt;</code> e abre o navegador padrão no viewer (<code>--open=&lt;canvas&gt;</code> cai direto num canvas, <code>--no-open</code> suprime, a env <code>BROWSER</code> escolhe um navegador específico; sem flags só abre de terminal interativo). Toda rota <code>/api/*</code> exige o header <code>X-Design-Token</code> com esse token da execução; o token é injetado no <code>viewer.html</code> por rewrite em memória (o placeholder <code>window.__DESIGN_TOKEN__ = null</code> do arquivo em disco fica intacto).</p>
   <p>Hardening somente em <code>/api/*</code> (as rotas estáticas nunca são interceptadas — servir em LAN continua possível): <code>Host</code> precisa ser <code>localhost</code>/<code>127.0.0.1</code> (porta ignorada); <code>Origin</code> presente e cross-site → 403 (ausente = permitido); campos <code>canvas</code>, <code>label</code> e <code>id</code> seguem <code>^[a-z0-9-]+$</code>; valor com cara de traversal (<code>..</code>, <code>/</code>, <code>\</code>) → 403; corpo acima de 256&nbsp;KB → 413. Erros respondem JSON <code>{"error": código}</code>.</p>
   <table>
     <tr><th>Método</th><th>Path</th><th>Body</th><th>Resposta</th><th>Códigos</th></tr>
@@ -360,9 +652,58 @@
 
   <p style="margin-top:48px; color: var(--muted); font-size: 13px;">Design canvas · tudo roda local, offline, sem dependências além do Node para o servidor e o validador.</p>
 
+  </div>
 </div>
 
 <script>
+  const params = new URLSearchParams(location.search)
+  const requested = (params.get('lang') ?? '').toLowerCase()
+  const LANG = requested === 'pt' || requested === 'en'
+    ? requested
+    : (navigator.language || '').toLowerCase().startsWith('pt') ? 'pt' : 'en'
+  document.documentElement.lang = LANG === 'pt' ? 'pt-BR' : 'en'
+
+  const T = {
+    en: {
+      title: 'Design canvas — usage docs',
+      theme: '🌙 Theme',
+      viewer: '↗ Open the viewer',
+      other: '🌐 Português',
+    },
+    pt: {
+      title: 'Design canvas — documentação de utilização',
+      theme: '🌙 Tema',
+      viewer: '↗ Abrir o visualizador',
+      other: '🌐 English',
+    },
+  }
+  document.title = T[LANG].title
+  document.getElementById('toggle').textContent = T[LANG].theme
+  const viewerLink = document.getElementById('viewerLink')
+  viewerLink.textContent = T[LANG].viewer
+  viewerLink.href = `viewer.html?lang=${LANG}`
+  const langBtn = document.getElementById('langBtn')
+  langBtn.textContent = T[LANG].other
+
+  // one content block per language; ids are prefixed per block so the
+  // same-page anchors (TOC) stay valid whichever block is active
+  for (const block of document.querySelectorAll('[data-lang]')) {
+    const active = block.dataset.lang === LANG
+    block.hidden = !active
+    if (!active) continue
+    for (const el of block.querySelectorAll('[id]')) {
+      const next = `${block.dataset.lang}-${el.id}`
+      for (const link of block.querySelectorAll(`a[href="#${el.id}"]`)) link.setAttribute('href', `#${next}`)
+      el.id = next
+    }
+  }
+
+  langBtn.addEventListener('click', () => {
+    const url = new URL(location.href)
+    url.searchParams.set('lang', LANG === 'pt' ? 'en' : 'pt')
+    location.href = url.toString()
+  })
+
   document.getElementById('toggle').addEventListener('click', () => {
     const root = document.documentElement
     root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark')

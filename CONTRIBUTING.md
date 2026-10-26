@@ -10,11 +10,12 @@ guess the project's invariants — the CI enforces most of them.
   is `@opencode/plugin`).
 
 ```bash
-npm run ci        # unit tests + smoke + validator + security suite
+npm run ci        # unit tests + smoke + validator + security suite + i18n
 npm test          # plugin/core.test.mjs
 npm run smoke     # plugin smoke (frontmatter, loadSkills, syncProject)
 npm run validate  # validator against the example canvas
 npm run security  # serve.mjs security suite (7 checks)
+npm run check:i18n  # viewer dictionary + bilingual docs in sync
 ```
 
 The CI runs exactly these on Linux/Windows × Node 18/20/22/24.
@@ -41,6 +42,12 @@ The CI runs exactly these on Linux/Windows × Node 18/20/22/24.
    fight it).
 7. **License hygiene.** Each third-party skill ships its own
    `skills/<name>/LICENSE`; never remove or edit those. Original code is MIT.
+8. **i18n.** Every user-visible string in
+   `skills/design/assets/viewer.html` goes through the `I18N` dictionary
+   (`t(key)` / `data-i18n*`), with EN and PT values kept in lockstep, and
+   `docs.html` keeps its `data-lang="en"`/`data-lang="pt"` blocks in lockstep
+   (same ids, working anchors). Never hardcode a UI literal in a single
+   language — `npm run check:i18n` enforces all of this.
 
 ## Testing changes
 
