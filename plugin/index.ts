@@ -19,7 +19,16 @@
  */
 import { Plugin, Skill } from "@opencode/plugin"
 import { execFileSync } from "node:child_process"
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
+import {
+  appendFileSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs"
+import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -28,6 +37,8 @@ const PACK_ROOT = resolve(HERE, "..")
 const SKILLS_DIR = join(PACK_ROOT, "skills")
 const DESIGN_ASSETS = join(SKILLS_DIR, "design", "assets")
 const DESIGN_SCRIPTS = join(SKILLS_DIR, "design", "scripts")
+/** Diagnóstico: console.log do plugin some no log do OpenCode. */
+const LOG_FILE = join(tmpdir(), "design-pack-plugin.log")
 
 /** Intervalo mínimo entre dois `git pull` (ms). */
 const PULL_INTERVAL_MS = 10 * 60 * 1000
@@ -173,49 +184,71 @@ function describe(summary: SyncSummary | null): string {
 export default Plugin.define({
   id: "design-pack",
   async setup(ctx) {
-    const log = (message: string) => console.log(`[design-pack] ${message}`)
+    const log = (message: string) => {
+      const line = `[design-pack] ${new Date().toISOString()} ${message}`
+      console.log(line)
+      try {
+        appendFileSync(LOG_FILE, line + "\n")
+      } catch { /* diagnóstico é best-effort */ }
+    }
+    const guard = async (phase: string, run: () => Promise<void> | void) => {
+      try {
+        await run()
+      } catch (error) {
+        log(`ERRO em ${phase}: ${(error as Error)?.message ?? error}`)
+      }
+    }
     const interval = Number(ctx.options?.updateIntervalMs ?? PULL_INTERVAL_MS)
     const projectDir = ctx.location.project?.directory ?? ctx.location.directory
+    log(`setup: projectDir=${projectDir} location=${ctx.location.directory}`)
 
     // 1. auto-update (com throttle para não pesar no startup de cada projeto)
-    const lastPull = Number((await ctx.storage.get("lastPull")) ?? 0)
-    if (!Number.isFinite(interval) || Date.now() - lastPull >= interval) {
-      await ctx.storage.set("lastPull", Date.now())
-      log(pullPack())
-    }
+    await guard("auto-update", async () => {
+      const lastPull = Number((await ctx.storage.get("lastPull")) ?? 0)
+      if (!Number.isFinite(interval) || Date.now() - lastPull >= interval) {
+        await ctx.storage.set("lastPull", Date.now())
+        log(pullPack())
+      }
+    })
 
     // 2. skills: fonte única = repo (lido após o pull). O callback é síncrono
     //    e relê `source.skills`; `reload()` reexecuta os transforms.
     const source = { skills: loadSkills() }
-    await ctx.skill.transform((editor) => {
-      for (const skill of source.skills) {
-        if (editor.get(skill.id)) editor.remove(skill.id)
-        editor.add({
-          id: Skill.ID.make(skill.id),
-          name: Skill.Name.make(skill.name),
-          description: skill.description,
-          path: Skill.Info.fields.path.make(skill.path),
-          content: skill.content,
-        })
-      }
+    await guard("skill.transform", async () => {
+      await ctx.skill.transform((editor) => {
+        for (const skill of source.skills) {
+          if (editor.get(skill.id)) editor.remove(skill.id)
+          editor.add({
+            id: Skill.ID.make(skill.id),
+            name: Skill.Name.make(skill.name),
+            description: skill.description,
+            path: Skill.Info.fields.path.make(skill.path),
+            content: skill.content,
+          })
+        }
+      })
+      log(`skills registradas do repo: ${source.skills.map((s) => s.id).join(", ")}`)
     })
-    log(`skills registradas do repo: ${source.skills.map((s) => s.id).join(", ")}`)
 
     // 3. espelho do runtime no design/ do projeto atual
-    log(describe(syncProject(projectDir)))
+    await guard("sync", async () => {
+      log(describe(syncProject(projectDir)))
+    })
 
     // 4. /design-sync: update forçado + re-sync sob demanda
-    await ctx.command.transform((editor) => {
-      editor.add({
-        name: "design-sync",
-        description: "Atualiza o Design Pack (git pull), recarrega as skills e espelha o design/ deste projeto",
-        execute: async ({ sessionID }) => {
-          const lines = [pullPack()]
-          source.skills = loadSkills()
-          await ctx.skill.reload()
-          lines.push(describe(syncProject(projectDir)))
-          await ctx.session.synthetic({ sessionID, text: `[design-pack] ${lines.join(" | ")}` })
-        },
+    await guard("command.transform", async () => {
+      await ctx.command.transform((editor) => {
+        editor.add({
+          name: "design-sync",
+          description: "Atualiza o Design Pack (git pull), recarrega as skills e espelha o design/ deste projeto",
+          execute: async ({ sessionID }) => {
+            const lines = [pullPack()]
+            source.skills = loadSkills()
+            await ctx.skill.reload()
+            lines.push(describe(syncProject(projectDir)))
+            await ctx.session.synthetic({ sessionID, text: `[design-pack] ${lines.join(" | ")}` })
+          },
+        })
       })
     })
   },

@@ -95,6 +95,9 @@ Observações:
   quem cria é a skill, no primeiro uso).
 - `node plugin/smoke.mjs <projeto>` testa o espelhamento à mão, sem abrir o
   OpenCode.
+- Diagnóstico: cada `setup()` escreve o que fez em
+  `%TEMP%\design-pack-plugin.log` (o `console.log` do plugin não aparece no
+  log do OpenCode).
 - O `install.mjs` continua valendo para Claude Code, Codex, Cursor, Gemini e
   instalações por projeto.
 
