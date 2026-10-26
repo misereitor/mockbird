@@ -185,6 +185,13 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Sidebar navigation fix (v1.3.1)**: a screen link carrying `data-go` — the
+  sidebar/menu pattern, with a real `href` kept as the JS-off fallback — used
+  to open an overlay *and* navigate; now `data-go` routes cleanly to `Mock.go`
+  (preserving `?scenario=` and the enter transition). The design skill now
+  mandates the pattern for persistent navigation (sidebar/menu items switch
+  screens for real; plain links stay the overlay/modal trigger) and
+  `npm run test:mock` locks the navigation/overlay contracts.
 - **Slash commands + OpenCode discovery fix (v1.3.0)**: `/design`, `/taste`,
   `/emil-design-eng` and `/impeccable` now exist as real slash commands —
   registered by the plugin from `commands/*.md` (one per skill) and installed

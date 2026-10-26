@@ -238,6 +238,7 @@
       <tr><td><code>Mock.close()</code></td><td>Closes the top modal layer; focus returns to the element that opened it.</td></tr>
       <tr><td><code>Mock.scenario()</code></td><td>Returns the active scenario from <code>?scenario=</code> (empty string on base data) — use it to branch content per scenario.</td></tr>
     </table>
+    <p><strong>Navigation vs overlay:</strong> a plain screen link (<code>&lt;a href="03-modal.html"&gt;</code>) always opens an <strong>overlay</strong> (modals, details). For real navigation — sidebar, menus, tabs — put <code>data-go="02-screen.html"</code> on the item and keep the same <code>href</code> as the JS-off fallback: the runtime routes <code>data-go</code> to <code>Mock.go</code>, so <code>?scenario=</code> and the enter transition are preserved. Items can cross canvases too: <code>data-go="../dashboard/01-overview.html"</code>.</p>
     <h3>Transitions between screens</h3>
     <p>Each screen can declare its enter animation in <code>canvas.json</code>:</p>
     <pre><code>{ "id": "overview", "name": "Overview", "file": "01-overview.html", "device": "tablet", "transition": "fade" }</code></pre>
@@ -523,6 +524,7 @@
     <tr><td><code>Mock.close()</code></td><td>Fecha a camada modal do topo; o foco volta para o elemento que a abriu.</td></tr>
     <tr><td><code>Mock.scenario()</code></td><td>Retorna o cenário ativo vindo de <code>?scenario=</code> (string vazia quando nos dados base) — use para ramificar conteúdo por cenário.</td></tr>
   </table>
+  <p><strong>Navegação vs overlay:</strong> um link comum de tela (<code>&lt;a href="03-modal.html"&gt;</code>) sempre abre um <strong>overlay</strong> (modais, detalhes). Para navegação de verdade — sidebar, menus, abas — ponha <code>data-go="02-tela.html"</code> no item e mantenha o mesmo <code>href</code> como fallback sem JS: o runtime encaminha o <code>data-go</code> para <code>Mock.go</code>, preservando <code>?scenario=</code> e a transição de entrada. Itens também podem cruzar canvases: <code>data-go="../dashboard/01-overview.html"</code>.</p>
   <h3>Transições entre telas</h3>
   <p>Cada tela pode declarar sua animação de entrada no <code>canvas.json</code>:</p>
   <pre><code>{ "id": "overview", "name": "Visão geral", "file": "01-overview.html", "device": "tablet", "transition": "fade" }</code></pre>

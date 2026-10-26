@@ -79,6 +79,10 @@
   function screenLink(target) {
     const link = target && target.closest ? target.closest('a[href]') : null
     if (!link) return null
+    // action attributes (data-go/data-overlay/data-toast/data-close) belong to
+    // the delegation router below - a nav link with data-go navigates and must
+    // never be hijacked into an overlay (sidebar/menu contract)
+    if (['data-go', 'data-overlay', 'data-toast', 'data-close'].some((attr) => link.hasAttribute(attr))) return null
     if (link.hasAttribute('download')) return null
     const frame = link.getAttribute('target')
     if (frame && frame !== '_self') return null

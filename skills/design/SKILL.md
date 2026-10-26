@@ -191,7 +191,14 @@ never in the example copy.
       trigger is a plain screen link, `<a href="03-modal.html">`, which the
       mock runtime intercepts into `Mock.overlay('03-modal.html')` — without
       JS the untouched href navigates to the modal screen itself (the JS-off
-      fallback). Screens may declare `"transition": "fade"|"slide-left"|"none"`
+      fallback). Persistent navigation (sidebar, top menu, tabs) must switch
+      screens for real: put `data-go="02-cadastro.html"` on each item (keep a
+      real `href="02-cadastro.html"` on the same link as the JS-off fallback —
+      the runtime routes `data-go` to `Mock.go`, preserving `?scenario=` and
+      the enter transition). Plain links stay reserved for overlay triggers
+      (modals/details — a plain screen link always opens an overlay); repeat
+      the same navigation block on every screen of the canvas and mark the
+      active item. Screens may declare `"transition": "fade"|"slide-left"|"none"`
       in `canvas.json`: `Mock.go` hands an enter class to the destination
       (`mock-enter-fade`/`mock-enter-slide-left`, self-removed within 300 ms).
       The handoff reads the CURRENT canvas's `canvas.json` matched by the
