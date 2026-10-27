@@ -905,6 +905,8 @@ const I18N = {
     // misc
     flowRestarted: 'Flow restarted from the beginning',
     canvasUpdated: 'Canvas updated',
+    screenUpdated: 'Screen "{name}" updated',
+    runtimeUpdated: 'Design files updated',
     scenarioDefault: 'default',
     scenarioToast: 'Scenario: {name}',
     scenarioToastDefault: 'Scenario: default',
@@ -1109,6 +1111,8 @@ const I18N = {
     // misc
     flowRestarted: 'Fluxo reiniciado do início',
     canvasUpdated: 'Canvas atualizado',
+    screenUpdated: 'Tela "{name}" atualizada',
+    runtimeUpdated: 'Arquivos de design atualizados',
     scenarioDefault: 'padrão',
     scenarioToast: 'Cenário: {name}',
     scenarioToastDefault: 'Cenário: padrão',
@@ -3763,20 +3767,88 @@ window.addEventListener('keydown', (event) => {
 })
 
 /* ------------------------------------------------------- light polling */
+/* Watch every file a screen depends on - canvas.json, data.json, the screen
+ * HTML files and the shared runtime - and reload ONLY what changed: a changed
+ * screen re-points its own iframe, shared files re-render the strip. Cheap
+ * signatures come from HEAD Last-Modified (serve.mjs); a server without it
+ * falls back to a GET hash so auto-update never silently stops working. */
 
-let lastManifestText = null
+const POLL_MS = 2500
+const SHARED_FILES = ['mock.js', 'mock.css', 'design-system.css', 'utilities.css']
+let pollBaseline = null // Map<path, signature>; null = first pass just baselines
+
+function watchedFiles() {
+  const canvas = [`${state.canvas}/canvas.json`, `${state.canvas}/data.json`]
+  const screens = state.screens.map((s) => `${state.canvas}/${String(s.file).split('?')[0]}`)
+  return [...SHARED_FILES, ...canvas, ...screens]
+}
+
+function cheapHash(text) {
+  let hash = 5381
+  for (let i = 0; i < text.length; i++) hash = ((hash * 33) ^ text.charCodeAt(i)) >>> 0
+  return hash.toString(36)
+}
+
+async function fileSignature(path) {
+  try {
+    const head = await fetch(path, { method: 'HEAD', cache: 'no-store' })
+    const modified = head.ok ? head.headers.get('last-modified') : null
+    if (modified) return `m:${modified}`
+    const text = await (await fetch(path, { cache: 'no-store' })).text()
+    return `h:${text.length}:${cheapHash(text)}`
+  } catch {
+    return 'error' // server or file gone: never counts as a change
+  }
+}
+
+/** Re-point one screen's iframe (strip + flow mode) with a fresh cache bust. */
+function reloadScreenFrame(file) {
+  const base = String(file).split('?')[0].split('/').pop()
+  const screen = state.screens.find((s) => String(s.file).split('?')[0].split('/').pop() === base) ?? null
+  if (screen) {
+    const iframe = frameOf(screen.id)
+    if (iframe?.dataset?.src) iframe.dataset.src = screenUrl(screen) // not loaded yet
+    else if (iframe) iframe.src = screenUrl(screen)
+  }
+  if (!$('fullscreen').hidden && fsCurrentFile() === base) {
+    $('fsFrame').src = screenUrl(fsScreenNow())
+  }
+}
+
 setInterval(async () => {
   if (!state.canvas || document.hidden) return
-  try {
-    const text = await fetchText(`${state.canvas}/canvas.json`)
-    if (lastManifestText !== null && text !== lastManifestText) {
-      state.bust = Date.now()
-      await loadCanvas()
-      toast(t('canvasUpdated'))
-    }
-    lastManifestText = text
-  } catch { /* server or manifest gone; the banner already reports it */ }
-}, 2500)
+  const files = watchedFiles()
+  const signatures = await Promise.all(files.map(fileSignature))
+  const current = new Map(files.map((file, i) => [file, signatures[i]]))
+  if (pollBaseline === null) {
+    pollBaseline = current
+    return
+  }
+  const changed = files.filter((file) => current.get(file) !== 'error' && pollBaseline.get(file) !== current.get(file))
+  if (changed.length === 0) return
+  pollBaseline = current
+  if (changed.includes(`${state.canvas}/canvas.json`)) {
+    state.bust = Date.now()
+    await loadCanvas()
+    toast(t('canvasUpdated'))
+    return
+  }
+  const sharedChanged = changed.some((f) => SHARED_FILES.includes(f) || f === `${state.canvas}/data.json`)
+  if (sharedChanged) {
+    state.bust = Date.now()
+    renderStrip()
+    toast(t('runtimeUpdated'))
+    return
+  }
+  const screensChanged = changed.filter((f) => f.endsWith('.html'))
+  state.bust = Date.now()
+  for (const file of screensChanged) reloadScreenFrame(file)
+  if (screensChanged.length === 1) {
+    toast(t('screenUpdated', { name: screensChanged[0].split('/').pop() }))
+  } else if (screensChanged.length > 1) {
+    toast(t('runtimeUpdated'))
+  }
+}, POLL_MS)
 
 /* --------------------------------------------------------------- boot */
 

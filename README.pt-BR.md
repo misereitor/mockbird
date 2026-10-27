@@ -189,6 +189,14 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Atualização ao vivo das telas (v1.3.2)**: o visualizador agora vigia cada
+  HTML de tela, o `data.json` e o runtime compartilhado
+  (`mock.js`/`mock.css`, `design-system.css`, `utilities.css`) — o arquivo
+  que mudou atualiza só o que mudou (uma tela editada re-aponta o próprio
+  iframe; o modo fluxo também atualiza), então edições feitas pelo agente
+  aparecem sem tocar em nada. O `serve.mjs` agora envia `Last-Modified` para
+  detecção barata de mudança, com fallback de hash por GET em servidores
+  antigos.
 - **Correção de navegação por sidebar (v1.3.1)**: um link de tela com
   `data-go` — o padrão de sidebar/menu, mantendo um `href` real como fallback
   sem JS — abria um overlay *e* navegava ao mesmo tempo; agora o `data-go`

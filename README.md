@@ -185,6 +185,13 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Live screen refresh (v1.3.2)**: the viewer now watches every screen HTML,
+  `data.json` and the shared runtime (`mock.js`/`mock.css`,
+  `design-system.css`, `utilities.css`) — a changed file refreshes only what
+  changed (a single edited screen re-points its own iframe; the flow-mode
+  frame refreshes too), so edits made by the agent appear without touching
+  anything. `serve.mjs` now sends `Last-Modified` for cheap change detection,
+  with a GET-hash fallback for older servers.
 - **Sidebar navigation fix (v1.3.1)**: a screen link carrying `data-go` — the
   sidebar/menu pattern, with a real `href` kept as the JS-off fallback — used
   to open an overlay *and* navigate; now `data-go` routes cleanly to `Mock.go`

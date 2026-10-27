@@ -1034,11 +1034,11 @@ const server = createServer(async (req, res) => {
         const html = readFileSync(file, 'utf8')
           .split(TOKEN_PLACEHOLDER).join(share ? TOKEN_SHARE : TOKEN_INJECTED)
           .split(READONLY_PLACEHOLDER).join(share ? READONLY_INJECTED : READONLY_PLACEHOLDER)
-        res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store' })
+        res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store', 'last-modified': st.mtime.toUTCString() })
         if (req.method === 'HEAD') return res.end()
         return res.end(html)
       }
-      res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store' })
+      res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store', 'last-modified': st.mtime.toUTCString() })
       if (req.method === 'HEAD') return res.end()
       return createReadStream(file).pipe(res)
     }
@@ -1053,7 +1053,7 @@ const server = createServer(async (req, res) => {
         .map((entry) => `${entry.name}${entry.isDirectory() ? '/' : ''}`)
         .sort()
       const items = ['../', ...entries].map((name) => `<li><a href="${name}">${name}</a></li>`)
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'last-modified': st.mtime.toUTCString() })
       if (req.method === 'HEAD') return res.end()
       return res.end(`<!doctype html><title>${pathname}</title><ul>${items.join('')}</ul>`)
     }
