@@ -154,6 +154,30 @@ await page.waitForTimeout(500)
 const afterDelete = await page.$$eval('.pending-check', (els) => els.length)
 if (afterDelete === checks - 1) ok('excluir comentario funciona')
 else fail('excluir', `antes=${checks} depois=${afterDelete}`)
+
+// 4.6 SEND FLOW: the modal opens WITHOUT sending; only the button sends
+await page.route('**/api/agent-send', (route) =>
+  route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ delivered: true, session: { id: 'ses_test', title: 'sessao de teste' }, created: false }),
+  }),
+)
+await page.click('#sendSelected')
+await page.waitForTimeout(300)
+const modalOpen = await page.$eval('#clipboard', (el) => !el.hidden)
+const noteVisible = await page.$eval('#sendNote', (el) => !!el.offsetParent)
+const statusBefore = await page.$eval('#agentStatus', (el) => el.textContent)
+if (modalOpen && noteVisible && statusBefore === '') ok('enviar selecionados ABRE o modal (sem enviar)')
+else fail('modal de envio', `modal=${modalOpen} note=${noteVisible} status=${JSON.stringify(statusBefore)}`)
+await page.fill('#sendNote', 'observacao extra do usuario')
+await page.click('#sendAgent')
+await page.waitForTimeout(500)
+const statusAfter = await page.$eval('#agentStatus', (el) => el.textContent)
+if (/sent|enviad/i.test(statusAfter)) ok('envio real acontece so no botao do modal')
+else fail('envio explicito', `status=${JSON.stringify(statusAfter)}`)
+await page.unroute('**/api/agent-send')
+await page.keyboard.press('Escape')
 await page.click('#pendingClose')
 
 // 5. BOX selection (drag around the first two cards)

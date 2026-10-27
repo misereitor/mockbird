@@ -185,6 +185,11 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Review before sending (v1.0.17)**: "Send selected" now opens a review
+  modal instead of delivering — the message is shown with a **note field**
+  to complement it, and it only goes to the agent when you click **🚀 Send to
+  the agent**. Copy picks up the note too. Locked by the browser suite
+  (18/18, with the delivery endpoint mocked).
 - **Comment freely, send when you want (v1.0.16)**: commenting now only
   *saves* — nothing is sent to the agent automatically. The 💬 Pending panel
   became the outbox: check the comments you want (open ones are pre-checked),

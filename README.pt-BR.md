@@ -189,6 +189,11 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Revisão antes de enviar (v1.0.17)**: "Enviar selecionados" agora abre um
+  modal de revisão em vez de entregar — a mensagem aparece com um **campo de
+  observação** para complementar, e só vai para o agente quando você clica em
+  **🚀 Enviar ao agente**. A cópia também pega a observação. Travado na suíte
+  de browser (18/18, com o endpoint de envio mockado).
 - **Comente à vontade, envie quando quiser (v1.0.16)**: comentar agora apenas
   *salva* — nada vai para o agente automaticamente. O painel 💬 Pendentes virou
   a caixa de saída: marque os comentários que quer (abertas já vêm marcadas),

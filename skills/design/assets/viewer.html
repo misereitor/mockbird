@@ -598,9 +598,10 @@
 
 <div id="clipboard" class="overlay" hidden>
   <div class="box">
-    <h2 id="clipboardTitle" data-i18n="clipboardTitle">Message copied</h2>
+    <h2 id="clipboardTitle" data-i18n="clipboardTitle">Ready to send to the agent</h2>
     <p class="hint" data-i18n="clipboardHint">The message below is ready for the agent chat:</p>
     <p class="msg-code" id="clipboardMsg"></p>
+    <textarea id="sendNote" data-i18n-placeholder="sendNotePlaceholder" placeholder="Add a note to the message (optional)"></textarea>
     <p class="hint" id="agentStatus" role="status"></p>
     <p class="hint" id="clipboardHint" hidden data-i18n="selectCopyHint">Select and copy (Ctrl+C)</p>
     <div class="row">
@@ -635,7 +636,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.0.16</div>
+<div id="versionTag">v1.0.17</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -837,9 +838,10 @@ const I18N = {
     commentElementTitle: 'Comment element',
     elementHint: 'Describe the change only in this element. The comment becomes a pin on the screen — copy one or all and paste into the agent chat.',
     elementPlaceholder: 'e.g. make this button full width',
-    clipboardTitle: 'Message copied',
+    clipboardTitle: 'Ready to send to the agent',
     clipboardTitleSent: 'Message sent to the agent',
     clipboardHint: 'The message below is ready for the agent chat:',
+    sendNotePlaceholder: 'Add a note to the message (optional)',
     selectCopyHint: 'Select and copy (Ctrl+C)',
     agentSending: 'Sending to the agent…',
     agentSent: 'Sent to the agent — session: {session}',
@@ -1073,9 +1075,10 @@ const I18N = {
     commentElementTitle: 'Comentar elemento',
     elementHint: 'Descreva a mudança só neste elemento. O comentário vira um alfinete na tela — copie um ou todos e cole no chat do agente.',
     elementPlaceholder: 'Ex.: deixar este botão em largura total',
-    clipboardTitle: 'Mensagem copiada',
+    clipboardTitle: 'Pronto para enviar ao agente',
     clipboardTitleSent: 'Mensagem enviada ao agente',
     clipboardHint: 'A mensagem abaixo está pronta para o chat do agente:',
+    sendNotePlaceholder: 'Acrescente uma observação à mensagem (opcional)',
     selectCopyHint: 'Selecione e copie (Ctrl+C)',
     agentSending: 'Enviando ao agente…',
     agentSent: 'Enviado ao agente — sessão: {session}',
@@ -1910,10 +1913,11 @@ $('toggleSelectAll').addEventListener('click', () => {
   $('toggleSelectAll').textContent = allOn ? t('selectAllBtn') : t('clearSelectionBtn')
 })
 
-$('sendSelected').addEventListener('click', async () => {
+$('sendSelected').addEventListener('click', () => {
   const messages = selectedPinMessages()
   if (messages.length === 0) return toast(t('nothingSelected'))
-  await deliverMessage(messages.join('\n'))
+  // w14: abre o modal de revisão — nada é enviado ainda
+  openSendModal(messages.join('\n'))
 })
 
 /* ------------------------------------------------- snapshots (w5-22) */
@@ -2071,7 +2075,7 @@ async function revertToSnapshot(canvas, label) {
       throw new Error(reasons[response.status] ?? `HTTP ${response.status}`)
     }
     const message = designResetMessage(canvas, label)
-    await deliverMessage(message)
+    openSendModal(message) // w14: revisão antes de enviar
     toast(t('snapshotRestored', { label }))
     if (canvas === state.canvas) {
       state.bust = Date.now()
@@ -3873,7 +3877,7 @@ $('commentForm').addEventListener('submit', async (event) => {
   toast(t('commentCreated'))
 })
 
-$('copyAgain').addEventListener('click', () => copyToClipboard($('clipboardMsg').textContent))
+$('copyAgain').addEventListener('click', () => copyToClipboard(composeFinalMessage()))
 
 /** Manual fallback: select the whole message so Ctrl+C copies it. */
 function selectAllClipboardMsg() {
@@ -3932,11 +3936,24 @@ async function postAgentSend(text) {
   }
 }
 
-/** Entrega ao agente em primeiro lugar; clipboard é o fallback honesto. */
-async function deliverMessage(message) {
+/** w14: o modal abre SEM enviar — o envio real só no botão "Enviar ao agente".
+ *  O textarea permite complementar a mensagem antes de mandar. */
+function openSendModal(message) {
   $('clipboardMsg').textContent = message
-  $('clipboard').hidden = false
+  $('sendNote').value = ''
   $('clipboardTitle').textContent = t('clipboardTitle')
+  $('agentStatus').textContent = ''
+  $('clipboard').hidden = false
+}
+
+/** Mensagem final = composição dos comentários + eventual observação. */
+function composeFinalMessage() {
+  const note = $('sendNote').value.trim()
+  return note ? `${$('clipboardMsg').textContent}\n\n${note}` : $('clipboardMsg').textContent
+}
+
+/** Envio de verdade — chamado SOMENTE pelo botão "Enviar ao agente". */
+async function sendToAgentNow(message) {
   const status = $('agentStatus')
   if (isReadonly()) {
     status.textContent = ''
@@ -3956,7 +3973,7 @@ async function deliverMessage(message) {
   }
 }
 
-$('sendAgent').addEventListener('click', () => deliverMessage($('clipboardMsg').textContent))
+$('sendAgent').addEventListener('click', () => sendToAgentNow(composeFinalMessage()))
 
 /* -------------------------------- w9: lazy frames (projetos complexos) */
 
