@@ -122,13 +122,13 @@
       <tr><td><strong>Scenario</strong></td><td>Swap the fictitious data (e.g. <code>empty</code>, <code>critical</code>). The choice survives navigation and is remembered per canvas.</td></tr>
       <tr><td><strong>Device</strong></td><td><code>Original</code> respects each screen's size; <code>Phone</code>/<code>Tablet</code>/<code>Desktop</code> forces every screen to the same size.</td></tr>
       <tr><td><strong>🌙 Theme</strong></td><td>Light/dark applied inside every screen (they use the design system tokens).</td></tr>
-      <tr><td><strong>Zoom</strong></td><td><kbd>−</kbd>/<kbd>+</kbd>/<kbd>Fit</kbd> buttons, <kbd>Ctrl</kbd> + mouse wheel, keys <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Pan by dragging a screen or with the middle mouse button anywhere (including inside flow mode).</td></tr>
+      <tr><td><strong>Zoom</strong></td><td><kbd>−</kbd>/<kbd>+</kbd>/<kbd>Fit</kbd> buttons, <kbd>Ctrl</kbd> + mouse wheel, keys <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Pan with the middle mouse button anywhere — over screens and inside flow mode too (in flow mode a left drag pans as well).</td></tr>
       <tr><td><strong>Search</strong></td><td>Filters screens by name, id or group (<kbd>/</kbd> focuses the box, <kbd>Esc</kbd> clears it) — with arrow keys to step through the visible screens and <kbd>Enter</kbd> to open one.</td></tr>
       <tr><td><strong>▦ Grid</strong></td><td>Toggles between the horizontal strip and a wrapping grid — a whole project overview at once.</td></tr>
       <tr><td><strong>📱 Frame</strong></td><td>Device frames (phone/tablet) around the mobile screens.</td></tr>
       <tr><td><strong>⟳ Reload</strong></td><td>Re-reads the files on the spot. The viewer also watches every screen file, <code>data.json</code> and the shared runtime, and refreshes only what changed (about every 2.5&nbsp;s) — edits made by the agent appear on their own.</td></tr>
       <tr><td><strong>⟲ Reset flow</strong></td><td>Clears the whole system state (login, created items…) and brings every screen back to the start.</td></tr>
-      <tr><td><strong>Selection</strong></td><td>One click selects a screen (enables comment and Screen PNG); <kbd>Shift</kbd>+click adds to the selection. Drag on the empty canvas to box-select every screen the rectangle touches; clicking empty space clears. Double-click opens flow mode; the PNG button exports the whole selection.</td></tr>
+      <tr><td><strong>Selection</strong></td><td><strong>Mouse contract</strong>: left selects (click a screen; drag draws a selection box over everything it touches; <kbd>Shift</kbd>+click adds), the middle button pans, the <strong>right button opens the element menu</strong> (💬/📋/🧩). Clicking empty space clears; double-click opens flow mode; the PNG button exports the whole selection.</td></tr>
       <tr><td><strong>🌐 Language</strong></td><td>Switches the interface between English and Portuguese (also via <code>?lang=en</code>/<code>?lang=pt</code> in the URL).</td></tr>
     </table>
 
@@ -426,13 +426,13 @@
     <tr><td><strong>Cenário</strong></td><td>Troca os dados fictícios (ex.: <code>vazio</code>, <code>critico</code>). A escolha sobrevive à navegação e fica lembrada por canvas.</td></tr>
     <tr><td><strong>Dispositivo</strong></td><td><code>Original</code> respeita o tamanho de cada tela; <code>Celular</code>/<code>Tablet</code>/<code>Desktop</code> força todas para o mesmo tamanho.</td></tr>
     <tr><td><strong>🌙 Tema</strong></td><td>Claro/escuro aplicado dentro de todas as telas (elas usam os tokens do design system).</td></tr>
-    <tr><td><strong>Zoom</strong></td><td>Botões <kbd>−</kbd>/<kbd>+</kbd>/<kbd>Ajustar</kbd>, <kbd>Ctrl</kbd> + roda do mouse, teclas <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Mova arrastando uma tela ou com o botão do meio do mouse em qualquer lugar (inclusive dentro do modo fluxo).</td></tr>
+    <tr><td><strong>Zoom</strong></td><td>Botões <kbd>−</kbd>/<kbd>+</kbd>/<kbd>Ajustar</kbd>, <kbd>Ctrl</kbd> + roda do mouse, teclas <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Mova com o botão do meio do mouse em qualquer lugar — sobre as telas e dentro do modo fluxo também (no modo fluxo o arraste com o esquerdo também move).</td></tr>
       <tr><td><strong>Busca</strong></td><td>Filtra telas por nome, id ou grupo (<kbd>/</kbd> foca o campo, <kbd>Esc</kbd> limpa) — com setas para percorrer as telas visíveis e <kbd>Enter</kbd> para abrir.</td></tr>
       <tr><td><strong>▦ Grade</strong></td><td>Alterna entre a fita horizontal e a grade que quebra em linhas — o projeto inteiro visível de uma vez.</td></tr>
       <tr><td><strong>📱 Moldura</strong></td><td>Molduras de dispositivo (celular/tablet) ao redor das telas mobile.</td></tr>
     <tr><td><strong>⟳ Recarregar</strong></td><td>Relê os arquivos na hora. O visualizador também vigia cada arquivo de tela, o <code>data.json</code> e o runtime compartilhado, e atualiza só o que mudou (a cada 2,5&nbsp;s) — edições feitas pelo agente aparecem sozinhas.</td></tr>
     <tr><td><strong>⟲ Reset fluxo</strong></td><td>Limpa todo o estado do sistema (login, itens criados…) e traz todas as telas de volta ao início.</td></tr>
-    <tr><td><strong>Seleção</strong></td><td>Um clique na tela a seleciona (habilita comentário e PNG); <kbd>Shift</kbd>+clique soma à seleção. Arraste no canvas vazio para selecionar por retângulo tudo o que a caixa tocar; clique no vazio limpa. Duplo clique abre o modo fluxo; o botão PNG exporta a seleção inteira.</td></tr>
+    <tr><td><strong>Seleção</strong></td><td><strong>Contrato do mouse</strong>: o esquerdo seleciona (clique numa tela; arrastar abre a caixa de seleção sobre tudo o que tocar; <kbd>Shift</kbd>+clique soma), o botão do meio move, o <strong>direito abre o menu do elemento</strong> (💬/📋/🧩). Clique no vazio limpa; duplo clique abre o modo fluxo; o botão PNG exporta a seleção inteira.</td></tr>
       <tr><td><strong>🌐 Idioma</strong></td><td>Alterna a interface entre português e inglês (também via <code>?lang=pt</code>/<code>?lang=en</code> na URL).</td></tr>
   </table>
 

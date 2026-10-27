@@ -189,6 +189,11 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Contrato do mouse, finalmente (v1.0.10)**: o esquerdo seleciona (clique ou
+  arraste a caixa de seleção), o botão do meio move, e o **botão direito abre
+  o menu do elemento** (💬/📋/🧩) — sempre. O botão direito tinha virado gesto
+  de pan (e um guard pós-gesto engolia o menu): os dois foram removidos; o
+  direito nunca é gesto agora.
 - **Resgate: histórico por arquivo + botão direito de volta (v1.0.9)**: com o
   servidor rodando, toda mudança em qualquer arquivo de `design/` vira uma
   revisão (`design/.history/`, as 20 mais recentes por arquivo) e o novo

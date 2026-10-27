@@ -3024,12 +3024,12 @@ $('viewport').addEventListener('pointerdown', (event) => {
   if (event.button > 2) return
   if (event.target.closest('button, select, input, textarea')) return // UI da tela não arrasta
   const overCard = event.target.closest('.card-overlay')
-  // w11: botões do meio E direito panoramizam em qualquer lugar — o direito
-  // foi devolvido (era pan antes da redefinição de interação)
-  if (event.button !== 0) return beginPan(state, $('viewport'), $('world'), $('zoomLabel'), event)
+  // contrato dos botões: esquerdo = selecionar (retângulo), meio = mover,
+  // direito = menu do elemento — o direito NUNCA é gesto
+  if (event.button === 1) return beginPan(state, $('viewport'), $('world'), $('zoomLabel'), event)
+  if (event.button !== 0) return
   if (overCard && state.inspect) return // arraste-comentar é do modo elemento
-  if (overCard && !event.shiftKey) return beginPan(state, $('viewport'), $('world'), $('zoomLabel'), event)
-  beginMarquee(event) // canvas vazio (ou shift): seleção por retângulo
+  beginMarquee(event) // seleção por retângulo, em qualquer lugar
 })
 
 $('zoomIn').addEventListener('click', () => zoomBy(1.2))
@@ -3192,6 +3192,7 @@ $('fsStage').addEventListener('wheel', (event) => {
 $('fsStage').addEventListener('pointerdown', (event) => {
   if (event.button > 2) return
   if (event.target.closest('button, select, input, textarea')) return // UI do fluxo não arrasta
+  if (event.button === 2) return // direito = menu do elemento, nunca gesto
   if (event.button === 0 && event.target.closest('.card-overlay') && state.inspect) return
   beginPan(fsView, $('fsStage'), $('fsWorld'), $('fsZoomLabel'), event)
 })
@@ -3247,7 +3248,6 @@ $('fsOverlay').addEventListener('click', (event) => {
  * captura tudo; delegamos em #viewport) e modo fluxo com inspetor (#fsOverlay).
  * Sem inspetor o iframe engole eventos: a injeção no doc converge aqui. */
 $('viewport').addEventListener('contextmenu', (event) => {
-  if (gestureJustEnded) return event.preventDefault() // pan direito não abre menu
   const overlay = event.target.closest('.card-overlay')
   if (!overlay) return
   event.preventDefault()
@@ -3260,7 +3260,6 @@ $('viewport').addEventListener('contextmenu', (event) => {
 
 $('fsOverlay').addEventListener('contextmenu', (event) => {
   event.preventDefault()
-  if (gestureJustEnded) return // pan direito não abre menu
   const target = fsElementAt(event)
   const screen = fsScreenNow()
   if (!screen || !target) return
@@ -3392,7 +3391,6 @@ function injectFrameInteraction(frame) {
     doc.addEventListener('click', showFsBar)
     doc.addEventListener('contextmenu', (event) => {
       event.preventDefault()
-      if (gestureJustEnded) return // pan direito não abre menu
       const point = toParent(event)
       const target = hit(point)
       const screen = screenNow()
@@ -3401,8 +3399,9 @@ function injectFrameInteraction(frame) {
     })
     doc.addEventListener('pointerdown', (event) => {
       closeCtxMenu() // clique dentro da tela também descarta o menu aberto
-      if (event.button === 1 || event.button === 2) {
-        if (event.button === 1) event.preventDefault() // sem autoscroll do navegador
+      if (event.button === 2) return // direito = menu do elemento, nunca gesto
+      if (event.button === 1) {
+        event.preventDefault()
         beginPan(fsView, $('fsStage'), $('fsWorld'), $('fsZoomLabel'), toParent(event))
         return
       }

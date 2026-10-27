@@ -185,6 +185,11 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Mouse contract, finally (v1.0.10)**: left selects (click or drag a
+  selection box), the middle button pans, and the **right button opens the
+  element menu** (💬/📋/🧩) — always. The right button had been turned into a
+  pan gesture (and a post-gesture guard was swallowing the menu): both are
+  gone; the right button is never a gesture now.
 - **Rescue: per-file history + right button back (v1.0.9)**: while the server
   runs, every change to any `design/` file is recorded as a revision
   (`design/.history/`, newest 20 per file) and the new 🕘 **History** panel
