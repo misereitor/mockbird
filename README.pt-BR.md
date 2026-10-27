@@ -189,6 +189,14 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Editar + preview na rede lado a lado (v1.0.15)**: rode
+  `node design/serve.mjs` (sua instância de edição completa) e
+  `node design/serve.mjs 8766 --share` (a somente leitura para a rede) no
+  mesmo projeto — o start do share agora imprime uma URL `LAN:` pronta para
+  colar (em vez de `0.0.0.0`), quem vê acompanha suas edições ao vivo, e só
+  a instância de edição grava em disco: a instância `--share` não registra
+  mais histórico de arquivos (somente leitura em espírito e em disco, e sem
+  revisões duplicadas com as duas rodando).
 - **O modo leitura se explica (v1.0.14)**: sob `--share` o botão direito não
   fazia *nada* (o menu do elemento se recusava a abrir em silêncio) — agora
   ele responde "Modo leitura (--share): comentários indisponíveis — rode sem

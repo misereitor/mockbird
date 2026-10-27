@@ -80,7 +80,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
+import { homedir, networkInterfaces, tmpdir } from 'node:os'
 import { basename, dirname, extname, join, normalize, relative, resolve, sep } from 'node:path'
 
 const argv = process.argv.slice(2)
@@ -1068,9 +1068,13 @@ function captureHistory(full) {
 }
 
 loadHistoryIndex()
-setInterval(() => {
-  for (const full of walkDesignFiles()) captureHistory(full)
-}, 2000)
+if (!share) {
+  // share é somente leitura em espírito E em disco: só a instância de edição
+  // grava o histórico (e dois pollers duplicariam revisões ao rodar juntos)
+  setInterval(() => {
+    for (const full of walkDesignFiles()) captureHistory(full)
+  }, 2000)
+}
 
 function historyList(file) {
   const rel = historyRelPath(file)
@@ -1334,9 +1338,24 @@ function openBrowser(url) {
   }
 }
 
+/** First non-internal IPv4 — the address a LAN viewer can actually open. */
+function lanAddress() {
+  for (const entries of Object.values(networkInterfaces())) {
+    for (const entry of entries ?? []) {
+      if (entry.family === 'IPv4' && !entry.internal) return entry.address
+    }
+  }
+  return null
+}
+
 server.listen(port, bindHost, () => {
   const host = bindHost === '0.0.0.0' ? '0.0.0.0' : '127.0.0.1'
   console.log(`URL: http://${host}:${port} TOKEN: ${token}`)
+  if (share) {
+    // o endereço que se cola para a pessoa na rede (0.0.0.0 não é navegável)
+    const lan = lanAddress()
+    if (lan) console.log(`LAN: http://${lan}:${port}/viewer.html (somente leitura)`)
+  }
   // Browser policy: --open forces, --no-open forbids, otherwise only from an
   // interactive terminal (so tests, CI and the plugin never spawn browsers).
   const shouldOpen = openArg !== undefined ? !noOpen : !noOpen && process.stdout.isTTY

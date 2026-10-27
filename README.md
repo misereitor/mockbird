@@ -185,6 +185,13 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Edit + LAN preview side by side (v1.0.15)**: run `node design/serve.mjs`
+  (your full-editing instance) and `node design/serve.mjs 8766 --share` (the
+  read-only one for the network) from the same project — the share startup
+  now prints a ready-to-paste `LAN:` URL (instead of `0.0.0.0`), viewers
+  follow your edits live, and only the editing instance writes to disk: the
+  `--share` instance no longer records file history (read-only in spirit and
+  on disk, and no duplicate revisions with both running).
 - **Read-only mode explains itself (v1.0.14)**: under `--share` the right
   button used to do *nothing* (the element menu silently refused to open) —
   now it answers with "Read-only mode (--share): comments are unavailable —
