@@ -185,6 +185,12 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Resolved comments stay visible (v1.0.12)**: comments can no longer
+  "disappear" — resolved ones were dropping out of the pending panel entirely
+  (which then reads "nothing pending") while sitting greyed on screen. The
+  panel now keeps a **Resolved (N)** section with one-click **Reopen**, and
+  every resolve/reopen announces itself in a toast ("listed under Pending ›
+  Resolved"). Locked by the acceptance suite (10/10).
 - **The viewer updates itself + real-browser acceptance (v1.0.11)**: the
   viewer now watches its **own** file and reloads the tab automatically when
   it changes — fixes reach your screen without pressing F5 (this is why

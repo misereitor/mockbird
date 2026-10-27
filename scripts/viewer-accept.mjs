@@ -10,7 +10,7 @@
  *   node scripts/viewer-accept.mjs
  */
 import { spawn } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, rmSync, utimesSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
@@ -39,13 +39,30 @@ for (const item of ['mock.js', 'mock.css', 'vendor', 'scripts', 'validate.mjs', 
     cpSync(join(PACK, item), join(ROOT, 'design', item), { recursive: true })
   } catch { /* optional file */ }
 }
+// fixture: one open + one RESOLVED comment (resolved ones must stay visible)
+writeFileSync(join(ROOT, 'design', 'comments.json'), JSON.stringify({
+  comments: [
+    { id: 'p-open1', canvas: 'login', file: '01-login.html', selector: 'body', snippet: 'x', rect: { x: 10, y: 10, width: 20, height: 20 }, status: 'open', replies: [{ text: 'aberto', createdAt: '2026-01-01T00:00:00.000Z' }], createdAt: '2026-01-01T00:00:00.000Z' },
+    { id: 'p-done1', canvas: 'login', file: '01-login.html', selector: 'body', snippet: 'y', rect: { x: 10, y: 40, width: 20, height: 20 }, status: 'resolved', replies: [{ text: 'resolvido', createdAt: '2026-01-01T00:00:00.000Z' }], createdAt: '2026-01-01T00:00:00.000Z' },
+  ],
+}, null, 2))
 
 const server = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), '8796', '--no-open'], {
   cwd: ROOT,
   windowsHide: true,
   stdio: ['ignore', 'pipe', 'pipe'],
 })
-await new Promise((resolve) => setTimeout(resolve, 1200))
+// wait for the real startup line (a leftover server holding the port would
+// otherwise turn into a confusing goto timeout later)
+await new Promise((resolve, reject) => {
+  const timer = setTimeout(() => reject(new Error('serve.mjs nao subiu em 10s (porta ocupada?)')), 10_000)
+  server.stdout.on('data', (chunk) => {
+    if (String(chunk).includes('TOKEN:')) {
+      clearTimeout(timer)
+      resolve()
+    }
+  })
+})
 
 const browser = await chromium.launch({
   executablePath: existsSync('C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe')
@@ -133,6 +150,14 @@ if (flowOpen) {
   await page.keyboard.press('Escape')
 }
 await page.keyboard.press('Escape')
+
+// 6.5 RESOLVED comments stay visible in the panel (regression: they vanished)
+await page.click('#pendingBtn')
+await page.waitForTimeout(400)
+const panelText = await page.$eval('#pendingBody', (el) => el.innerText)
+if (/resolved/i.test(panelText)) ok('comentarios resolvidos continuam visiveis no painel')
+else fail('resolvidos no painel', `painel nao cita resolvidos: ${JSON.stringify(panelText.slice(0, 120))}`)
+await page.click('#pendingClose')
 
 // 7. SELF-RELOAD: touch viewer.html on disk -> the tab reloads itself
 await page.evaluate(() => { window.__acceptMarker = 'stale' })

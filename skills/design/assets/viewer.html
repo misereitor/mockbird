@@ -864,6 +864,9 @@ const I18N = {
     noPending: 'No pending comment — all clear.',
     staleHeading: 'Stale — anchor lost ({count})',
     staleHint: 'They do not count as open pending (validate.mjs --mark-stale).',
+    resolvedHeading: 'Resolved ({count})',
+    pinResolvedToast: 'Comment resolved — listed under Pending › Resolved',
+    pinReopenedToast: 'Comment reopened',
     reopenBtn: 'Reopen',
     reopenTitle: 'Move the comment back to open',
     replyBtn: 'Reply',
@@ -1085,6 +1088,9 @@ const I18N = {
     noPending: 'Nenhum comentário pendente — tudo em dia.',
     staleHeading: 'Stale — âncora perdida ({count})',
     staleHint: 'Não contam como pendentes abertas (validate.mjs --mark-stale).',
+    resolvedHeading: 'Resolvidos ({count})',
+    pinResolvedToast: 'Comentário resolvido — listado em Pendentes › Resolvidos',
+    pinReopenedToast: 'Comentário reaberto',
     reopenBtn: 'Reabrir',
     reopenTitle: 'Voltar o comentário para aberto',
     replyBtn: 'Responder',
@@ -1590,6 +1596,11 @@ function stalePins(comments) {
   return (Array.isArray(comments) ? comments : []).filter((pin) => pin && pin.status === 'stale')
 }
 
+/** w12: resolvidos continuam listados — comentário escondido é comentário perdido. */
+function resolvedPins(comments) {
+  return (Array.isArray(comments) ? comments : []).filter((pin) => pin && pin.status === 'resolved')
+}
+
 /** Sweep index stepping: clamped to the pending list (-1 = no selection). */
 function sweepStep(list, index, delta) {
   const len = (Array.isArray(list) ? list : []).length
@@ -1653,13 +1664,21 @@ function pendingEntry(pin) {
   resolve.type = 'button'
   resolve.textContent = t('resolveBtn')
   resolve.title = t('resolveTitle')
-  resolve.addEventListener('click', () => persistPin({ id: pin.id, status: 'resolved' }))
+  resolve.addEventListener('click', () => {
+    persistPin({ id: pin.id, status: 'resolved' }).then((ok) => {
+      if (ok) toast(t('pinResolvedToast'))
+    })
+  })
 
   const reopen = document.createElement('button')
   reopen.type = 'button'
   reopen.textContent = t('reopenBtn')
   reopen.title = t('reopenTitle')
-  reopen.addEventListener('click', () => persistPin({ id: pin.id, status: 'open' }))
+  reopen.addEventListener('click', () => {
+    persistPin({ id: pin.id, status: 'open' }).then((ok) => {
+      if (ok) toast(t('pinReopenedToast'))
+    })
+  })
 
   const reply = document.createElement('button')
   reply.type = 'button'
@@ -1744,6 +1763,21 @@ function renderPendingPanel() {
     for (const pin of stale) list.appendChild(pendingEntry(pin))
     staleSection.appendChild(list)
     body.appendChild(staleSection)
+  }
+
+  // w12: resolvidos ficam listados — antes sumiam do painel e "desapareciam"
+  const resolved = resolvedPins(all)
+  if (resolved.length > 0) {
+    const doneSection = document.createElement('section')
+    doneSection.className = 'pending-section'
+    const doneHeading = document.createElement('h3')
+    doneHeading.textContent = t('resolvedHeading', { count: resolved.length })
+    doneSection.appendChild(doneHeading)
+    const list = document.createElement('ul')
+    list.className = 'pending-list'
+    for (const pin of resolved) list.appendChild(pendingEntry(pin))
+    doneSection.appendChild(list)
+    body.appendChild(doneSection)
   }
 }
 
@@ -2233,7 +2267,9 @@ $('sweepResolve').addEventListener('click', () => {
   const open = pendingPins(Array.isArray(state.allComments) ? state.allComments : [])
   const pin = open[state.sweepIndex]
   if (!pin) return
-  persistPin({ id: pin.id, status: 'resolved' })
+  persistPin({ id: pin.id, status: 'resolved' }).then((ok) => {
+    if (ok) toast(t('pinResolvedToast'))
+  })
 })
 
 /* --------------------------------------------- history / resgate (v1.0.9) */
@@ -2628,7 +2664,10 @@ function pinMarker(pin, index, layer) {
   act.title = pin.status === 'resolved' ? t('pinReopenTitle') : t('resolveTitle')
   act.addEventListener('click', (event) => {
     event.stopPropagation()
-    persistPin({ id: pin.id, status: pin.status === 'resolved' ? 'open' : 'resolved' })
+    const resolving = pin.status !== 'resolved'
+    persistPin({ id: pin.id, status: resolving ? 'resolved' : 'open' }).then((ok) => {
+      if (ok) toast(t(resolving ? 'pinResolvedToast' : 'pinReopenedToast'))
+    })
   })
   marker.append(badge, act)
   return marker

@@ -189,6 +189,12 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Comentários resolvidos continuam visíveis (v1.0.12)**: comentários não
+  podem mais "sumir" — os resolvidos caíam do painel de pendentes por
+  completo (que então mostra "nada pendente") enquanto ficavam acinzentados na
+  tela. O painel agora mantém uma seção **Resolvidos (N)** com **Reabrir** em
+  um clique, e todo resolver/reabrir se anuncia num toast ("listado em
+  Pendentes › Resolvidos"). Travado na suíte de aceitação (10/10).
 - **O viewer se atualiza sozinho + aceitação em browser de verdade (v1.0.11)**:
   o viewer agora vigia o **próprio** arquivo e recarrega a aba sozinho quando
   ele muda — os fixes chegam na sua tela sem F5 (era por isso que as mudanças
