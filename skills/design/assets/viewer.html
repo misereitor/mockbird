@@ -242,6 +242,12 @@
     position: fixed; z-index: 30; pointer-events: none;
     border: 1px dashed var(--ui-accent); background: rgb(13 148 136 / .12);
   }
+  /* versão do viewer — pequena, no rodapé à direita (sempre visível) */
+  #versionTag {
+    position: fixed; right: 8px; bottom: 6px; z-index: 41; pointer-events: none;
+    color: var(--ui-muted); font-size: 10px; opacity: .8;
+    font-family: ui-monospace, Consolas, monospace;
+  }
   .pins { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
   .pin { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; display: flex; }
   .pin-badge {
@@ -622,6 +628,7 @@
 </div>
 
 <div id="toast"></div>
+<div id="versionTag">v1.0.13</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">

@@ -70,6 +70,19 @@ if (blocks.size !== 2) {
   console.log(`docs: ${ids.en.length} section ids per language`)
 }
 
+/* ---------------------------------------------------------- version tag */
+
+// the on-screen footer version must match package.json (never lie to the user)
+const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
+const tag = /id="versionTag">([^<]+)</.exec(viewer)?.[1]?.trim()
+if (!tag) {
+  errors.push('viewer: versionTag footer missing')
+} else if (tag !== `v${pkg.version}`) {
+  errors.push(`viewer: versionTag says ${tag} but package.json says v${pkg.version}`)
+} else {
+  console.log(`version: ${tag} (footer == package.json)`)
+}
+
 if (errors.length > 0) {
   console.error(`FAIL (${errors.length}):\n` + errors.map((e) => ` - ${e}`).join('\n'))
   process.exit(1)

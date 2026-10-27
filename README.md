@@ -185,6 +185,10 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Version on screen (v1.0.13)**: the viewer now shows a small version tag
+  bottom-right, and CI fails if it ever drifts from `package.json` — every
+  report can say exactly which version is running (no more stale-tab
+  ambiguity).
 - **Resolved comments stay visible (v1.0.12)**: comments can no longer
   "disappear" — resolved ones were dropping out of the pending panel entirely
   (which then reads "nothing pending") while sitting greyed on screen. The

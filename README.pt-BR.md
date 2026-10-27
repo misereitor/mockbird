@@ -189,6 +189,10 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Versão na tela (v1.0.13)**: o viewer mostra uma etiqueta pequena de versão
+  no rodapé à direita, e o CI falha se ela divergir do `package.json` — todo
+  relato diz exatamente qual versão está rodando (acaba a ambiguidade de aba
+  desatualizada).
 - **Comentários resolvidos continuam visíveis (v1.0.12)**: comentários não
   podem mais "sumir" — os resolvidos caíam do painel de pendentes por
   completo (que então mostra "nada pendente") enquanto ficavam acinzentados na
