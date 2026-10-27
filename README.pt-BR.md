@@ -189,6 +189,15 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Seleção por retângulo + canvas de ferramenta (v1.4.0)**: arraste no canvas vazio
+  para selecionar por retângulo todos os telas tocadas (Shift+clique soma à
+  seleção, clique no vazio limpa; o botão PNG exporta a seleção inteira). O
+  mouse passa a se comportar como em ferramentas de design: o botão do meio
+  panoramiza em qualquer lugar (sobre as telas e dentro do modo fluxo),
+  arrastar sobre uma tela também panoramiza, e o arraste-comentar foi para o
+  modo 🎯 Elemento. Reloads mantêm você no lugar: o ⟳ do modo fluxo
+  recarrega a tela atual (o ⟲ Reset fluxo reinicia do começo), o reload da
+  fita preserva zoom/pan e o F5 volta para a mesma tela e histórico do fluxo.
 - **Atualização ao vivo das telas (v1.3.2)**: o visualizador agora vigia cada
   HTML de tela, o `data.json` e o runtime compartilhado
   (`mock.js`/`mock.css`, `design-system.css`, `utilities.css`) — o arquivo

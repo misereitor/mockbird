@@ -122,13 +122,13 @@
       <tr><td><strong>Scenario</strong></td><td>Swap the fictitious data (e.g. <code>empty</code>, <code>critical</code>). The choice survives navigation and is remembered per canvas.</td></tr>
       <tr><td><strong>Device</strong></td><td><code>Original</code> respects each screen's size; <code>Phone</code>/<code>Tablet</code>/<code>Desktop</code> forces every screen to the same size.</td></tr>
       <tr><td><strong>🌙 Theme</strong></td><td>Light/dark applied inside every screen (they use the design system tokens).</td></tr>
-      <tr><td><strong>Zoom</strong></td><td><kbd>−</kbd>/<kbd>+</kbd>/<kbd>Fit</kbd> buttons, <kbd>Ctrl</kbd> + mouse wheel, keys <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Drag the background to pan.</td></tr>
+      <tr><td><strong>Zoom</strong></td><td><kbd>−</kbd>/<kbd>+</kbd>/<kbd>Fit</kbd> buttons, <kbd>Ctrl</kbd> + mouse wheel, keys <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Pan by dragging a screen or with the middle mouse button anywhere (including inside flow mode).</td></tr>
       <tr><td><strong>Search</strong></td><td>Filters screens by name, id or group (<kbd>/</kbd> focuses the box, <kbd>Esc</kbd> clears it) — with arrow keys to step through the visible screens and <kbd>Enter</kbd> to open one.</td></tr>
       <tr><td><strong>▦ Grid</strong></td><td>Toggles between the horizontal strip and a wrapping grid — a whole project overview at once.</td></tr>
       <tr><td><strong>📱 Frame</strong></td><td>Device frames (phone/tablet) around the mobile screens.</td></tr>
       <tr><td><strong>⟳ Reload</strong></td><td>Re-reads the files on the spot. The viewer also watches every screen file, <code>data.json</code> and the shared runtime, and refreshes only what changed (about every 2.5&nbsp;s) — edits made by the agent appear on their own.</td></tr>
       <tr><td><strong>⟲ Reset flow</strong></td><td>Clears the whole system state (login, created items…) and brings every screen back to the start.</td></tr>
-      <tr><td><strong>Selection</strong></td><td>One click selects a screen (enables comment and Screen PNG). Double-click opens flow mode.</td></tr>
+      <tr><td><strong>Selection</strong></td><td>One click selects a screen (enables comment and Screen PNG); <kbd>Shift</kbd>+click adds to the selection. Drag on the empty canvas to box-select every screen the rectangle touches; clicking empty space clears. Double-click opens flow mode; the PNG button exports the whole selection.</td></tr>
       <tr><td><strong>🌐 Language</strong></td><td>Switches the interface between English and Portuguese (also via <code>?lang=en</code>/<code>?lang=pt</code> in the URL).</td></tr>
     </table>
 
@@ -199,7 +199,7 @@
     <p><strong>Double-click</strong> a screen to open flow mode: the screen at full size, <strong>interactive</strong> — you log in, navigate, create records. The bar floats at the top and <strong>gets out of the way by itself</strong> after a few seconds without mouse movement; any movement over the screen brings it back. On the bar:</p>
     <ul>
       <li><strong>◀ ▶</strong> — back and forth through the flow's navigation history.</li>
-      <li><strong>⟲</strong> — restart the flow from the beginning (per screen).</li>
+      <li><strong>⟳</strong> — reload the current screen, keeping the flow position (<strong>⟲ Reset flow</strong> on the main bar starts the whole flow over).</li>
       <li><strong>🎯 Element</strong> — turns on element-comment mode <em>inside flow mode</em>, with the screen full size (the best place for it).</li>
       <li><strong>🌙</strong> — toggles light/dark without leaving the flow.</li>
       <li><strong>← Back</strong> — closes flow mode.</li>
@@ -408,13 +408,13 @@
     <tr><td><strong>Cenário</strong></td><td>Troca os dados fictícios (ex.: <code>vazio</code>, <code>critico</code>). A escolha sobrevive à navegação e fica lembrada por canvas.</td></tr>
     <tr><td><strong>Dispositivo</strong></td><td><code>Original</code> respeita o tamanho de cada tela; <code>Celular</code>/<code>Tablet</code>/<code>Desktop</code> força todas para o mesmo tamanho.</td></tr>
     <tr><td><strong>🌙 Tema</strong></td><td>Claro/escuro aplicado dentro de todas as telas (elas usam os tokens do design system).</td></tr>
-    <tr><td><strong>Zoom</strong></td><td>Botões <kbd>−</kbd>/<kbd>+</kbd>/<kbd>Ajustar</kbd>, <kbd>Ctrl</kbd> + roda do mouse, teclas <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Arraste o fundo para mover.</td></tr>
+    <tr><td><strong>Zoom</strong></td><td>Botões <kbd>−</kbd>/<kbd>+</kbd>/<kbd>Ajustar</kbd>, <kbd>Ctrl</kbd> + roda do mouse, teclas <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Mova arrastando uma tela ou com o botão do meio do mouse em qualquer lugar (inclusive dentro do modo fluxo).</td></tr>
       <tr><td><strong>Busca</strong></td><td>Filtra telas por nome, id ou grupo (<kbd>/</kbd> foca o campo, <kbd>Esc</kbd> limpa) — com setas para percorrer as telas visíveis e <kbd>Enter</kbd> para abrir.</td></tr>
       <tr><td><strong>▦ Grade</strong></td><td>Alterna entre a fita horizontal e a grade que quebra em linhas — o projeto inteiro visível de uma vez.</td></tr>
       <tr><td><strong>📱 Moldura</strong></td><td>Molduras de dispositivo (celular/tablet) ao redor das telas mobile.</td></tr>
     <tr><td><strong>⟳ Recarregar</strong></td><td>Relê os arquivos na hora. O visualizador também vigia cada arquivo de tela, o <code>data.json</code> e o runtime compartilhado, e atualiza só o que mudou (a cada 2,5&nbsp;s) — edições feitas pelo agente aparecem sozinhas.</td></tr>
     <tr><td><strong>⟲ Reset fluxo</strong></td><td>Limpa todo o estado do sistema (login, itens criados…) e traz todas as telas de volta ao início.</td></tr>
-    <tr><td><strong>Seleção</strong></td><td>Um clique na tela a seleciona (habilita comentário e PNG da tela). Duplo clique abre o modo fluxo.</td></tr>
+    <tr><td><strong>Seleção</strong></td><td>Um clique na tela a seleciona (habilita comentário e PNG); <kbd>Shift</kbd>+clique soma à seleção. Arraste no canvas vazio para selecionar por retângulo tudo o que a caixa tocar; clique no vazio limpa. Duplo clique abre o modo fluxo; o botão PNG exporta a seleção inteira.</td></tr>
       <tr><td><strong>🌐 Idioma</strong></td><td>Alterna a interface entre português e inglês (também via <code>?lang=pt</code>/<code>?lang=en</code> na URL).</td></tr>
   </table>
 
@@ -485,7 +485,7 @@
   <p><strong>Duplo clique</strong> em uma tela abre o modo fluxo: a tela em tamanho real, <strong>interativa</strong> — você loga, navega, cadastra. A barra flutua no topo e <strong>sai da frente sozinha</strong> depois de alguns segundos sem mouse; qualquer movimento sobre a tela traz ela de volta. Na barra:</p>
   <ul>
     <li><strong>◀ ▶</strong> — volta e avança pelo histórico de navegação do fluxo.</li>
-    <li><strong>⟲</strong> — reinicia o fluxo do começo (por tela).</li>
+    <li><strong>⟳</strong> — recarrega a tela atual, mantendo a posição do fluxo (<strong>⟲ Reset fluxo</strong> na barra principal reinicia o fluxo inteiro).</li>
     <li><strong>🎯 Elemento</strong> — liga o modo de comentar elemento <em>dentro do modo fluxo</em>, com a tela em tamanho cheio (o melhor lugar para isso).</li>
     <li><strong>🌙</strong> — alterna claro/escuro sem sair do fluxo.</li>
     <li><strong>← Voltar</strong> — fecha o modo fluxo.</li>

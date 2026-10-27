@@ -237,6 +237,11 @@
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .card-overlay.inspecting { cursor: crosshair; }
+  /* w10: seleção por retângulo (estilo ferramenta de design) */
+  .marquee {
+    position: fixed; z-index: 30; pointer-events: none;
+    border: 1px dashed var(--ui-accent); background: rgb(13 148 136 / .12);
+  }
   .pins { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
   .pin { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; display: flex; }
   .pin-badge {
@@ -500,7 +505,7 @@
     <button id="fsBack" data-i18n-title="fsBackTitle" title="Back to list mode" data-i18n="fsBackBtn">← Back</button>
     <button id="fsPrev" data-i18n-title="fsPrevTitle" title="Previous screen in the flow">◀</button>
     <button id="fsNext" data-i18n-title="fsNextTitle" title="Next screen in the flow">▶</button>
-    <button id="fsRestart" data-i18n-title="fsRestartTitle" title="Restart the flow from the beginning">⟲</button>
+    <button id="fsRestart" data-i18n-title="fsReloadTitle" title="Reload this screen (keeps the flow position)">⟳</button>
     <button id="fsInspect" data-share-hide data-i18n-title="fsElementBtnTitle" title="Comment an element of the screen (Esc leaves the mode)" data-i18n="elementBtn">🎯 Element</button>
     <button id="fsChip" data-i18n-title="chipsBtnTitle" title="Show id/variant chips over each component (inspector)" data-i18n="chipsBtn">🧩 Components</button>
     <button id="fsTheme" data-i18n-title="themeToggle" title="Toggle light/dark theme">🌙</button>
@@ -759,6 +764,7 @@ const I18N = {
     fsSnapshotBtnTitle: 'Save a snapshot of this canvas and see the saved snapshots',
     exportScreenBtn: '⬇ Screen PNG',
     exportCanvasBtn: '⬇ Canvas PNG',
+    exportSelectedTitle: 'Export the {count} selected screens as PNG',
     languageTitle: 'Switch language (reloads the page)',
     problemsSummary: ' problem(s) in the canvas — click to see',
     shareBanner: 'read-only mode — comments and snapshots unavailable',
@@ -775,7 +781,7 @@ const I18N = {
     fsBackTitle: 'Back to list mode',
     fsPrevTitle: 'Previous screen in the flow',
     fsNextTitle: 'Next screen in the flow',
-    fsRestartTitle: 'Restart the flow from the beginning',
+    fsReloadTitle: 'Reload this screen (keeps the flow position)',
     fsCanvasTitle: 'Switch canvas (loads its first screen)',
     fsScenarioTitle: 'Data scenario applied to the screens',
     fsDeviceTitle: 'Viewing device',
@@ -965,6 +971,7 @@ const I18N = {
     fsSnapshotBtnTitle: 'Salvar um snapshot deste canvas e ver os snapshots salvos',
     exportScreenBtn: '⬇ PNG da tela',
     exportCanvasBtn: '⬇ PNG do canvas',
+    exportSelectedTitle: 'Exportar as {count} telas selecionadas como PNG',
     languageTitle: 'Trocar o idioma (recarrega a página)',
     problemsSummary: ' problema(s) no canvas — clique para ver',
     shareBanner: 'modo leitura — comentários e snapshots indisponíveis',
@@ -981,7 +988,7 @@ const I18N = {
     fsBackTitle: 'Voltar ao modo lista',
     fsPrevTitle: 'Tela anterior do fluxo',
     fsNextTitle: 'Tela seguinte do fluxo',
-    fsRestartTitle: 'Reiniciar o fluxo do começo',
+    fsReloadTitle: 'Recarregar esta tela (mantém a posição do fluxo)',
     fsCanvasTitle: 'Trocar de canvas (carrega a primeira tela dele)',
     fsScenarioTitle: 'Cenário de dados aplicado às telas',
     fsDeviceTitle: 'Dispositivo de visualização',
@@ -1162,7 +1169,7 @@ $('langBtn').addEventListener('click', () => {
 const state = {
   canvas: '', theme: 'light', device: 'original',
   zoom: 1, x: 0, y: 0,
-  screens: [], selectedId: null, bust: 0,
+  screens: [], selectedId: null, selectedIds: [], bust: 0,
   inspect: false, comments: [],
   chips: false, grid: false, bezel: false,
   scenario: '', problems: [],
@@ -2237,8 +2244,10 @@ function renderStrip() {
   syncWorldWidth()
   renderAllPins()
   syncShareDegradation() // share: camadas de pins criadas agora também somem
-  if (!state.screens.some((s) => s.id === state.selectedId)) select(null)
-  else applySelection()
+  // w10 multi-seleção: seleção sobrevive à re-renderização, mas só com telas vivas
+  state.selectedIds = state.selectedIds.filter((id) => state.screens.some((s) => s.id === id))
+  state.selectedId = state.selectedIds[state.selectedIds.length - 1] ?? null
+  applySelection()
 }
 
 function cardFor(screen) {
@@ -2297,7 +2306,8 @@ function cardFor(screen) {
   pins.className = 'pins'
   pins.setAttribute('data-share-hide', '') // share: camada de pins some (syncShareDegradation)
   overlay.addEventListener('click', (event) => {
-    select(screen.id)
+    if (event.shiftKey) toggleSelect(screen.id) // w10: shift+clique soma à seleção
+    else select(screen.id)
     if (state.inspect) {
       const target = elementAt(overlay, event)
       if (target) openElementDialog(screen, target)
@@ -2643,19 +2653,40 @@ function sizeLabel(screen, width, height) {
 }
 
 function select(id) {
+  state.selectedIds = id === null ? [] : [id]
   state.selectedId = id
+  applySelection()
+}
+
+/** w10 multi-seleção: shift+clique acrescenta/tira da seleção (o último vira
+ *  o primário — comentário e afins apontam para ele). */
+function toggleSelect(id) {
+  const index = state.selectedIds.indexOf(id)
+  if (index >= 0) state.selectedIds.splice(index, 1)
+  else state.selectedIds.push(id)
+  state.selectedId = state.selectedIds[state.selectedIds.length - 1] ?? null
   applySelection()
 }
 
 function applySelection() {
   for (const card of $('strip').querySelectorAll('.card')) {
-    card.classList.toggle('selected', card.dataset.id === state.selectedId)
+    card.classList.toggle('selected', state.selectedIds.includes(card.dataset.id))
   }
-  $('commentBtn').disabled = $('exportBtn').disabled = state.selectedId === null
+  $('commentBtn').disabled = state.selectedIds.length !== 1 // comentário é por tela
+  $('exportBtn').disabled = state.selectedIds.length === 0
+  const count = state.selectedIds.length
+  $('exportBtn').title = count > 1 ? t('exportSelectedTitle', { count }) : ''
 }
 
 function selectedScreen() {
   return state.screens.find((s) => s.id === state.selectedId) ?? null
+}
+
+/** Toda a seleção, na ordem dos cards (o export de N telas usa isto). */
+function selectedScreens() {
+  return state.selectedIds
+    .map((id) => state.screens.find((s) => s.id === id))
+    .filter(Boolean)
 }
 
 /* ------------------------------------------------------------- pan/zoom */
@@ -2745,18 +2776,105 @@ $('viewport').addEventListener('wheel', (event) => {
   else { state.x -= event.deltaX; state.y -= event.deltaY; applyView() }
 }, { passive: false })
 
-$('viewport').addEventListener('pointerdown', (event) => {
-  if (event.target.closest('.card-overlay')) return
-  const start = { x: event.clientX - state.x, y: event.clientY - state.y }
-  $('viewport').classList.add('dragging')
-  const move = (e) => { state.x = e.clientX - start.x; state.y = e.clientY - start.y; applyView() }
+/** Pan drag — shared by the list viewport, the flow stage and middle-drag
+ *  inside a screen iframe. Left button pans the canvas; the middle button
+ *  pans anywhere (over screens too). A pan swallows the click it produces. */
+function beginPan(view, stageEl, worldEl, labelEl, event) {
+  const start = { x: event.clientX - view.x, y: event.clientY - view.y }
+  let moved = false
+  stageEl.classList.add('dragging')
+  const move = (e) => {
+    if (Math.abs(e.clientX - event.clientX) > 3 || Math.abs(e.clientY - event.clientY) > 3) moved = true
+    view.x = e.clientX - start.x
+    view.y = e.clientY - start.y
+    applyViewState(view, stageEl, worldEl, labelEl)
+  }
   const up = () => {
-    $('viewport').classList.remove('dragging')
+    stageEl.classList.remove('dragging')
     window.removeEventListener('pointermove', move)
     window.removeEventListener('pointerup', up)
+    if (moved) {
+      gestureJustEnded = true
+      setTimeout(() => { gestureJustEnded = false }, 400) // sem clique a seguir, o guard expira
+    }
   }
   window.addEventListener('pointermove', move)
   window.addEventListener('pointerup', up)
+}
+
+let gestureJustEnded = false
+function consumeGestureClick() {
+  if (!gestureJustEnded) return false
+  gestureJustEnded = false
+  return true
+}
+
+// middle button = pan anywhere: kill the browser's autoscroll default
+window.addEventListener('mousedown', (event) => {
+  if (event.button === 1 && !event.target.closest?.('input, textarea, select')) event.preventDefault()
+})
+
+/** w10 seleção por retângulo (estilo ferramenta de design): arrastar no canvas
+ *  vazio (ou com Shift em qualquer lugar) abre a borda de seleção; todo card
+ *  tocado pela caixa entra na seleção. Clique sem arrastar no vazio limpa. */
+function beginMarquee(event) {
+  const box = document.createElement('div')
+  box.className = 'marquee'
+  document.body.appendChild(box)
+  const startX = event.clientX
+  const startY = event.clientY
+  let moved = false
+  const draw = (x1, y1, x2, y2) => {
+    box.style.left = `${Math.min(x1, x2)}px`
+    box.style.top = `${Math.min(y1, y2)}px`
+    box.style.width = `${Math.abs(x2 - x1)}px`
+    box.style.height = `${Math.abs(y2 - y1)}px`
+  }
+  const move = (e) => {
+    if (!moved && (Math.abs(e.clientX - startX) > 3 || Math.abs(e.clientY - startY) > 3)) moved = true
+    draw(startX, startY, e.clientX, e.clientY)
+  }
+  const up = (e) => {
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', up)
+    box.remove()
+    if (!moved) {
+      if (!event.shiftKey) select(null)
+      return
+    }
+    const rect = {
+      left: Math.min(startX, e.clientX), top: Math.min(startY, e.clientY),
+      right: Math.max(startX, e.clientX), bottom: Math.max(startY, e.clientY),
+    }
+    const hits = [...$('strip').querySelectorAll('.card')]
+      .filter((card) => {
+        const r = card.getBoundingClientRect()
+        return r.left < rect.right && r.right > rect.left && r.top < rect.bottom && r.bottom > rect.top
+      })
+      .map((card) => card.dataset.id)
+    if (event.shiftKey) {
+      for (const id of hits) if (!state.selectedIds.includes(id)) state.selectedIds.push(id)
+    } else {
+      state.selectedIds = hits
+    }
+    state.selectedId = state.selectedIds[state.selectedIds.length - 1] ?? null
+    applySelection()
+    gestureJustEnded = true // o gesto não pode virar clique num card
+    setTimeout(() => { gestureJustEnded = false }, 400)
+  }
+  draw(startX, startY, startX, startY)
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', up)
+}
+
+$('viewport').addEventListener('pointerdown', (event) => {
+  if (event.button !== 0 && event.button !== 1) return
+  if (event.target.closest('button, select, input, textarea')) return // UI da tela não arrasta
+  const overCard = event.target.closest('.card-overlay')
+  if (event.button === 1) return beginPan(state, $('viewport'), $('world'), $('zoomLabel'), event)
+  if (overCard && state.inspect) return // arraste-comentar é do modo elemento
+  if (overCard && !event.shiftKey) return beginPan(state, $('viewport'), $('world'), $('zoomLabel'), event)
+  beginMarquee(event) // canvas vazio (ou shift): seleção por retângulo
 })
 
 $('zoomIn').addEventListener('click', () => zoomBy(1.2))
@@ -2917,17 +3035,10 @@ $('fsStage').addEventListener('wheel', (event) => {
 }, { passive: false })
 
 $('fsStage').addEventListener('pointerdown', (event) => {
-  if (event.target.closest('.card-overlay')) return
-  const start = { x: event.clientX - fsView.x, y: event.clientY - fsView.y }
-  $('fsStage').classList.add('dragging')
-  const move = (e) => { fsView.x = e.clientX - start.x; fsView.y = e.clientY - start.y; applyFsView() }
-  const up = () => {
-    $('fsStage').classList.remove('dragging')
-    window.removeEventListener('pointermove', move)
-    window.removeEventListener('pointerup', up)
-  }
-  window.addEventListener('pointermove', move)
-  window.addEventListener('pointerup', up)
+  if (event.button !== 0 && event.button !== 1) return
+  if (event.target.closest('button, select, input, textarea')) return // UI do fluxo não arrasta
+  if (event.button === 0 && event.target.closest('.card-overlay') && state.inspect) return
+  beginPan(fsView, $('fsStage'), $('fsWorld'), $('fsZoomLabel'), event)
 })
 
 $('fsZoomIn').addEventListener('click', () => zoomFsBy(1.2))
@@ -3050,7 +3161,7 @@ function consumeDragClick() {
 }
 
 window.addEventListener('click', (event) => {
-  if (consumeDragClick()) {
+  if (consumeDragClick() || consumeGestureClick()) {
     event.preventDefault()
     event.stopPropagation()
   }
@@ -3058,6 +3169,7 @@ window.addEventListener('click', (event) => {
 
 function beginDrag(overlay, event, hitTest, getScreen) {
   if (isReadonly()) return // share: arraste-comentar é escrita — desligado
+  if (!state.inspect) return // w10: fora do modo elemento o arraste não abre modal
   dragState = { overlay, getScreen, hitTest, startX: event.clientX, startY: event.clientY, active: false }
 }
 
@@ -3131,8 +3243,18 @@ function injectFrameInteraction(frame) {
     })
     doc.addEventListener('pointerdown', (event) => {
       closeCtxMenu() // clique dentro da tela também descarta o menu aberto
+      if (event.button === 1) {
+        event.preventDefault()
+        beginPan(fsView, $('fsStage'), $('fsWorld'), $('fsZoomLabel'), toParent(event))
+        return
+      }
       if (event.button !== 0) return
-      beginDrag(null, toParent(event), hit, screenNow)
+      if (state.inspect) beginDrag(null, toParent(event), hit, screenNow)
+      // w10: fora do modo elemento o arraste dentro da tela panoramiza o fluxo
+      else beginPan(fsView, $('fsStage'), $('fsWorld'), $('fsZoomLabel'), toParent(event))
+    })
+    doc.addEventListener('mousedown', (event) => {
+      if (event.button === 1) event.preventDefault() // sem autoscroll do navegador
     })
     doc.addEventListener('pointermove', (event) => moveDrag(toParent(event)))
     doc.addEventListener('pointerup', (event) => endDrag(toParent(event)))
@@ -3145,9 +3267,50 @@ function injectFrameInteraction(frame) {
   } catch { /* frame opaco; interações comentáveis ficam só no modo inspetor */ }
 }
 
+/** w10: a posição do fluxo (tela + histórico) sobrevive a F5/reload da página. */
+function saveFlowState() {
+  const key = 'design.viewer.flow'
+  try {
+    if (!fsScreen || $('fullscreen').hidden) {
+      sessionStorage.removeItem(key)
+      return
+    }
+    sessionStorage.setItem(key, JSON.stringify({
+      canvas: fsScreen.canvas ?? state.canvas,
+      file: String(fsScreen.file).split('?')[0],
+      history: fsHistory.entries,
+      index: fsHistory.index,
+    }))
+  } catch { /* storage unavailable; the flow just starts fresh on reload */ }
+}
+
 function updateFsNavButtons() {
   $('fsPrev').disabled = fsHistory.index <= 0
   $('fsNext').disabled = fsHistory.index >= fsHistory.entries.length - 1
+  saveFlowState()
+}
+
+/** w10: no boot, reabre o modo fluxo exatamente onde o reload o deixou. */
+function restoreFlowState() {
+  let saved = null
+  try {
+    saved = JSON.parse(sessionStorage.getItem('design.viewer.flow') ?? 'null')
+  } catch { /* stale state; start fresh */ }
+  if (!saved || !saved.file) return
+  const file = String(saved.file).split('?')[0]
+  const known = state.screens.find((s) => String(s.file).split('?')[0] === file) ?? null
+  const screen = known ?? (saved.canvas && saved.canvas !== state.canvas
+    ? { id: file.replace(/\.[^.]+$/, ''), name: file, file, canvas: saved.canvas }
+    : null)
+  if (!screen) return
+  openFullscreen(screen)
+  if (Array.isArray(saved.history) && saved.history.length > 0) {
+    fsHistory.entries = saved.history
+    fsHistory.index = Math.min(Math.max(0, Number(saved.index) || 0), saved.history.length - 1)
+    fsHistory.navigating = true
+    $('fsFrame').src = fsHistory.entries[fsHistory.index]
+    updateFsNavButtons()
+  }
 }
 
 function closeFullscreen() {
@@ -3156,6 +3319,7 @@ function closeFullscreen() {
   $('fsOverlay').hidden = true
   $('fsHighlight').hidden = true
   $('fullscreen').hidden = true
+  saveFlowState() // fecha = esquece a posição do fluxo
 }
 
 $('fsBack').addEventListener('click', closeFullscreen)
@@ -3180,11 +3344,17 @@ $('fsNext').addEventListener('click', () => {
 
 $('fsRestart').addEventListener('click', () => {
   if (!fsScreen) return
-  fsHistory.entries = [screenUrl(fsScreen)]
-  fsHistory.index = 0
+  // w10: "reload" recarrega a TELA ATUAL mantendo a posição do fluxo; o
+  // "reiniciar do começo" agora é o ⟲ Reset fluxo da barra principal
+  const current = fsHistory.entries[fsHistory.index] ?? ''
+  if (!current) return
+  const base = current.split('?')[0]
+  const query = new URLSearchParams(current.split('?').slice(1).join('?'))
+  query.set('_', String(Date.now()))
+  state.bust = Date.now()
   fsHistory.navigating = true
-  updateFsNavButtons()
-  $('fsFrame').src = fsHistory.entries[0]
+  fsHistory.entries[fsHistory.index] = `${base}?${query.toString()}`
+  $('fsFrame').src = fsHistory.entries[fsHistory.index]
 })
 
 $('fsInspect').addEventListener('click', () => {
@@ -3516,8 +3686,9 @@ document.addEventListener('keydown', (event) => {
 /* ---------------------------------------------------------------- export */
 
 $('exportBtn').addEventListener('click', () => {
-  const screen = selectedScreen()
-  if (screen) withBusyToast(t('generatingPng'), () => exportScreen(screen))
+  const chosen = selectedScreens()
+  if (chosen.length === 1) withBusyToast(t('generatingPng'), () => exportScreen(chosen[0]))
+  else if (chosen.length > 1) withBusyToast(t('generatingPng'), () => exportCanvasPng(chosen))
 })
 
 $('exportAllBtn').addEventListener('click', () => {
@@ -3616,10 +3787,10 @@ async function exportFsScreen(screen) {
   toast(t('screenPngExported'))
 }
 
-async function exportCanvasPng() {
-  await ensureFramesLoaded(state.screens.map((s) => frameOf(s.id))) // w9 lazy
+async function exportCanvasPng(screens = state.screens) {
+  await ensureFramesLoaded(screens.map((s) => frameOf(s.id))) // w9 lazy
   const captures = []
-  for (const screen of state.screens) {
+  for (const screen of screens) {
     const iframe = frameOf(screen.id)
     if (!iframe?.contentDocument) throw new Error(t('screenNameNotLoaded', { name: screen.name }))
     const [width, height] = screenSize(screen)
@@ -3656,7 +3827,7 @@ async function exportCanvasPng() {
   }
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
   const url = URL.createObjectURL(blob)
-  const filename = `${state.canvas}-canvas.png`
+  const filename = `${state.canvas}-${screens.length === state.screens.length ? 'canvas' : 'selected'}.png`
   download(url, filename, false)
   showPreview(canvas.toDataURL('image/png'), filename)
   setTimeout(() => URL.revokeObjectURL(url), 30000)
@@ -3693,9 +3864,10 @@ $('docsBtn').addEventListener('click', () => {
   window.open(`docs.html?lang=${LANG}`, '_blank')
 })
 
-$('reloadBtn').addEventListener('click', () => {
+$('reloadBtn').addEventListener('click', async () => {
   state.bust = Date.now()
-  loadCanvas().then(fitSoon)
+  await loadCanvas()
+  applyView() // w10: reload mantém zoom/pan/posição — só o conteúdo muda
 })
 
 function clearFlowState() {
@@ -3713,6 +3885,14 @@ $('resetFlowBtn').addEventListener('click', () => {
   clearFlowState()
   state.bust = Date.now()
   renderStrip()
+  // w10: "reiniciar de verdade" = volta o fluxo aberto para a primeira tela
+  if (!$('fullscreen').hidden && fsScreen) {
+    fsHistory.entries = [screenUrl(fsScreen)]
+    fsHistory.index = 0
+    fsHistory.navigating = true
+    updateFsNavButtons()
+    $('fsFrame').src = fsHistory.entries[0]
+  }
   toast(t('flowRestarted'))
 })
 
@@ -3904,6 +4084,7 @@ async function boot() {
     if (target) centerOnScreen(target.id)
   }
   fitSoon()
+  restoreFlowState() // w10: reload/F5 mantém o modo fluxo e a tela atual
 }
 
 /** Canvas discovery: design/index.json first, then a directory listing. */

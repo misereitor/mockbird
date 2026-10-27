@@ -185,6 +185,15 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Box selection + tool-like canvas (v1.4.0)**: drag on the empty canvas to
+  box-select every screen the rectangle touches (Shift+click adds to the
+  selection; clicking empty space clears; the PNG button exports the whole
+  selection). The mouse behaves like in design tools: the middle button pans
+  anywhere (over screens and inside flow mode), left-drag on a screen pans
+  too, and drag-to-comment moved fully into 🎯 Element mode. Reloads keep
+  you in place: the flow-mode ⟳ reloads the current screen (⟲ Reset flow
+  restarts from the beginning), the list reload keeps zoom/pan, and F5
+  returns to the same flow screen and history.
 - **Live screen refresh (v1.3.2)**: the viewer now watches every screen HTML,
   `data.json` and the shared runtime (`mock.js`/`mock.css`,
   `design-system.css`, `utilities.css`) — a changed file refreshes only what
