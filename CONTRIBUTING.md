@@ -66,6 +66,13 @@ The CI runs exactly these on Linux/Windows × Node 18/20/22/24.
 - Touching the viewer? It is plain HTML/JS with no build step — keep it that
   way (zero dependencies, no CDN).
 
+## Versioning
+
+Keep it quiet. The project is in its **1.0.x** era: bump the **patch** digit
+(`1.0.7` → `1.0.8`) for fixes and incremental improvements — including small
+features. Bump the minor digit only when the project genuinely steps up.
+No marketing-style version inflation; the owner will call it out.
+
 ## Pull requests
 
 - Keep PRs focused; describe *what* changed and *why*.

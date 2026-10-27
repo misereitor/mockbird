@@ -189,14 +189,21 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
-- **Comentários direto ao agente (v1.5.0)**: comentar no visualizador agora
+- **Correção do click preso + versão silenciosa (v1.0.8)**: soltar o mouse
+  dentro do iframe de uma tela (ou trocar de janela no meio do arraste)
+  podia perder o `pointerup` e deixar o canvas "grudado" seguindo o mouse —
+  os gestos do canvas agora terminam em `pointerup`/`pointercancel`/blur,
+  são repassados de dentro dos iframes e cada gesto novo curta qualquer
+  gesto remanescente. A numeração também fica quieta: a era 1.0.x sobe o
+  dígito de patch (os releases antigos foram renumerados — `v1.0.1`…`v1.0.7`).
+- **Comentários direto ao agente (v1.0.7)**: comentar no visualizador agora
   entrega a mensagem `[Design: …]` direto na sua sessão do OpenCode — sem
   copiar/colar. O overlay mostra exatamente o que aconteceu ("Enviado ao
   agente — sessão: X"); quando o agente está inalcançável cai honestamente no
   fallback da cópia. Nova rota `POST /api/agent-send` (mesmo contrato de
   localhost+token, 403 no `--share`) fala com o serviço local do OpenCode e
   escolhe a sessão mais recente do projeto (criando uma se preciso).
-- **Seleção por retângulo + canvas de ferramenta (v1.4.0)**: arraste no canvas vazio
+- **Seleção por retângulo + canvas de ferramenta (v1.0.6)**: arraste no canvas vazio
   para selecionar por retângulo todos os telas tocadas (Shift+clique soma à
   seleção, clique no vazio limpa; o botão PNG exporta a seleção inteira). O
   mouse passa a se comportar como em ferramentas de design: o botão do meio
@@ -205,7 +212,7 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
   modo 🎯 Elemento. Reloads mantêm você no lugar: o ⟳ do modo fluxo
   recarrega a tela atual (o ⟲ Reset fluxo reinicia do começo), o reload da
   fita preserva zoom/pan e o F5 volta para a mesma tela e histórico do fluxo.
-- **Atualização ao vivo das telas (v1.3.2)**: o visualizador agora vigia cada
+- **Atualização ao vivo das telas (v1.0.5)**: o visualizador agora vigia cada
   HTML de tela, o `data.json` e o runtime compartilhado
   (`mock.js`/`mock.css`, `design-system.css`, `utilities.css`) — o arquivo
   que mudou atualiza só o que mudou (uma tela editada re-aponta o próprio
@@ -213,7 +220,7 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
   aparecem sem tocar em nada. O `serve.mjs` agora envia `Last-Modified` para
   detecção barata de mudança, com fallback de hash por GET em servidores
   antigos.
-- **Correção de navegação por sidebar (v1.3.1)**: um link de tela com
+- **Correção de navegação por sidebar (v1.0.4)**: um link de tela com
   `data-go` — o padrão de sidebar/menu, mantendo um `href` real como fallback
   sem JS — abria um overlay *e* navegava ao mesmo tempo; agora o `data-go`
   vai direto para o `Mock.go` (preservando `?scenario=` e a transição de
@@ -221,7 +228,7 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
   (itens de sidebar/menu trocam de tela de verdade; links comuns continuam
   sendo o gatilho de overlay/modal) e o `npm run test:mock` trava os
   contratos de navegação/overlay.
-- **Slash commands + correção da descoberta no OpenCode (v1.3.0)**: `/design`,
+- **Slash commands + correção da descoberta no OpenCode (v1.0.3)**: `/design`,
   `/taste`, `/emil-design-eng` e `/impeccable` agora existem como slash
   commands de verdade — registrados pelo plugin a partir de `commands/*.md`
   (um por skill) e instalados pelo `install.mjs` na pasta `commands/` do
@@ -229,13 +236,13 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
   `@design` e o carregamento automático continuam funcionando). Também foi
   corrigido o caminho de instalação global: `~/.config/opencode/skills`
   (plural — o V2 nunca descobriu a pasta singular `skill/` antiga).
-- **i18n do viewer/docs (v1.2.0)**: a interface do viewer e o `docs.html`
+- **i18n do viewer/docs (v1.0.2)**: a interface do viewer e o `docs.html`
   falam inglês por padrão e seguem o idioma do navegador (PT-BR incluso) —
   `?lang=pt` / `?lang=en` forçam, o botão 🌐 alterna e mantém seu lugar.
   Toda string vive num dicionário `I18N` único (EN + PT, com verificação
   automática de sincronia) e o `docs.html` carrega os dois idiomas lado a
   lado. Os toasts de erro do `mock.js` também seguem o idioma do viewer.
-- **Viewer para projetos complexos (v1.1.0)**: blocos `"group"` no
+- **Viewer para projetos complexos (v1.0.1)**: blocos `"group"` no
   `canvas.json`, ▦ Grade (visão quebra em linhas), busca de telas (`/`),
   📱 Moldura (molduras de dispositivo), telas com lazy-load e tela-vs-tela no
   `Comparar` (A/B agora aceita telas vivas, não só snapshots). O `serve.mjs`

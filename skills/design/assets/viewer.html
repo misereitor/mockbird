@@ -2782,12 +2782,23 @@ $('viewport').addEventListener('wheel', (event) => {
   else { state.x -= event.deltaX; state.y -= event.deltaY; applyView() }
 }, { passive: false })
 
+/** w11: gestos do canvas (pan/retângulo) podem PERDER o pointerup — soltar
+ *  dentro de um iframe no modo fluxo (o iframe engole o evento), pointercancel
+ *  ou trocar de janela no meio do arraste. Sem teardown garantido o canvas
+ *  "gruda" e continua seguindo o mouse. Qualquer ponto do runtime — inclusive
+ *  os documentos dos iframes — chama endCanvasGesture() para encerrar. */
+let activeGestureUp = null
+function endCanvasGesture() {
+  if (activeGestureUp) activeGestureUp()
+}
+
 /** Pan drag — shared by the list viewport, the flow stage and middle-drag
  *  inside a screen iframe. Left button pans the canvas; the middle button
  *  pans anywhere (over screens too). A pan swallows the click it produces. */
 function beginPan(view, stageEl, worldEl, labelEl, event) {
   const start = { x: event.clientX - view.x, y: event.clientY - view.y }
   let moved = false
+  endCanvasGesture() // um gesto novo sempre encerra o anterior (autocura)
   stageEl.classList.add('dragging')
   const move = (e) => {
     if (Math.abs(e.clientX - event.clientX) > 3 || Math.abs(e.clientY - event.clientY) > 3) moved = true
@@ -2796,16 +2807,23 @@ function beginPan(view, stageEl, worldEl, labelEl, event) {
     applyViewState(view, stageEl, worldEl, labelEl)
   }
   const up = () => {
+    if (activeGestureUp !== up) return
+    activeGestureUp = null
     stageEl.classList.remove('dragging')
     window.removeEventListener('pointermove', move)
     window.removeEventListener('pointerup', up)
+    window.removeEventListener('pointercancel', up)
+    window.removeEventListener('blur', up)
     if (moved) {
-      gestureJustEnded = true
+      gestureJustEnded = true // o gesto não pode virar clique num card
       setTimeout(() => { gestureJustEnded = false }, 400) // sem clique a seguir, o guard expira
     }
   }
+  activeGestureUp = up
   window.addEventListener('pointermove', move)
   window.addEventListener('pointerup', up)
+  window.addEventListener('pointercancel', up)
+  window.addEventListener('blur', up)
 }
 
 let gestureJustEnded = false
@@ -2829,7 +2847,10 @@ function beginMarquee(event) {
   document.body.appendChild(box)
   const startX = event.clientX
   const startY = event.clientY
+  let lastX = startX
+  let lastY = startY
   let moved = false
+  endCanvasGesture() // um gesto novo sempre encerra o anterior (autocura)
   const draw = (x1, y1, x2, y2) => {
     box.style.left = `${Math.min(x1, x2)}px`
     box.style.top = `${Math.min(y1, y2)}px`
@@ -2837,20 +2858,28 @@ function beginMarquee(event) {
     box.style.height = `${Math.abs(y2 - y1)}px`
   }
   const move = (e) => {
+    lastX = e.clientX
+    lastY = e.clientY
     if (!moved && (Math.abs(e.clientX - startX) > 3 || Math.abs(e.clientY - startY) > 3)) moved = true
     draw(startX, startY, e.clientX, e.clientY)
   }
   const up = (e) => {
+    if (activeGestureUp !== up) return
+    activeGestureUp = null
     window.removeEventListener('pointermove', move)
     window.removeEventListener('pointerup', up)
+    window.removeEventListener('pointercancel', up)
+    window.removeEventListener('blur', up)
     box.remove()
+    const endX = e?.clientX ?? lastX // blur/pointercancel não trazem coordenadas
+    const endY = e?.clientY ?? lastY
     if (!moved) {
       if (!event.shiftKey) select(null)
       return
     }
     const rect = {
-      left: Math.min(startX, e.clientX), top: Math.min(startY, e.clientY),
-      right: Math.max(startX, e.clientX), bottom: Math.max(startY, e.clientY),
+      left: Math.min(startX, endX), top: Math.min(startY, endY),
+      right: Math.max(startX, endX), bottom: Math.max(startY, endY),
     }
     const hits = [...$('strip').querySelectorAll('.card')]
       .filter((card) => {
@@ -2869,8 +2898,11 @@ function beginMarquee(event) {
     setTimeout(() => { gestureJustEnded = false }, 400)
   }
   draw(startX, startY, startX, startY)
+  activeGestureUp = up
   window.addEventListener('pointermove', move)
   window.addEventListener('pointerup', up)
+  window.addEventListener('pointercancel', up)
+  window.addEventListener('blur', up)
 }
 
 $('viewport').addEventListener('pointerdown', (event) => {
@@ -3262,6 +3294,10 @@ function injectFrameInteraction(frame) {
     doc.addEventListener('mousedown', (event) => {
       if (event.button === 1) event.preventDefault() // sem autoscroll do navegador
     })
+    // w11: o pointerup DENTRO do iframe nunca chega à window do viewer — sem
+    // repassar, o pan ficaria grudado seguindo o mouse depois de soltar
+    doc.addEventListener('pointerup', () => endCanvasGesture())
+    doc.addEventListener('pointercancel', () => endCanvasGesture())
     doc.addEventListener('pointermove', (event) => moveDrag(toParent(event)))
     doc.addEventListener('pointerup', (event) => endDrag(toParent(event)))
     doc.addEventListener('click', (event) => {

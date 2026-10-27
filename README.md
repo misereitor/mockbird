@@ -185,14 +185,21 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
-- **Send comments straight to the agent (v1.5.0)**: commenting in the viewer
+- **Stuck click fix + quiet versioning (v1.0.8)**: releasing the mouse inside
+  a screen iframe (or switching windows mid-drag) could lose the `pointerup`
+  and leave the canvas "stuck" following the mouse — canvas gestures now tear
+  down on `pointerup`/`pointercancel`/blur, are forwarded from inside screen
+  iframes, and each new gesture heals any leftover one. Versioning goes
+  quiet too: the 1.0.x era bumps the patch digit (older releases were
+  renumbered to match — `v1.0.1`…`v1.0.7`).
+- **Send comments straight to the agent (v1.0.7)**: commenting in the viewer
   now delivers the `[Design: …]` message directly into your OpenCode session
   — no more copy/paste. The overlay reports exactly what happened ("Sent to
   the agent — session: X"); when the agent is unreachable it honestly falls
   back to the clipboard copy. New `POST /api/agent-send` route (same
   localhost+token contract, 403 under `--share`) talks to the local OpenCode
   service and picks the project's newest session (creating one when needed).
-- **Box selection + tool-like canvas (v1.4.0)**: drag on the empty canvas to
+- **Box selection + tool-like canvas (v1.0.6)**: drag on the empty canvas to
   box-select every screen the rectangle touches (Shift+click adds to the
   selection; clicking empty space clears; the PNG button exports the whole
   selection). The mouse behaves like in design tools: the middle button pans
@@ -201,21 +208,21 @@ for the invariants, test commands and PR checklist. A few pointers:
   you in place: the flow-mode ⟳ reloads the current screen (⟲ Reset flow
   restarts from the beginning), the list reload keeps zoom/pan, and F5
   returns to the same flow screen and history.
-- **Live screen refresh (v1.3.2)**: the viewer now watches every screen HTML,
+- **Live screen refresh (v1.0.5)**: the viewer now watches every screen HTML,
   `data.json` and the shared runtime (`mock.js`/`mock.css`,
   `design-system.css`, `utilities.css`) — a changed file refreshes only what
   changed (a single edited screen re-points its own iframe; the flow-mode
   frame refreshes too), so edits made by the agent appear without touching
   anything. `serve.mjs` now sends `Last-Modified` for cheap change detection,
   with a GET-hash fallback for older servers.
-- **Sidebar navigation fix (v1.3.1)**: a screen link carrying `data-go` — the
+- **Sidebar navigation fix (v1.0.4)**: a screen link carrying `data-go` — the
   sidebar/menu pattern, with a real `href` kept as the JS-off fallback — used
   to open an overlay *and* navigate; now `data-go` routes cleanly to `Mock.go`
   (preserving `?scenario=` and the enter transition). The design skill now
   mandates the pattern for persistent navigation (sidebar/menu items switch
   screens for real; plain links stay the overlay/modal trigger) and
   `npm run test:mock` locks the navigation/overlay contracts.
-- **Slash commands + OpenCode discovery fix (v1.3.0)**: `/design`, `/taste`,
+- **Slash commands + OpenCode discovery fix (v1.0.3)**: `/design`, `/taste`,
   `/emil-design-eng` and `/impeccable` now exist as real slash commands —
   registered by the plugin from `commands/*.md` (one per skill) and installed
   by `install.mjs` into the OpenCode `commands/` folder. Skills alone are not
@@ -223,13 +230,13 @@ for the invariants, test commands and PR checklist. A few pointers:
   working). Also fixed the OpenCode global install path:
   `~/.config/opencode/skills` (plural — V2 never discovered the old singular
   `skill/` folder).
-- **Viewer/docs i18n (v1.2.0)**: the viewer UI and `docs.html` speak English
+- **Viewer/docs i18n (v1.0.2)**: the viewer UI and `docs.html` speak English
   by default and follow the browser language (PT-BR included) — `?lang=pt` /
   `?lang=en` force it, the 🌐 button switches and keeps your place. Every
   string lives in one `I18N` dictionary (EN + PT, kept in sync by an
   automated check) and `docs.html` carries both languages side by side.
   `mock.js` error toasts follow the viewer language too.
-- **Viewer for complex projects (v1.1.0)**: `"group"` blocks in `canvas.json`,
+- **Viewer for complex projects (v1.0.1)**: `"group"` blocks in `canvas.json`,
   ▦ Grade (wrapping overview), screen search (`/`), 📱 Moldura (device
   frames), lazy-loaded screens and screen-vs-screen in `Comparar` (A/B now
   accepts live screens, not just snapshots). `serve.mjs` opens the default
