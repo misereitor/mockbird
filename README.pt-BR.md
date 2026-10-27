@@ -189,6 +189,15 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Comente à vontade, envie quando quiser (v1.0.16)**: comentar agora apenas
+  *salva* — nada vai para o agente automaticamente. O painel 💬 Pendentes virou
+  a caixa de saída: marque os comentários que quer (abertas já vêm marcadas),
+  clique em 🚀 **Enviar selecionados** e o lote segue direto para a sua sessão
+  do OpenCode. Comentários também podem ser **excluídos** (ao lado de
+  resolver/responder/reabrir, com confirmação). Correções que o teste de
+  browser pegou no caminho: pins não bloqueiam mais cliques nas telas, o badge
+  do pin não move mais a câmera ao clicar (isso quebrava o duplo-clique) e o
+  duplo-clique abre o modo fluxo mesmo sobre um pin.
 - **Editar + preview na rede lado a lado (v1.0.15)**: rode
   `node design/serve.mjs` (sua instância de edição completa) e
   `node design/serve.mjs 8766 --share` (a somente leitura para a rede) no

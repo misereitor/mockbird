@@ -185,6 +185,15 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Comment freely, send when you want (v1.0.16)**: commenting now only
+  *saves* — nothing is sent to the agent automatically. The 💬 Pending panel
+  became the outbox: check the comments you want (open ones are pre-checked),
+  hit 🚀 **Send selected**, and the batch goes straight to your OpenCode
+  session. Comments can also be **deleted** (alongside resolve/reply/reopen,
+  with confirmation). Bonus fixes found by the browser suite: pins no longer
+  block clicks on the screens, the pin badge no longer moves the camera on
+  click (it broke double-clicks), and double-click opens flow mode even over
+  a pin.
 - **Edit + LAN preview side by side (v1.0.15)**: run `node design/serve.mjs`
   (your full-editing instance) and `node design/serve.mjs 8766 --share` (the
   read-only one for the network) from the same project — the share startup

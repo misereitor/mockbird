@@ -259,7 +259,19 @@ function normalizeReplies(list) {
   }))
 }
 
-/** POST /api/comments — create or update pin status+replies. */
+/** DELETE /api/comments {id} - remove a pin entirely (with the others intact). */
+function handleCommentsDelete(body) {
+  if (!body || typeof body.id !== 'string' || !SAFE_ID.test(body.id)) {
+    throw new ApiError(400, 'invalid')
+  }
+  const comments = loadComments()
+  const next = comments.filter((pin) => pin && pin.id !== body.id)
+  if (next.length === comments.length) throw new ApiError(404, 'not-found')
+  saveComments(next)
+  return next
+}
+
+/** POST /api/comments - create or update pin status+replies. */
 function handleCommentsPost(body) {
   const comments = loadComments()
   const hasId = body.id !== undefined
@@ -1220,6 +1232,18 @@ async function handleApi(req, res, pathname) {
       const query = new URL(req.url, 'http://localhost').searchParams
       const list = historyList(query.get('file') ?? '')
       return list ? sendJson(res, 200, list) : fail(res, 400, 'invalid')
+    }
+    if (route === 'comments' && method === 'DELETE') {
+      const body = await readBody(req)
+      if (body.error === 413) return fail(res, 413, 'too-large')
+      if (body.error) return fail(res, 400, 'invalid')
+      let parsed = null
+      try {
+        parsed = JSON.parse(body.text ?? '')
+      } catch {
+        return fail(res, 400, 'invalid')
+      }
+      return sendJson(res, 200, { comments: handleCommentsDelete(parsed) })
     }
     if (method !== 'POST') return fail(res, 404, 'not-found')
 

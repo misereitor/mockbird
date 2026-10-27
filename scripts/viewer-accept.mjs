@@ -113,15 +113,48 @@ else fail('menu botao direito', '#ctxMenu escondido')
 await page.screenshot({ path: join(shots, 'accept-ctxmenu.png') })
 await page.keyboard.press('Escape')
 
-// 4. ELEMENT comment
+// 4. ELEMENT comment: inspect mode + click an element + SUBMIT (safe: no auto-send)
 await page.click('#inspectBtn')
 await page.waitForTimeout(150)
 await page.click('#strip .card-overlay')
 await page.waitForTimeout(350)
-if (await page.$eval('#elementDialog', (el) => !el.hidden)) ok('comentar elemento')
+if (await page.$eval('#elementDialog', (el) => !el.hidden)) ok('comentar elemento (dialogo abre)')
 else fail('comentar elemento', '#elementDialog escondido')
-await page.keyboard.press('Escape')
+await page.fill('#elementText', 'comentario de teste da suite')
+await page.click('#elementForm button[type="submit"]')
+await page.waitForTimeout(600)
+const overlayHidden = await page.$eval('#clipboard', (el) => el.hidden)
+const pinCount = await page.$$eval('.pin', (els) => els.length)
+if (overlayHidden && pinCount >= 1) ok(`comentar cria SEM enviar (${pinCount} pins, sem overlay)`)
+else fail('comentar sem enviar', `overlay visivel=${!overlayHidden} pins=${pinCount}`)
+// o submit ja fechou o dialogo; um clique em 🎯 desliga o modo elemento
 await page.click('#inspectBtn')
+await page.waitForTimeout(150)
+
+// 4.5 OUTBOX: selection + send + delete in the pending panel
+await page.click('#pendingBtn')
+await page.waitForTimeout(400)
+const checks = await page.$$eval('.pending-check', (els) => els.length)
+const deletes = await page.$$eval('.pending-actions button', (els) => els.filter((el) => /excluir|delete/i.test(el.textContent)).length)
+const sendCount = await page.$eval('#sendSelectedCount', (el) => el.textContent)
+if (checks >= 3 && deletes >= 3) ok(`caixa de saida: ${checks} checkboxes, ${deletes} botoes de excluir`)
+else fail('caixa de saida', `checks=${checks} deletes=${deletes}`)
+if (Number(sendCount) >= 1) ok(`selecao pre-marcada para abertas (enviar: ${sendCount})`)
+else fail('contagem de envio', `count=${sendCount}`)
+page.once('dialog', (dialog) => dialog.accept())
+const deleteButtons = await page.$$('.pending-actions button')
+for (const button of deleteButtons) {
+  const label = await button.textContent()
+  if (/excluir|delete/i.test(label)) {
+    await button.click()
+    break
+  }
+}
+await page.waitForTimeout(500)
+const afterDelete = await page.$$eval('.pending-check', (els) => els.length)
+if (afterDelete === checks - 1) ok('excluir comentario funciona')
+else fail('excluir', `antes=${checks} depois=${afterDelete}`)
+await page.click('#pendingClose')
 
 // 5. BOX selection (drag around the first two cards)
 const first = await page.$('#strip .card-overlay')
@@ -137,11 +170,23 @@ else fail('selecao por retangulo', `somente ${boxed} selecionadas`)
 await page.screenshot({ path: join(shots, 'accept-marquee.png') })
 
 // 6. FLOW mode: double-click + right-click menu inside the screen
+const target = await page.$('#strip .card-overlay')
+const tbox = await target.boundingBox()
+const cx = tbox.x + tbox.width / 2
+const cy = tbox.y + tbox.height / 2
+const under = await page.evaluate(([x, y]) => {
+  const el = document.elementFromPoint(x, y)
+  return el ? `${el.tagName}.${el.className}` : 'null'
+}, [cx, cy])
+console.log(`  [diag] sob o duplo-clique: ${under}`)
 await page.dblclick('#strip .card-overlay')
 await page.waitForTimeout(700)
 const flowOpen = await page.$eval('#fullscreen', (el) => !el.hidden)
 if (flowOpen) ok('modo fluxo abre (duplo clique)')
-else fail('modo fluxo', '#fullscreen escondido')
+else {
+  fail('modo fluxo', `#fullscreen escondido (alvo: ${under})`)
+  await page.screenshot({ path: join(shots, 'accept-flow-fail.png') })
+}
 if (flowOpen) {
   await page.click('#fsFrame', { button: 'right', position: { x: 200, y: 300 } })
   await page.waitForTimeout(350)

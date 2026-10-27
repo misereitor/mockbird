@@ -249,18 +249,20 @@
     font-family: ui-monospace, Consolas, monospace;
   }
   .pins { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
-  .pin { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; display: flex; }
+  .pin { position: absolute; transform: translate(-50%, -100%); pointer-events: none; display: flex; }
   .pin-badge {
     display: flex; align-items: center; justify-content: center;
     min-width: 22px; height: 22px; padding: 0 7px; border-radius: 11px;
     background: var(--ui-accent); color: #fff; font-size: 12px; font-weight: 700; line-height: 1;
     box-shadow: 0 2px 6px rgb(15 23 42 / .35);
+    cursor: pointer; pointer-events: auto; /* w13: só o badge/ação capturam — o resto do pin não bloqueia a tela */
   }
   body.dark .pin-badge { color: #042f2e; }
   .pin .pin-act {
     display: none; height: 22px; min-height: 22px; width: 20px; padding: 0;
     border: 0; border-radius: 0 11px 11px 0; background: var(--ui-surface);
     color: var(--ui-muted); cursor: pointer; font-size: 12px; line-height: 1;
+    pointer-events: auto;
   }
   .pin:hover .pin-act { display: block; }
   .pin.resolved .pin-badge { background: var(--ui-muted); }
@@ -317,6 +319,11 @@
   }
   .pending-actions { display: flex; gap: 6px; flex-wrap: wrap; }
   .pending-actions button { height: 26px; min-height: 26px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
+  /* w13: caixa de saída — seleção explícita + envio sob demanda */
+  .pending-send { display: flex; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--ui-border); }
+  .pending-send button { height: 28px; min-height: 28px; padding: 0 10px; font-size: 12px; }
+  .pending-pick { display: flex; align-items: center; }
+  .pending-pick input { width: 15px; height: 15px; }
   .pending-reply { display: flex; flex-direction: column; gap: 6px; }
   .pending-reply textarea {
     min-height: 56px; resize: vertical; padding: 8px; font-size: 13px;
@@ -628,7 +635,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.0.15</div>
+<div id="versionTag">v1.0.16</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -670,6 +677,10 @@
       <button id="sweepResolve" type="button" class="primary" data-i18n-title="resolveTitle" title="Mark as resolved" data-i18n="resolveBtn">Resolve</button>
     </div>
     <button id="pendingClose" type="button" data-i18n-title="closePanelTitle" title="Close panel">×</button>
+  </div>
+  <div class="pending-send" data-share-hide>
+    <button id="sendSelected" type="button" class="primary" data-share-hide>🚀 <span data-i18n="sendSelectedBtn">Send selected</span> (<span id="sendSelectedCount">0</span>)</button>
+    <button id="toggleSelectAll" type="button" data-share-hide data-i18n="selectAllBtn">Select all</button>
   </div>
   <div id="pendingBody"></div>
 </aside>
@@ -875,6 +886,17 @@ const I18N = {
     resolvedHeading: 'Resolved ({count})',
     pinResolvedToast: 'Comment resolved — listed under Pending › Resolved',
     pinReopenedToast: 'Comment reopened',
+    commentCreated: 'Comment saved — pick and send it from 💬 Pending',
+    sendSelectedBtn: 'Send selected',
+    selectAllBtn: 'Select all',
+    clearSelectionBtn: 'Clear',
+    nothingSelected: 'Select at least one comment first',
+    deleteBtn: 'Delete',
+    deleteTitle: 'Delete this comment permanently',
+    deleteConfirm: 'Delete this comment permanently?',
+    commentDeleted: 'Comment deleted',
+    deleteFailed: 'Could not delete the comment',
+    pinBadgeTitle: 'Select this screen',
     reopenBtn: 'Reopen',
     reopenTitle: 'Move the comment back to open',
     replyBtn: 'Reply',
@@ -926,7 +948,7 @@ const I18N = {
     resetStartBtn: '↺ start',
     resetStartTitle: 'This screen navigated within the flow — click to go back to the start',
     couldNotLoad: 'Could not load {file}',
-    noElementComments: 'No element comments yet — enable 🎯 Element and click the target',
+
     notComponentInstance: 'This element is not a component instance from the registry',
     componentToast: 'Component: {info}',
     selectorLabel: 'Selector',
@@ -1100,6 +1122,17 @@ const I18N = {
     resolvedHeading: 'Resolvidos ({count})',
     pinResolvedToast: 'Comentário resolvido — listado em Pendentes › Resolvidos',
     pinReopenedToast: 'Comentário reaberto',
+    commentCreated: 'Comentário salvo — selecione e envie por 💬 Pendentes',
+    sendSelectedBtn: 'Enviar selecionados',
+    selectAllBtn: 'Selecionar tudo',
+    clearSelectionBtn: 'Limpar',
+    nothingSelected: 'Selecione ao menos um comentário',
+    deleteBtn: 'Excluir',
+    deleteTitle: 'Excluir este comentário permanentemente',
+    deleteConfirm: 'Excluir este comentário permanentemente?',
+    commentDeleted: 'Comentário excluído',
+    deleteFailed: 'Não consegui excluir o comentário',
+    pinBadgeTitle: 'Selecionar esta tela',
     reopenBtn: 'Reabrir',
     reopenTitle: 'Voltar o comentário para aberto',
     replyBtn: 'Responder',
@@ -1151,7 +1184,7 @@ const I18N = {
     resetStartBtn: '↺ início',
     resetStartTitle: 'Esta tela navegou dentro do fluxo — clique para voltar ao início',
     couldNotLoad: 'Não foi possível carregar {file}',
-    noElementComments: 'Nenhum comentário de elemento ainda — ative 🎯 Elemento e clique no alvo',
+
     notComponentInstance: 'Este elemento não é uma instância de componente do registry',
     componentToast: 'Componente: {info}',
     selectorLabel: 'Seletor',
@@ -1588,6 +1621,28 @@ async function persistPin(body) {
   }
 }
 
+/** w13: excluir comentário (DELETE /api/comments) — com confirmação. */
+async function deleteComment(pin) {
+  if (!window.confirm(t('deleteConfirm'))) return
+  try {
+    const response = await fetch(COMMENTS_API, {
+      method: 'DELETE',
+      headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: pin.id }),
+    })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const payload = await response.json()
+    state.comments = payload.comments.filter((p) => p && p.canvas === state.canvas)
+    state.allComments = payload.comments.filter((p) => p && typeof p === 'object')
+    renderAllPins()
+    updateCopyAll()
+    renderPendingPanel()
+    toast(t('commentDeleted'))
+  } catch {
+    toast(t('deleteFailed'))
+  }
+}
+
 /* ------------------------------------------ pending comments panel (w4-19) */
 
 /** Pending = status "open" across ALL canvases (stale/resolved excluded). */
@@ -1647,12 +1702,22 @@ function pendingLabel(pin) {
   return `${pin?.canvas ?? '?'} › ${file} — ${replies[0]?.text ?? t('noText')}`
 }
 
-/** One entry: link to the screen + Resolver/Reabrir/Responder actions. */
+/** One entry: selection checkbox + link to the screen + resolve/reopen/reply/delete. */
 function pendingEntry(pin) {
   const item = document.createElement('li')
   item.className = 'pending-item'
   if (pin.status === 'stale') item.classList.add('stale')
   else if (pin.status === 'resolved') item.classList.add('resolved')
+
+  // w13: seleção explícita — o envio ao agente é uma decisão separada
+  const pick = document.createElement('label')
+  pick.className = 'pending-pick'
+  const check = document.createElement('input')
+  check.type = 'checkbox'
+  check.className = 'pending-check'
+  check.dataset.pinId = pin.id
+  check.checked = pin.status === 'open'
+  pick.appendChild(check)
 
   const jump = document.createElement('button')
   jump.type = 'button'
@@ -1695,8 +1760,14 @@ function pendingEntry(pin) {
   reply.title = t('replyBtnTitle')
   reply.addEventListener('click', () => openReplyDialog(pin))
 
-  actions.append(resolve, reopen, reply)
-  item.append(jump, meta, actions)
+  const remove = document.createElement('button')
+  remove.type = 'button'
+  remove.textContent = t('deleteBtn')
+  remove.title = t('deleteTitle')
+  remove.addEventListener('click', () => deleteComment(pin))
+
+  actions.append(resolve, reopen, reply, remove)
+  item.append(pick, jump, meta, actions)
   return item
 }
 
@@ -1788,6 +1859,8 @@ function renderPendingPanel() {
     doneSection.appendChild(list)
     body.appendChild(doneSection)
   }
+  updateSendCount()
+  $('toggleSelectAll').textContent = t('selectAllBtn')
 }
 
 /** Live toolbar badge with the open-pin count (cabeçalho + modo fluxo). */
@@ -1807,6 +1880,40 @@ $('pendingBtn').addEventListener('click', () => {
 
 $('pendingClose').addEventListener('click', () => {
   $('pendingPanel').hidden = true
+})
+
+/* --------------------- outbox: selecionar e enviar quando quiser (w13) */
+
+function selectedPinMessages() {
+  const chosen = new Set(
+    [...$('pendingBody').querySelectorAll('.pending-check')]
+      .filter((box) => box.checked)
+      .map((box) => box.dataset.pinId),
+  )
+  return state.allComments.filter((pin) => pin && chosen.has(pin.id)).map(pinMessage)
+}
+
+function updateSendCount() {
+  const count = [...$('pendingBody').querySelectorAll('.pending-check')].filter((box) => box.checked).length
+  $('sendSelectedCount').textContent = String(count)
+}
+
+$('pendingBody').addEventListener('change', (event) => {
+  if (event.target.classList?.contains('pending-check')) updateSendCount()
+})
+
+$('toggleSelectAll').addEventListener('click', () => {
+  const boxes = [...$('pendingBody').querySelectorAll('.pending-check')]
+  const allOn = boxes.length > 0 && boxes.every((box) => box.checked)
+  for (const box of boxes) box.checked = !allOn
+  updateSendCount()
+  $('toggleSelectAll').textContent = allOn ? t('selectAllBtn') : t('clearSelectionBtn')
+})
+
+$('sendSelected').addEventListener('click', async () => {
+  const messages = selectedPinMessages()
+  if (messages.length === 0) return toast(t('nothingSelected'))
+  await deliverMessage(messages.join('\n'))
 })
 
 /* ------------------------------------------------- snapshots (w5-22) */
@@ -2484,6 +2591,11 @@ function cardFor(screen) {
     }
   })
   overlay.addEventListener('dblclick', () => openFullscreen(screen))
+  // w13: o pin é irmão do overlay — o duplo-clique sobre o badge precisa
+  // abrir o modo fluxo do mesmo jeito; o card inteiro escuta
+  card.addEventListener('dblclick', (event) => {
+    if (!event.target.closest('.pin-act')) openFullscreen(screen)
+  })
   overlay.addEventListener('mousemove', (event) => {
     if (!state.inspect) return
     const target = elementAt(overlay, event)
@@ -2568,11 +2680,9 @@ $('elementForm').addEventListener('submit', async (event) => {
   }
   if (rect) pin.rect = { x: rect.x, y: rect.y, width: rect.width ?? 0, height: rect.height ?? 0 }
   $('elementDialog').hidden = true
-  // Channel (a): the pin persists in comments.json (GET/POST /api/comments).
+  // w13: comentar SÓ cria o comentário (pin) — enviar é decisão separada
   await persistPin(pin)
-  // Channel (b): the chat message on the clipboard — template preserved.
-  const message = annotationMessage({ screenId: screen.id, selector, snippet, text })
-  await deliverMessage(message)
+  toast(t('commentCreated'))
 })
 
 /* --------------------------------------------- menu de contexto (w8) */
@@ -2670,6 +2780,13 @@ function pinMarker(pin, index, layer) {
   const badge = document.createElement('span')
   badge.className = 'pin-badge'
   badge.textContent = String(index + 1)
+  badge.title = pinText(pin) || t('pinBadgeTitle')
+  badge.addEventListener('click', () => {
+    // w13: seleção leve, SEM pan — mover a câmera aqui quebraria o duplo-clique
+    // (os dois cliques deixariam de cair no mesmo alvo)
+    const card = pinScreen(pin)
+    if (card) select(card.id)
+  })
   const act = document.createElement('button')
   act.className = 'pin-act'
   act.type = 'button'
@@ -2726,13 +2843,10 @@ function updateCopyAll() {
   btn.textContent = t('commentsCount', { count: state.comments.length })
 }
 
-$('copyAllBtn').addEventListener('click', async () => {
-  if (state.comments.length === 0) {
-    toast(t('noElementComments'))
-    return
-  }
-  const message = state.comments.map(pinMessage).join('\n')
-  await deliverMessage(message)
+$('copyAllBtn').addEventListener('click', () => {
+  // w13: "Comentários (N)" abre a caixa de saída — seleção + envio sob demanda
+  $('pendingPanel').hidden = false
+  renderPendingPanel()
 })
 
 $('inspectBtn').addEventListener('click', () => {
@@ -3753,9 +3867,10 @@ $('commentForm').addEventListener('submit', async (event) => {
   const screen = selectedScreen()
   const text = $('commentText').value.trim()
   if (!screen || !text) return
-  const message = `[Design: design/${state.canvas} › ${screen.name} (${screen.file})] ${text}`
   $('dialog').hidden = true
-  await deliverMessage(message)
+  // w13: comentar SÓ cria o comentário — enviar é uma decisão separada
+  await persistPin({ canvas: state.canvas, file: screen.file, replies: [{ text }] })
+  toast(t('commentCreated'))
 })
 
 $('copyAgain').addEventListener('click', () => copyToClipboard($('clipboardMsg').textContent))
