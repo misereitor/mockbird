@@ -411,6 +411,36 @@ async function agentSendGuard(base, token, shareBase, shareToken) {
   )
 }
 
+/** assert 9: /api/history obeys the same guard - tokenless and --share are
+ *  403 and a bad restore body is 400, so no probe can read or write history. */
+async function historyGuard(base, token, shareBase, shareToken) {
+  const noToken = await api(base, '/api/history?file=login/01-login.html')
+  const share = await api(shareBase, '/api/history/restore', {
+    method: 'POST',
+    token: shareToken,
+    body: { file: 'login/01-login.html', revision: '1-0' },
+  })
+  const bad = await api(base, '/api/history/restore', {
+    method: 'POST',
+    token,
+    body: {},
+  })
+  const noTokenText = await noToken.text()
+  const shareText = await share.text()
+  const badText = await bad.text()
+  record(
+    9,
+    'history-guard',
+    noToken.status === 403 &&
+      share.status === 403 &&
+      bad.status === 400 &&
+      safeError(noTokenText) === 'forbidden' &&
+      safeError(shareText) === 'forbidden' &&
+      safeError(badText) === 'invalid',
+    `got sem-token ${noToken.status} ${safeError(noTokenText)} + share-restore ${share.status} ${safeError(shareText)} + corpo vazio ${bad.status} ${safeError(badText)} | want 403/403/400`,
+  )
+}
+
 // ---------- main ----------
 
 async function main() {
@@ -477,6 +507,7 @@ async function main() {
     await battery(mainServer.base, mainServer.token)
     await shareApi403(shareServer.base, shareServer.token)
     await agentSendGuard(mainServer.base, mainServer.token, shareServer.base, shareServer.token)
+    await historyGuard(mainServer.base, mainServer.token, shareServer.base, shareServer.token)
     await staticWeirdHost(port1)
   } catch (error) {
     recordFail(0, 'harness', `infra error: ${error.message}`)

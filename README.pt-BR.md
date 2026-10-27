@@ -189,6 +189,16 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Resgate: histórico por arquivo + botão direito de volta (v1.0.9)**: com o
+  servidor rodando, toda mudança em qualquer arquivo de `design/` vira uma
+  revisão (`design/.history/`, as 20 mais recentes por arquivo) e o novo
+  painel 🕘 **Histórico** restaura **exatamente um arquivo, uma versão** —
+  nada mais no sistema é tocado (telas independentes; arquivos compartilhados
+  restauram por inteiro; a visualização atualiza sozinha; cada restauração
+  também vira uma nova revisão). Também: o botão direito do mouse volta a
+  panoramizar (foi derrubado sem querer na redefinição de interações) e o
+  clique direito continua abrindo o menu de elemento — sem abrir um depois
+  de um arraste.
 - **Correção do click preso + versão silenciosa (v1.0.8)**: soltar o mouse
   dentro do iframe de uma tela (ou trocar de janela no meio do arraste)
   podia perder o `pointerup` e deixar o canvas "grudado" seguindo o mouse —

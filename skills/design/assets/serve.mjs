@@ -952,6 +952,148 @@ function handleRevert(res, body) {
   })
 }
 
+// ---------- design/.history (resgate de alterações) ----------
+/* Automatic per-file revision log for design/: while the server runs, every
+ * change made by the agent (or anything else) is captured as a revision that
+ * can be restored INDIVIDUALLY — the fine-grained rescue that full snapshots
+ * cannot do. Best-effort: coverage starts when the server starts; .history/
+ * and snapshots/ are never recorded; revisions are pruned to the newest
+ * HISTORY_KEEP per file. Restoration is one file at a time, so nothing else
+ * in the system is touched. */
+
+const HISTORY_DIR = join(root, '.history')
+const HISTORY_KEEP = 20
+const HISTORY_SKIP = new Set(['.history', 'snapshots'])
+let historySeq = 0
+const historyIndex = new Map() // relpath -> { mtimeMs, size, revisions: [{id,time,size}] }
+
+function walkDesignFiles(dir = root, out = []) {
+  let entries = []
+  try {
+    entries = readdirSync(dir, { withFileTypes: true })
+  } catch {
+    return out
+  }
+  for (const entry of entries) {
+    if (entry.name.startsWith('.') || HISTORY_SKIP.has(entry.name)) continue
+    const full = join(dir, entry.name)
+    if (entry.isDirectory()) walkDesignFiles(full, out)
+    else if (entry.isFile()) out.push(full)
+  }
+  return out
+}
+
+/** Relative path inside design/ or null — subfolders allowed, no traversal. */
+function historyRelPath(file) {
+  if (typeof file !== 'string' || file.length === 0 || file.length > 512) return null
+  if (!/^[a-zA-Z0-9._/-]+$/.test(file) || file.split('/').includes('..')) return null
+  const full = normalize(join(root, file))
+  if (full !== root && !full.startsWith(root + sep)) return null
+  const rel = relative(root, full)
+  const segments = rel.split(sep)
+  if (segments[0] && HISTORY_SKIP.has(segments[0])) return null
+  return rel
+}
+
+function historyRevisionFile(rel, id) {
+  return join(HISTORY_DIR, rel, `${id}${extname(rel)}`)
+}
+
+function recordHistory(full, rel, st) {
+  const dir = join(HISTORY_DIR, rel)
+  mkdirSync(dir, { recursive: true })
+  const id = `${Date.now()}-${historySeq++}`
+  const source = readFileSync(full)
+  writeFileSync(historyRevisionFile(rel, id), source)
+  return { id, time: Number(id.split('-')[0]), size: st.size }
+}
+
+function loadHistoryIndex() {
+  // rebuild after a server restart so history survives; prune beyond the cap
+  let rels = []
+  try {
+    const walk = (dir, prefix = '') => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const rel = prefix ? `${prefix}/${entry.name}` : entry.name
+        if (entry.isDirectory()) walk(join(dir, entry.name), rel)
+        else rels.push(rel)
+      }
+    }
+    walk(HISTORY_DIR)
+  } catch {
+    return
+  }
+  const byRel = new Map()
+  for (const rel of rels) {
+    const clean = dirname(rel) // the recorded file's rel path (…/<file>/<id><ext>)
+    const base = basename(rel)
+    const id = base.slice(0, base.lastIndexOf('.')) // strip the revision extension
+    if (!byRel.has(clean)) byRel.set(clean, [])
+    byRel.get(clean).push(id)
+  }
+  for (const [clean, ids] of byRel) {
+    const revisions = ids
+      .map((id) => ({ id, time: Number(id.split('-')[0]) || 0, size: 0 }))
+      .sort((a, b) => a.time - b.time)
+      .slice(-HISTORY_KEEP)
+    historyIndex.set(clean.split('/').join(sep), { mtimeMs: 0, size: -1, revisions })
+    for (const id of ids.filter((i) => !revisions.some((r) => r.id === i))) {
+      try {
+        rmSync(historyRevisionFile(clean.split('/').join(sep), id), { force: true })
+      } catch { /* prune is best-effort */ }
+    }
+  }
+}
+
+function captureHistory(full) {
+  try {
+    const rel = relative(root, full)
+    if (!rel || rel.startsWith('..')) return
+    const st = statSync(full)
+    const entry = historyIndex.get(rel) ?? { mtimeMs: 0, size: -1, revisions: [] }
+    if (entry.mtimeMs === st.mtimeMs && entry.size === st.size) return
+    const revision = recordHistory(full, rel, st)
+    entry.mtimeMs = st.mtimeMs
+    entry.size = st.size
+    entry.revisions.push(revision)
+    if (entry.revisions.length > HISTORY_KEEP) {
+      for (const old of entry.revisions.splice(0, entry.revisions.length - HISTORY_KEEP)) {
+        try {
+          rmSync(historyRevisionFile(rel, old.id), { force: true })
+        } catch { /* prune is best-effort */ }
+      }
+    }
+    historyIndex.set(rel, entry)
+  } catch { /* history never breaks the server */ }
+}
+
+loadHistoryIndex()
+setInterval(() => {
+  for (const full of walkDesignFiles()) captureHistory(full)
+}, 2000)
+
+function historyList(file) {
+  const rel = historyRelPath(file)
+  if (!rel) return null
+  const entry = historyIndex.get(rel)
+  return { file: rel, revisions: (entry?.revisions ?? []).slice().reverse() }
+}
+
+function handleHistoryRestore(res, parsed) {
+  const rel = historyRelPath(parsed.file)
+  const id = typeof parsed.revision === 'string' ? parsed.revision : ''
+  if (!rel || !/^\d+-\d+$/.test(id)) return fail(res, 400, 'invalid')
+  const revisionFile = historyRevisionFile(rel, id)
+  if (!existsSync(revisionFile)) return fail(res, 404, 'not-found')
+  try {
+    writeFileSync(join(root, rel), readFileSync(revisionFile))
+    captureHistory(join(root, rel)) // the restore is itself a new revision
+    return sendJson(res, 200, { restored: { file: rel, revision: id } })
+  } catch (error) {
+    return apiFail(res, error)
+  }
+}
+
 // ---------- agent delivery ----------
 /* Send a [Design: …] message straight into the user's OpenCode session —
  * no clipboard round-trip. Discovery goes through the `opencode` CLI (ASCII
@@ -1056,7 +1198,11 @@ async function handleApi(req, res, pathname) {
             ? 'revert'
             : pathname === '/api/agent-send'
               ? 'agent-send'
-              : null
+              : pathname === '/api/history'
+                ? 'history'
+                : pathname === '/api/history/restore'
+                  ? 'history-restore'
+                  : null
   if (!route) return fail(res, 404, 'not-found')
 
   try {
@@ -1065,6 +1211,11 @@ async function handleApi(req, res, pathname) {
     }
     if (route === 'snapshots' && method === 'GET') {
       return sendJson(res, 200, { snapshots: listSnapshots() })
+    }
+    if (route === 'history' && method === 'GET') {
+      const query = new URL(req.url, 'http://localhost').searchParams
+      const list = historyList(query.get('file') ?? '')
+      return list ? sendJson(res, 200, list) : fail(res, 400, 'invalid')
     }
     if (method !== 'POST') return fail(res, 404, 'not-found')
 
@@ -1083,7 +1234,9 @@ async function handleApi(req, res, pathname) {
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
         return fail(res, 400, 'invalid')
       }
-      for (const key of ['canvas', 'label', 'id', 'file']) {
+      // history/restore carries a relative file path with subfolders — its
+      // own strict check (historyRelPath) replaces the traversal sniff here
+      for (const key of route === 'history-restore' ? ['canvas', 'label', 'id'] : ['canvas', 'label', 'id', 'file']) {
         const value = parsed[key]
         if (typeof value === 'string' && isTraversal(value)) return fail(res, 403, 'traversal')
       }
@@ -1092,6 +1245,7 @@ async function handleApi(req, res, pathname) {
     if (route === 'revert') return handleRevert(res, parsed)
     if (!parsed) return fail(res, 400, 'invalid')
     if (route === 'agent-send') return handleAgentSend(res, parsed)
+    if (route === 'history-restore') return handleHistoryRestore(res, parsed)
     if (route === 'comments') return sendJson(res, 200, { comments: handleCommentsPost(parsed) })
     return sendJson(res, 200, { snapshot: handleSnapshot(parsed) })
   } catch (error) {

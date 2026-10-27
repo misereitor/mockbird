@@ -194,6 +194,8 @@
     <p>This message is <strong>state confirmation only</strong>: the agent edits nothing — it acknowledges and moves on.</p>
     <p><strong>Restore limits:</strong> the restore is a <strong>full replace</strong> per <code>src/</code> artifact — screens, <code>canvas.json</code>, <code>data.json</code>, <code>tokens.json</code> and the complete <code>components/</code> fully replace their counterparts in the served root, and files outside <code>src/</code> survive untouched. The globals (<code>tokens.json</code>, <code>components/</code>) return exactly to the snapshot state and <strong>affect the other canvases</strong>: the unit is the canvas snapshot (the whole <code>src/</code>), and the global tokens/components restore is a full replace.</p>
     <p><strong>Revert codes:</strong> <strong>400</strong> = invalid or desynced manifest, detected BEFORE the restore — the root stays intact and nothing was restored; <strong>500</strong> = the pipeline failed after the restore, with a full rollback to the previous state; <strong>404</strong> = snapshot not found.</p>
+    <h3>Rescue: per-file history</h3>
+    <p>While the server runs, every change to any file in <code>design/</code> is recorded as a revision (<code>design/.history/</code>, the newest 20 per file). The 🕘 <strong>History</strong> panel lists a file's revisions and restores <strong>exactly one</strong> — one file, one version, nothing else in the system is touched (screens are independent; shared files restore as a whole, and the view refreshes by itself). Coverage starts when the server starts; each restore is itself recorded as a new revision.</p>
 
     <h2 id="fluxo">Flow mode (test the system for real)</h2>
     <p><strong>Double-click</strong> a screen to open flow mode: the screen at full size, <strong>interactive</strong> — you log in, navigate, create records. The bar floats at the top and <strong>gets out of the way by itself</strong> after a few seconds without mouse movement; any movement over the screen brings it back. On the bar:</p>
@@ -306,6 +308,16 @@
         <td><code>{text}</code> — a chat message, usually a <code>[Design: …]</code></td>
         <td><code>{ delivered: true, session: {id, title}, created }</code> — the message enters the project's newest OpenCode session (a session is created there when none exists)</td>
         <td><strong>200</strong>; <strong>400</strong> (empty or oversized text); <strong>403</strong> (no token, Host/Origin); <strong>502</strong> (<code>agent-unavailable</code> — OpenCode unreachable; the viewer falls back to the clipboard)</td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td><td><code>/api/history</code></td><td><code>?file=&lt;path&gt;</code></td>
+        <td><code>{ file, revisions: [{id, time, size}] }</code> — newest first</td>
+        <td><strong>200</strong>; <strong>400</strong> (bad path); <strong>403</strong> (no token, Host/Origin)</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td><td><code>/api/history/restore</code></td><td><code>{file, revision}</code></td>
+        <td><code>{ restored: {file, revision} }</code> — writes that exact revision back (the restore is recorded as a new revision)</td>
+        <td><strong>200</strong>; <strong>400</strong> (bad body/path); <strong>403</strong> (no token, Host/Origin, traversal); <strong>404</strong> (revision not found)</td>
       </tr>
     </table>
     <p>JSON error codes (pinned taxonomy, body <code>{"error": code}</code>): <code>invalid</code> (400), <code>forbidden</code> and <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500), <code>agent-unavailable</code> (502) — success is <strong>200</strong> with the JSON body documented in the table. <code>GET /api/snapshots</code> ignores invalid or desynced manifests in the listing — full validation (schema + inventory against the files on disk) happens at revert. With <code>--share</code> the bind becomes <code>0.0.0.0</code> (LAN preview) and <strong>every <code>/api/*</code> route answers 403</strong> (reads included — nothing leaks).</p>
@@ -486,6 +498,8 @@
   <p>Essa mensagem é <strong>apenas confirmação de estado</strong>: o agente não edita nada — reconhece e segue.</p>
   <p><strong>Limites do restore:</strong> o restore é <strong>replace integral</strong> por artefato de <code>src/</code> — telas, <code>canvas.json</code>, <code>data.json</code>, <code>tokens.json</code> e <code>components/</code> completo substituem integralmente os correspondentes na raiz servida, e arquivos fora de <code>src/</code> sobrevivem intactos. Os globais (<code>tokens.json</code>, <code>components/</code>) voltam exatamente ao estado do snapshot e <strong>afetam os outros canvases</strong>: a unidade é o snapshot do canvas (o <code>src/</code> inteiro), e o restore global de tokens/components é por replace integral.</p>
   <p><strong>Códigos do revert:</strong> <strong>400</strong> = manifest inválido ou dessincronizado, detectado ANTES do restore — a raiz fica intacta e nada foi restaurado; <strong>500</strong> = o pipeline falhou depois do restore, com rollback completo para o estado anterior; <strong>404</strong> = snapshot inexistente.</p>
+  <h3>Resgate: histórico por arquivo</h3>
+  <p>Enquanto o servidor roda, toda mudança em qualquer arquivo de <code>design/</code> é registrada como uma revisão (<code>design/.history/</code>, as 20 mais recentes por arquivo). O painel 🕘 <strong>Histórico</strong> lista as revisões de um arquivo e restaura <strong>exatamente uma</strong> — um arquivo, uma versão, nada mais no sistema é tocado (as telas são independentes; arquivos compartilhados restauram por inteiro, e a visualização atualiza sozinha). A cobertura começa quando o servidor inicia; cada restauração também vira uma nova revisão.</p>
 
   <h2 id="fluxo">Modo fluxo (testar o sistema de verdade)</h2>
   <p><strong>Duplo clique</strong> em uma tela abre o modo fluxo: a tela em tamanho real, <strong>interativa</strong> — você loga, navega, cadastra. A barra flutua no topo e <strong>sai da frente sozinha</strong> depois de alguns segundos sem mouse; qualquer movimento sobre a tela traz ela de volta. Na barra:</p>
@@ -598,6 +612,16 @@
       <td><code>{text}</code> — uma mensagem de chat, normalmente um <code>[Design: …]</code></td>
       <td><code>{ delivered: true, session: {id, title}, created }</code> — a mensagem entra na sessão mais recente do OpenCode deste projeto (uma sessão é criada lá quando não existe nenhuma)</td>
       <td><strong>200</strong>; <strong>400</strong> (texto vazio ou grande demais); <strong>403</strong> (sem token, Host/Origin); <strong>502</strong> (<code>agent-unavailable</code> — OpenCode inalcançável; o visualizador cai no fallback da área de transferência)</td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td><td><code>/api/history</code></td><td><code>?file=&lt;path&gt;</code></td>
+      <td><code>{ file, revisions: [{id, time, size}] }</code> — mais recente primeiro</td>
+      <td><strong>200</strong>; <strong>400</strong> (caminho inválido); <strong>403</strong> (sem token, Host/Origin)</td>
+    </tr>
+    <tr>
+      <td><code>POST</code></td><td><code>/api/history/restore</code></td><td><code>{file, revision}</code></td>
+      <td><code>{ restored: {file, revision} }</code> — grava aquela revisão exata de volta (a restauração vira uma nova revisão)</td>
+      <td><strong>200</strong>; <strong>400</strong> (corpo/caminho inválido); <strong>403</strong> (sem token, Host/Origin, traversal); <strong>404</strong> (revisão inexistente)</td>
     </tr>
   </table>
   <p>Códigos de erro JSON (taxonomia pinada, corpo <code>{"error": código}</code>): <code>invalid</code> (400), <code>forbidden</code> e <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500), <code>agent-unavailable</code> (502) — sucesso é <strong>200</strong> com o corpo JSON documentado na tabela. O <code>GET /api/snapshots</code> ignora manifestos inválidos ou dessincronizados na listagem — a validação completa (schema + inventário contra os arquivos em disco) acontece no revert. Com <code>--share</code> o bind vira <code>0.0.0.0</code> (preview em LAN) e <strong>toda rota <code>/api/*</code> responde 403</strong> (leituras incluídas — nada vaza).</p>

@@ -185,6 +185,15 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Rescue: per-file history + right button back (v1.0.9)**: while the server
+  runs, every change to any `design/` file is recorded as a revision
+  (`design/.history/`, newest 20 per file) and the new 🕘 **History** panel
+  restores **exactly one file, one version** — nothing else in the system is
+  touched (screens are independent; shared files restore whole; the view
+  refreshes by itself; each restore is recorded as a new revision). Also:
+  the right mouse button pans again (it was accidentally dropped in the
+  interaction rework) and right-click still opens the element menu — without
+  popping one after a pan drag.
 - **Stuck click fix + quiet versioning (v1.0.8)**: releasing the mouse inside
   a screen iframe (or switching windows mid-drag) could lose the `pointerup`
   and leave the canvas "stuck" following the mouse — canvas gestures now tear

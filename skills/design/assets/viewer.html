@@ -324,15 +324,15 @@
   body.dark #pendingBtn #pendingBadge { color: #042f2e; }
 
   /* -- snapshots (w5-22) -- */
-  #snapshotPanel {
+  #snapshotPanel, #historyPanel {
     position: fixed; top: 0; right: 0; bottom: 0; width: 340px; z-index: 8;
     display: flex; flex-direction: column;
     background: var(--ui-surface); border-left: 1px solid var(--ui-border);
     box-shadow: -12px 0 32px rgb(15 23 42 / .18);
   }
-  #snapshotForm { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--ui-border); }
+  #snapshotForm, #historyForm { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--ui-border); }
   #snapshotLabel { flex: 1; }
-  #snapshotList {
+  #snapshotList, #historyList {
     flex: 1; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 16px;
   }
   .snap-item {
@@ -471,6 +471,7 @@
     <button id="copyAllBtn" data-share-hide data-i18n-title="copyAllBtnTitle" title="View/copy every element comment">⧉ Comments (0)</button>
     <button id="pendingBtn" data-share-hide data-i18n-title="pendingBtnTitle" title="Open the pending comments panel (all canvases)"><span data-i18n="pendingBtn">💬 Pending</span> <span id="pendingBadge">0</span></button>
     <button id="snapshotBtn" data-share-hide data-i18n-title="snapshotBtnTitle" title="Save a snapshot of this canvas (src/ + flat render/) and see the saved snapshots" data-i18n="snapshotBtn">Save snapshot</button>
+    <button id="historyBtn" data-share-hide data-i18n-title="historyBtnTitle" title="Restore any recorded version of a file (rescue)" data-i18n="historyBtn">🕘 History</button>
     <button id="exportBtn" disabled data-i18n="exportScreenBtn">⬇ Screen PNG</button>
     <button id="exportAllBtn" data-i18n="exportCanvasBtn">⬇ Canvas PNG</button>
     <button id="langBtn" data-i18n-title="languageTitle" title="Switch language (reloads the page)">🌐 Português</button>
@@ -690,6 +691,17 @@
   </div>
 </aside>
 
+<aside id="historyPanel" data-share-hide hidden>
+  <div class="pending-top">
+    <strong data-i18n="historyPanelTitle">File history</strong>
+    <button id="historyClose" type="button" data-i18n-title="closePanelTitle" title="Close panel">×</button>
+  </div>
+  <form id="historyForm" data-share-hide>
+    <select id="historyFile" data-share-hide></select>
+  </form>
+  <div id="historyList" data-share-hide></div>
+</aside>
+
 <script>
 'use strict'
 
@@ -880,6 +892,15 @@ const I18N = {
     canvasMissing404: 'canvas not found',
     labelExists409: 'label already exists',
     snapshotLabelTitle: 'Use only lowercase letters, digits and hyphen',
+    historyBtn: '🕘 History',
+    historyBtnTitle: 'Restore any recorded version of a file (rescue)',
+    historyPanelTitle: 'File history',
+    historyEmpty: 'No recorded versions yet — history is captured while the server runs.',
+    historyRestore: 'Restore',
+    historyRestoreTitle: 'Restore this exact version of the file',
+    historyRestoreConfirm: 'Restore {file} to the version from {time}?',
+    historyRestored: '{file} restored — the view refreshes by itself',
+    historyFailed: 'Could not restore — try another version',
     // comments API
     pinsUnavailable: 'comments.json unavailable — persistent pins disabled',
     commentsInvalid: 'comments.json invalid',
@@ -1092,6 +1113,15 @@ const I18N = {
     canvasMissing404: 'canvas inexistente',
     labelExists409: 'label já existe',
     snapshotLabelTitle: 'Use apenas letras minúsculas, números e hífen',
+    historyBtn: '🕘 Histórico',
+    historyBtnTitle: 'Restaurar qualquer versão registrada de um arquivo (resgate)',
+    historyPanelTitle: 'Histórico de arquivos',
+    historyEmpty: 'Nenhuma versão registrada ainda — o histórico é capturado enquanto o servidor roda.',
+    historyRestore: 'Restaurar',
+    historyRestoreTitle: 'Restaurar esta versão exata do arquivo',
+    historyRestoreConfirm: 'Restaurar {file} na versão de {time}?',
+    historyRestored: '{file} restaurado — a visualização atualiza sozinha',
+    historyFailed: 'Não consegui restaurar — tente outra versão',
     // comments API
     pinsUnavailable: 'comments.json indisponível — pins persistentes desativados',
     commentsInvalid: 'comments.json inválido',
@@ -2206,6 +2236,91 @@ $('sweepResolve').addEventListener('click', () => {
   persistPin({ id: pin.id, status: 'resolved' })
 })
 
+/* --------------------------------------------- history / resgate (v1.0.9) */
+
+/** Arquivos vigiados pelo watchdog = os mesmos que têm revisões gravadas. */
+async function loadHistoryFileOptions() {
+  const select = $('historyFile')
+  const kept = select.value
+  select.innerHTML = ''
+  for (const file of watchedFiles()) {
+    const option = document.createElement('option')
+    option.value = file
+    option.textContent = file
+    select.appendChild(option)
+  }
+  if ([...select.options].some((option) => option.value === kept)) select.value = kept
+}
+
+async function loadHistoryList() {
+  const list = $('historyList')
+  const file = $('historyFile').value
+  list.innerHTML = ''
+  if (!file) return
+  let payload = null
+  try {
+    const response = await fetch(`api/history?file=${encodeURIComponent(file)}`, { cache: 'no-store', headers: apiHeaders() })
+    if (response.ok) payload = await response.json()
+  } catch { /* server gone; the banner already reports it */ }
+  const revisions = payload?.revisions ?? []
+  if (revisions.length === 0) {
+    const empty = document.createElement('p')
+    empty.className = 'pending-empty'
+    empty.textContent = t('historyEmpty')
+    list.appendChild(empty)
+    return
+  }
+  for (const revision of revisions) {
+    const li = document.createElement('li')
+    li.className = 'snap-item'
+    const when = document.createElement('strong')
+    when.textContent = new Date(revision.time).toLocaleString()
+    const size = document.createElement('span')
+    size.textContent = `${revision.size} B`
+    const restore = document.createElement('button')
+    restore.type = 'button'
+    restore.className = 'snap-revert'
+    restore.textContent = t('historyRestore')
+    restore.title = t('historyRestoreTitle')
+    restore.addEventListener('click', () => restoreHistory(file, revision))
+    li.append(when, size, restore)
+    list.appendChild(li)
+  }
+}
+
+/** Restaura UMA revisão de UM arquivo — nada mais no sistema é tocado. */
+async function restoreHistory(file, revision) {
+  const time = new Date(revision.time).toLocaleString()
+  if (!window.confirm(t('historyRestoreConfirm', { file, time }))) return
+  try {
+    const response = await fetch('api/history/restore', {
+      method: 'POST',
+      headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file, revision: revision.id }),
+    })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    toast(t('historyRestored', { file }))
+    loadHistoryList()
+  } catch {
+    toast(t('historyFailed'))
+  }
+}
+
+$('historyBtn').addEventListener('click', () => {
+  const panel = $('historyPanel')
+  panel.hidden = !panel.hidden
+  if (!panel.hidden) {
+    loadHistoryFileOptions()
+    loadHistoryList()
+  }
+})
+
+$('historyClose').addEventListener('click', () => {
+  $('historyPanel').hidden = true
+})
+
+$('historyFile').addEventListener('change', loadHistoryList)
+
 /* ----------------------------------------------------------------- strip */
 
 function screenSize(screen) {
@@ -2906,10 +3021,12 @@ function beginMarquee(event) {
 }
 
 $('viewport').addEventListener('pointerdown', (event) => {
-  if (event.button !== 0 && event.button !== 1) return
+  if (event.button > 2) return
   if (event.target.closest('button, select, input, textarea')) return // UI da tela não arrasta
   const overCard = event.target.closest('.card-overlay')
-  if (event.button === 1) return beginPan(state, $('viewport'), $('world'), $('zoomLabel'), event)
+  // w11: botões do meio E direito panoramizam em qualquer lugar — o direito
+  // foi devolvido (era pan antes da redefinição de interação)
+  if (event.button !== 0) return beginPan(state, $('viewport'), $('world'), $('zoomLabel'), event)
   if (overCard && state.inspect) return // arraste-comentar é do modo elemento
   if (overCard && !event.shiftKey) return beginPan(state, $('viewport'), $('world'), $('zoomLabel'), event)
   beginMarquee(event) // canvas vazio (ou shift): seleção por retângulo
@@ -3073,7 +3190,7 @@ $('fsStage').addEventListener('wheel', (event) => {
 }, { passive: false })
 
 $('fsStage').addEventListener('pointerdown', (event) => {
-  if (event.button !== 0 && event.button !== 1) return
+  if (event.button > 2) return
   if (event.target.closest('button, select, input, textarea')) return // UI do fluxo não arrasta
   if (event.button === 0 && event.target.closest('.card-overlay') && state.inspect) return
   beginPan(fsView, $('fsStage'), $('fsWorld'), $('fsZoomLabel'), event)
@@ -3130,6 +3247,7 @@ $('fsOverlay').addEventListener('click', (event) => {
  * captura tudo; delegamos em #viewport) e modo fluxo com inspetor (#fsOverlay).
  * Sem inspetor o iframe engole eventos: a injeção no doc converge aqui. */
 $('viewport').addEventListener('contextmenu', (event) => {
+  if (gestureJustEnded) return event.preventDefault() // pan direito não abre menu
   const overlay = event.target.closest('.card-overlay')
   if (!overlay) return
   event.preventDefault()
@@ -3142,6 +3260,7 @@ $('viewport').addEventListener('contextmenu', (event) => {
 
 $('fsOverlay').addEventListener('contextmenu', (event) => {
   event.preventDefault()
+  if (gestureJustEnded) return // pan direito não abre menu
   const target = fsElementAt(event)
   const screen = fsScreenNow()
   if (!screen || !target) return
@@ -3273,6 +3392,7 @@ function injectFrameInteraction(frame) {
     doc.addEventListener('click', showFsBar)
     doc.addEventListener('contextmenu', (event) => {
       event.preventDefault()
+      if (gestureJustEnded) return // pan direito não abre menu
       const point = toParent(event)
       const target = hit(point)
       const screen = screenNow()
@@ -3281,8 +3401,8 @@ function injectFrameInteraction(frame) {
     })
     doc.addEventListener('pointerdown', (event) => {
       closeCtxMenu() // clique dentro da tela também descarta o menu aberto
-      if (event.button === 1) {
-        event.preventDefault()
+      if (event.button === 1 || event.button === 2) {
+        if (event.button === 1) event.preventDefault() // sem autoscroll do navegador
         beginPan(fsView, $('fsStage'), $('fsWorld'), $('fsZoomLabel'), toParent(event))
         return
       }
