@@ -584,11 +584,13 @@
 
 <div id="clipboard" class="overlay" hidden>
   <div class="box">
-    <h2 data-i18n="clipboardTitle">Message copied</h2>
-    <p class="hint" data-i18n="clipboardHint">Paste it into the agent’s chat to adjust just this screen:</p>
+    <h2 id="clipboardTitle" data-i18n="clipboardTitle">Message copied</h2>
+    <p class="hint" data-i18n="clipboardHint">The message below is ready for the agent chat:</p>
     <p class="msg-code" id="clipboardMsg"></p>
+    <p class="hint" id="agentStatus" role="status"></p>
     <p class="hint" id="clipboardHint" hidden data-i18n="selectCopyHint">Select and copy (Ctrl+C)</p>
     <div class="row">
+      <button id="sendAgent" type="button" data-share-hide data-i18n="sendAgentBtn">🚀 Send to the agent</button>
       <button id="copyAgain" type="button" data-i18n="copyAgainBtn">Copy again</button>
       <button class="primary" data-close data-i18n="closeBtn">Close</button>
     </div>
@@ -805,8 +807,13 @@ const I18N = {
     elementHint: 'Describe the change only in this element. The comment becomes a pin on the screen — copy one or all and paste into the agent chat.',
     elementPlaceholder: 'e.g. make this button full width',
     clipboardTitle: 'Message copied',
-    clipboardHint: 'Paste it into the agent’s chat to adjust just this screen:',
+    clipboardTitleSent: 'Message sent to the agent',
+    clipboardHint: 'The message below is ready for the agent chat:',
     selectCopyHint: 'Select and copy (Ctrl+C)',
+    agentSending: 'Sending to the agent…',
+    agentSent: 'Sent to the agent — session: {session}',
+    agentSendFailed: 'Could not reach the agent — copy and paste into the chat',
+    sendAgentBtn: '🚀 Send to the agent',
     copyAgainBtn: 'Copy again',
     closeBtn: 'Close',
     replyTitle: 'Reply to comment',
@@ -1012,8 +1019,13 @@ const I18N = {
     elementHint: 'Descreva a mudança só neste elemento. O comentário vira um alfinete na tela — copie um ou todos e cole no chat do agente.',
     elementPlaceholder: 'Ex.: deixar este botão em largura total',
     clipboardTitle: 'Mensagem copiada',
-    clipboardHint: 'Cole no chat do agente para ajustar apenas esta tela:',
+    clipboardTitleSent: 'Mensagem enviada ao agente',
+    clipboardHint: 'A mensagem abaixo está pronta para o chat do agente:',
     selectCopyHint: 'Selecione e copie (Ctrl+C)',
+    agentSending: 'Enviando ao agente…',
+    agentSent: 'Enviado ao agente — sessão: {session}',
+    agentSendFailed: 'Não consegui alcançar o agente — copie e cole no chat',
+    sendAgentBtn: '🚀 Enviar ao agente',
     copyAgainBtn: 'Copiar de novo',
     closeBtn: 'Fechar',
     replyTitle: 'Responder comentário',
@@ -1879,9 +1891,7 @@ async function revertToSnapshot(canvas, label) {
       throw new Error(reasons[response.status] ?? `HTTP ${response.status}`)
     }
     const message = designResetMessage(canvas, label)
-    $('clipboardMsg').textContent = message
-    $('clipboard').hidden = false
-    await copyToClipboard(message)
+    await deliverMessage(message)
     toast(t('snapshotRestored', { label }))
     if (canvas === state.canvas) {
       state.bust = Date.now()
@@ -2402,9 +2412,7 @@ $('elementForm').addEventListener('submit', async (event) => {
   await persistPin(pin)
   // Channel (b): the chat message on the clipboard — template preserved.
   const message = annotationMessage({ screenId: screen.id, selector, snippet, text })
-  $('clipboardMsg').textContent = message
-  $('clipboard').hidden = false
-  await copyToClipboard(message)
+  await deliverMessage(message)
 })
 
 /* --------------------------------------------- menu de contexto (w8) */
@@ -2557,9 +2565,7 @@ $('copyAllBtn').addEventListener('click', async () => {
     return
   }
   const message = state.comments.map(pinMessage).join('\n')
-  $('clipboardMsg').textContent = message
-  $('clipboard').hidden = false
-  await copyToClipboard(message)
+  await deliverMessage(message)
 })
 
 $('inspectBtn').addEventListener('click', () => {
@@ -3542,9 +3548,7 @@ $('commentForm').addEventListener('submit', async (event) => {
   if (!screen || !text) return
   const message = `[Design: design/${state.canvas} › ${screen.name} (${screen.file})] ${text}`
   $('dialog').hidden = true
-  $('clipboardMsg').textContent = message
-  $('clipboard').hidden = false
-  await copyToClipboard(message)
+  await deliverMessage(message)
 })
 
 $('copyAgain').addEventListener('click', () => copyToClipboard($('clipboardMsg').textContent))
@@ -3586,6 +3590,51 @@ async function copyToClipboard(text, label = t('commentLabel')) {
   }
   return copied
 }
+
+/* ---------------------------- agent delivery (v1.5, dual-channel direto) */
+
+/** POST /api/agent-send → a mensagem [Design: …] entra na sessão do OpenCode
+ *  do projeto. Best-effort: qualquer falha vira null e o contrato visível
+ *  (overlay + cópia) assume — degradação declarada, nunca quebra. */
+async function postAgentSend(text) {
+  try {
+    const response = await fetch('api/agent-send', {
+      method: 'POST',
+      headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
+    if (!response.ok) return null
+    return await response.json()
+  } catch {
+    return null
+  }
+}
+
+/** Entrega ao agente em primeiro lugar; clipboard é o fallback honesto. */
+async function deliverMessage(message) {
+  $('clipboardMsg').textContent = message
+  $('clipboard').hidden = false
+  $('clipboardTitle').textContent = t('clipboardTitle')
+  const status = $('agentStatus')
+  if (isReadonly()) {
+    status.textContent = ''
+    await copyToClipboard(message)
+    return
+  }
+  status.textContent = t('agentSending')
+  const result = await postAgentSend(message)
+  if (result?.delivered) {
+    const session = result.session?.title || result.session?.id || ''
+    $('clipboardTitle').textContent = t('clipboardTitleSent')
+    status.textContent = t('agentSent', { session })
+    toast(t('agentSent', { session }))
+  } else {
+    status.textContent = t('agentSendFailed')
+    await copyToClipboard(message) // fallback: overlay + seleção = o contrato
+  }
+}
+
+$('sendAgent').addEventListener('click', () => deliverMessage($('clipboardMsg').textContent))
 
 /* -------------------------------- w9: lazy frames (projetos complexos) */
 

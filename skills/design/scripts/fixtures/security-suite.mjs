@@ -378,6 +378,39 @@ async function shareApi403(shareBase, shareToken) {
   )
 }
 
+/** assert 8: /api/agent-send obeys the same guard - tokenless and --share are
+ *  403 and an empty body is 400, so no probe ever reaches the agent itself. */
+async function agentSendGuard(base, token, shareBase, shareToken) {
+  const noToken = await api(base, '/api/agent-send', {
+    method: 'POST',
+    body: { text: '[Design: design/x] probe' },
+  })
+  const share = await api(shareBase, '/api/agent-send', {
+    method: 'POST',
+    token: shareToken,
+    body: { text: '[Design: design/x] probe' },
+  })
+  const empty = await api(base, '/api/agent-send', {
+    method: 'POST',
+    token,
+    body: {},
+  })
+  const noTokenText = await noToken.text()
+  const shareText = await share.text()
+  const emptyText = await empty.text()
+  record(
+    8,
+    'agent-send-guard',
+    noToken.status === 403 &&
+      share.status === 403 &&
+      empty.status === 400 &&
+      safeError(noTokenText) === 'forbidden' &&
+      safeError(shareText) === 'forbidden' &&
+      safeError(emptyText) === 'invalid',
+    `got sem-token ${noToken.status} ${safeError(noTokenText)} + share ${share.status} ${safeError(shareText)} + vazio ${empty.status} ${safeError(emptyText)} | want 403/403/400 (nada chega ao agente)`,
+  )
+}
+
 // ---------- main ----------
 
 async function main() {
@@ -443,6 +476,7 @@ async function main() {
 
     await battery(mainServer.base, mainServer.token)
     await shareApi403(shareServer.base, shareServer.token)
+    await agentSendGuard(mainServer.base, mainServer.token, shareServer.base, shareServer.token)
     await staticWeirdHost(port1)
   } catch (error) {
     recordFail(0, 'harness', `infra error: ${error.message}`)

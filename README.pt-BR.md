@@ -189,6 +189,13 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Comentários direto ao agente (v1.5.0)**: comentar no visualizador agora
+  entrega a mensagem `[Design: …]` direto na sua sessão do OpenCode — sem
+  copiar/colar. O overlay mostra exatamente o que aconteceu ("Enviado ao
+  agente — sessão: X"); quando o agente está inalcançável cai honestamente no
+  fallback da cópia. Nova rota `POST /api/agent-send` (mesmo contrato de
+  localhost+token, 403 no `--share`) fala com o serviço local do OpenCode e
+  escolhe a sessão mais recente do projeto (criando uma se preciso).
 - **Seleção por retângulo + canvas de ferramenta (v1.4.0)**: arraste no canvas vazio
   para selecionar por retângulo todos os telas tocadas (Shift+clique soma à
   seleção, clique no vazio limpa; o botão PNG exporta a seleção inteira). O

@@ -185,6 +185,13 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Send comments straight to the agent (v1.5.0)**: commenting in the viewer
+  now delivers the `[Design: …]` message directly into your OpenCode session
+  — no more copy/paste. The overlay reports exactly what happened ("Sent to
+  the agent — session: X"); when the agent is unreachable it honestly falls
+  back to the clipboard copy. New `POST /api/agent-send` route (same
+  localhost+token contract, 403 under `--share`) talks to the local OpenCode
+  service and picks the project's newest session (creating one when needed).
 - **Box selection + tool-like canvas (v1.4.0)**: drag on the empty canvas to
   box-select every screen the rectangle touches (Shift+click adds to the
   selection; clicking empty space clears; the PNG button exports the whole

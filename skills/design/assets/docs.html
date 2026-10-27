@@ -136,7 +136,7 @@
     <h3>Comment on the whole screen</h3>
     <ol>
       <li>Select the screen (one click) and click <strong>💬 Comment this screen</strong>.</li>
-      <li>Write the request. The viewer copies a formatted message — <strong>paste it into the agent chat</strong>:</li>
+      <li>Write the request. The viewer sends the formatted message <strong>straight to the agent</strong> (the clipboard copy stays as fallback):</li>
     </ol>
     <pre><code>[Design: design/login › Login (01-login.html)] increase the form spacing</code></pre>
     <h3>Comment on a specific element <span class="tag">🎯</span></h3>
@@ -151,7 +151,7 @@
     <div class="dica"><strong>Full cycle:</strong> comment → paste into chat → agent edits → the viewer updates by itself. Without leaving the browser.</div>
 
     <h3 id="comentarios">Persistent comments (pins) <span class="tag">🎯</span></h3>
-    <p><strong>Dual-channel rule 🎯:</strong> every element comment does <strong>two things at once</strong>: (1) writes a <strong>persistent pin</strong> — the numbered pin on the screen, which survives reload and shows up in the <strong>⧉ Comments (n)</strong> panel — and (2) copies the <code>[Design: …]</code> chat message for you to paste into the agent. The pin is the <strong>persistent record</strong> (status per element, pending panel, toolbar count); the chat message is the <strong>channel that instructs the agent</strong>. <strong>The chat message format is unchanged</strong> — pins are one extra channel, never a grammar change.</p>
+    <p><strong>Dual-channel rule 🎯:</strong> every element comment does <strong>two things at once</strong>: (1) writes a <strong>persistent pin</strong> — the numbered pin on the screen, which survives reload and shows up in the <strong>⧉ Comments (n)</strong> panel — and (2) delivers the <code>[Design: …]</code> chat message <strong>straight into your OpenCode session</strong> (the clipboard copy remains as the fallback when the agent is unreachable — the overlay always shows which one happened). The pin is the <strong>persistent record</strong> (status per element, pending panel, toolbar count); the chat message is the <strong>channel that instructs the agent</strong>. <strong>The chat message format is unchanged</strong> — pins are one extra channel, never a grammar change.</p>
     <p>Pins live in <code>design/comments.json</code>, written <strong>only by the server</strong> (never edit it by hand):</p>
     <pre><code>{
   "comments": [
@@ -301,8 +301,14 @@
         <td><code>{ reverted: {canvas, label}, pipeline: {gen, sync, validate} }</code> — restores the snapshot's <code>src/</code> as a full replace (unit = the canvas snapshot, see <a href="#snapshots">Snapshots and comparison</a>), always runs <code>gen-tokens</code> → <code>sync-components</code> → <code>validate</code> and marks <code>stale</code> the affected pins</td>
         <td><strong>200</strong>; <strong>400</strong> (invalid body; invalid/desynced manifest — detected BEFORE any restore, root intact); <strong>403</strong> (no token, Host/Origin, traversal); <strong>404</strong> (snapshot not found); <strong>413</strong>; <strong>500</strong> (write/pipeline failure + full rollback)</td>
       </tr>
+      <tr>
+        <td><code>POST</code></td><td><code>/api/agent-send</code></td>
+        <td><code>{text}</code> — a chat message, usually a <code>[Design: …]</code></td>
+        <td><code>{ delivered: true, session: {id, title}, created }</code> — the message enters the project's newest OpenCode session (a session is created there when none exists)</td>
+        <td><strong>200</strong>; <strong>400</strong> (empty or oversized text); <strong>403</strong> (no token, Host/Origin); <strong>502</strong> (<code>agent-unavailable</code> — OpenCode unreachable; the viewer falls back to the clipboard)</td>
+      </tr>
     </table>
-    <p>JSON error codes (pinned taxonomy, body <code>{"error": code}</code>): <code>invalid</code> (400), <code>forbidden</code> and <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500) — success is <strong>200</strong> with the JSON body documented in the table. <code>GET /api/snapshots</code> ignores invalid or desynced manifests in the listing — full validation (schema + inventory against the files on disk) happens at revert. With <code>--share</code> the bind becomes <code>0.0.0.0</code> (LAN preview) and <strong>every <code>/api/*</code> route answers 403</strong> (reads included — nothing leaks).</p>
+    <p>JSON error codes (pinned taxonomy, body <code>{"error": code}</code>): <code>invalid</code> (400), <code>forbidden</code> and <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500), <code>agent-unavailable</code> (502) — success is <strong>200</strong> with the JSON body documented in the table. <code>GET /api/snapshots</code> ignores invalid or desynced manifests in the listing — full validation (schema + inventory against the files on disk) happens at revert. With <code>--share</code> the bind becomes <code>0.0.0.0</code> (LAN preview) and <strong>every <code>/api/*</code> route answers 403</strong> (reads included — nothing leaks).</p>
 
     <p><strong>Changelog (w4)</strong>: the server's default bind became <code>127.0.0.1</code> (this machine only) — the write API is never exposed on the network. To test on a phone or another LAN device, <code>--share</code> is the migration path: <code>node design/serve.mjs 8766 --share</code> (bind <code>0.0.0.0</code>). Under <code>--share</code> the viewer enters <strong>read-only mode with declared degradation</strong>: besides the 403 on every <code>/api/*</code> route, it hides write actions and <code>/api</code>-fed features (pins on screens, pending panel, reply/resolve) and shows the banner "read-only mode — comments and snapshots unavailable". The contract holds for the future: <strong>snapshot/comparison</strong> UIs must also stay hidden under <code>--share</code> — marking them with <code>data-share-hide</code> in the HTML is enough, since the viewer hides them via <code>syncShareDegradation()</code>.</p>
 
@@ -422,7 +428,7 @@
   <h3>Comentário na tela inteira</h3>
   <ol>
     <li>Selecione a tela (um clique) e clique <strong>💬 Comentar esta tela</strong>.</li>
-    <li>Escreva o pedido. O visualizador copia uma mensagem formatada — <strong>cole no chat do agente</strong>:</li>
+    <li>Escreva o pedido. O visualizador envia a mensagem formatada <strong>direto ao agente</strong> (a cópia fica como fallback):</li>
   </ol>
   <pre><code>[Design: design/login › Login (01-login.html)] aumentar o espaçamento do formulário</code></pre>
   <h3>Comentário em um elemento específico <span class="tag">🎯</span></h3>
@@ -437,7 +443,7 @@
   <div class="dica"><strong>Ciclo completo:</strong> comente → cole no chat → agente edita → o visualizador atualiza sozinho. Sem sair do navegador.</div>
 
   <h3 id="comentarios">Comentários persistentes (pins) <span class="tag">🎯</span></h3>
-  <p><strong>Regra dual-channel 🎯:</strong> cada comentário de elemento faz <strong>duas coisas de uma só vez</strong>: (1) grava um <strong>pin persistente</strong> — o alfinete numerado na tela, que sobrevive ao reload e aparece no painel <strong>⧉ Comentários (n)</strong> — e (2) copia a mensagem de chat <code>[Design: …]</code> para você colar no agente. O pin é o <strong>registro persistente</strong> (status por elemento, painel de pendências, contagem na toolbar); a mensagem de chat é o <strong>canal que instrui o agente</strong>. <strong>O formato da mensagem de chat é inalterado</strong> — os pins são um canal a mais, nunca uma mudança de gramática.</p>
+  <p><strong>Regra dual-channel 🎯:</strong> cada comentário de elemento faz <strong>duas coisas de uma só vez</strong>: (1) grava um <strong>pin persistente</strong> — o alfinete numerado na tela, que sobrevive ao reload e aparece no painel <strong>⧉ Comentários (n)</strong> — e (2) entrega a mensagem de chat <code>[Design: …]</code> <strong>direto na sua sessão do OpenCode</strong> (a cópia para a área de transferência fica como fallback quando o agente está inalcançável — o overlay mostra sempre qual dos dois aconteceu). O pin é o <strong>registro persistente</strong> (status por elemento, painel de pendências, contagem na toolbar); a mensagem de chat é o <strong>canal que instrui o agente</strong>. <strong>O formato da mensagem de chat é inalterado</strong> — os pins são um canal a mais, nunca uma mudança de gramática.</p>
   <p>Os pins vivem em <code>design/comments.json</code>, escrito <strong>somente pelo servidor</strong> (nunca edite à mão):</p>
   <pre><code>{
   "comments": [
@@ -587,8 +593,14 @@
       <td><code>{ reverted: {canvas, label}, pipeline: {gen, sync, validate} }</code> — restaura o <code>src/</code> do snapshot em replace integral (unidade = snapshot do canvas, ver <a href="#snapshots">Snapshots e comparação</a>), roda sempre <code>gen-tokens</code> → <code>sync-components</code> → <code>validate</code> e marca <code>stale</code> os pins afetados</td>
       <td><strong>200</strong>; <strong>400</strong> (corpo inválido; manifest inválido/dessincronizado — detectado ANTES de qualquer restore, raiz intacta); <strong>403</strong> (sem token, Host/Origin, traversal); <strong>404</strong> (snapshot inexistente); <strong>413</strong>; <strong>500</strong> (falha de escrita/pipeline + rollback completo)</td>
     </tr>
+    <tr>
+      <td><code>POST</code></td><td><code>/api/agent-send</code></td>
+      <td><code>{text}</code> — uma mensagem de chat, normalmente um <code>[Design: …]</code></td>
+      <td><code>{ delivered: true, session: {id, title}, created }</code> — a mensagem entra na sessão mais recente do OpenCode deste projeto (uma sessão é criada lá quando não existe nenhuma)</td>
+      <td><strong>200</strong>; <strong>400</strong> (texto vazio ou grande demais); <strong>403</strong> (sem token, Host/Origin); <strong>502</strong> (<code>agent-unavailable</code> — OpenCode inalcançável; o visualizador cai no fallback da área de transferência)</td>
+    </tr>
   </table>
-  <p>Códigos de erro JSON (taxonomia pinada, corpo <code>{"error": código}</code>): <code>invalid</code> (400), <code>forbidden</code> e <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500) — sucesso é <strong>200</strong> com o corpo JSON documentado na tabela. O <code>GET /api/snapshots</code> ignora manifestos inválidos ou dessincronizados na listagem — a validação completa (schema + inventário contra os arquivos em disco) acontece no revert. Com <code>--share</code> o bind vira <code>0.0.0.0</code> (preview em LAN) e <strong>toda rota <code>/api/*</code> responde 403</strong> (leituras incluídas — nada vaza).</p>
+  <p>Códigos de erro JSON (taxonomia pinada, corpo <code>{"error": código}</code>): <code>invalid</code> (400), <code>forbidden</code> e <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500), <code>agent-unavailable</code> (502) — sucesso é <strong>200</strong> com o corpo JSON documentado na tabela. O <code>GET /api/snapshots</code> ignora manifestos inválidos ou dessincronizados na listagem — a validação completa (schema + inventário contra os arquivos em disco) acontece no revert. Com <code>--share</code> o bind vira <code>0.0.0.0</code> (preview em LAN) e <strong>toda rota <code>/api/*</code> responde 403</strong> (leituras incluídas — nada vaza).</p>
 
   <p><strong>Changelog (w4)</strong>: o bind padrão do servidor passou a ser <code>127.0.0.1</code> (só a própria máquina) — a API de escrita nunca fica exposta na rede. Para testar no celular ou em outro aparelho da LAN, <code>--share</code> é o caminho de migração: <code>node design/serve.mjs 8766 --share</code> (bind <code>0.0.0.0</code>). Em <code>--share</code> o visualizador entra em <strong>modo leitura com degradação declarada</strong>: além do 403 em toda rota <code>/api/*</code>, ele esconde as ações de escrita e os recursos alimentados por <code>/api</code> (pins nas telas, painel de pendências, responder/resolver) e mostra o banner "modo leitura — comentários e snapshots indisponíveis". O contrato vale para o futuro: as UIs de <strong>snapshots/comparação</strong> (que chegam depois) também precisam ficar ocultas em <code>--share</code> — marcá-las com <code>data-share-hide</code> no HTML já basta, pois o visualizador as esconde via <code>syncShareDegradation()</code>.</p>
 

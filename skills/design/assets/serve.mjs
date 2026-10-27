@@ -80,7 +80,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { basename, dirname, extname, join, normalize, relative, resolve, sep } from 'node:path'
 
 const argv = process.argv.slice(2)
@@ -105,6 +105,8 @@ const token = randomBytes(16).toString('hex')
 
 const MAX_BODY = 256 * 1024
 const SAFE_ID = /^[a-z0-9-]+$/
+/** Spawn options for external processes: hidden console windows on Windows. */
+const HIDDEN = { windowsHide: true }
 const TOKEN_PLACEHOLDER = 'window.__DESIGN_TOKEN__ = null'
 const TOKEN_INJECTED = `window.__DESIGN_TOKEN__ = "${token}"`
 // share mode: the token stays null (writes are refused by /api anyway) and the
@@ -950,6 +952,92 @@ function handleRevert(res, body) {
   })
 }
 
+// ---------- agent delivery ----------
+/* Send a [Design: …] message straight into the user's OpenCode session —
+ * no clipboard round-trip. Discovery goes through the `opencode` CLI (ASCII
+ * args only, so no console codepage traps); the delivery itself is plain
+ * HTTP to the local service with Basic auth (opencode:<password> from
+ * ~/.config/opencode/service.json). Everything is best-effort: any failure
+ * answers {error: "agent-unavailable"} and the viewer falls back to the
+ * clipboard. Never runs under --share (the /api guard refuses first). */
+
+const AGENT_CACHE_MS = 60_000
+let agentCache = { url: null, at: 0 }
+
+function agentConfigDir() {
+  return join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'opencode')
+}
+
+function agentEndpoint() {
+  if (agentCache.url && Date.now() - agentCache.at < AGENT_CACHE_MS) return agentCache.url
+  try {
+    const args = ['api', 'get', '/api/info']
+    const result = process.platform === 'win32'
+      ? spawnSync('cmd.exe', ['/d', '/s', '/c', 'opencode', ...args], { encoding: 'utf8', ...HIDDEN, timeout: 15_000 })
+      : spawnSync('opencode', args, { encoding: 'utf8', ...HIDDEN, timeout: 15_000 })
+    const url = result.status === 0 ? JSON.parse(result.stdout).urls?.[0] ?? null : null
+    agentCache = { url, at: Date.now() }
+    return url
+  } catch {
+    return null
+  }
+}
+
+async function agentCall(method, path, body) {
+  const url = agentEndpoint()
+  if (!url) return null
+  let password = null
+  try {
+    password = JSON.parse(readFileSync(join(agentConfigDir(), 'service.json'), 'utf8')).password
+  } catch {
+    return null
+  }
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 15_000)
+  try {
+    const response = await fetch(url + path, {
+      method,
+      headers: {
+        authorization: `Basic ${Buffer.from(`opencode:${password}`).toString('base64')}`,
+        'content-type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    })
+    if (!response.ok) return null
+    return await response.json()
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/** Newest root session of this project wins; none exists → create one here. */
+async function deliverToAgent(text) {
+  const directory = process.cwd()
+  const list = await agentCall('GET', `/api/session?directory=${encodeURIComponent(directory)}&order=desc&limit=1&parentID=null`)
+  let session = list?.data?.[0] ?? null
+  let created = false
+  if (!session) {
+    const made = await agentCall('POST', '/api/session', { title: 'Design review', location: { directory } })
+    session = made?.data ?? null
+    created = true
+  }
+  if (!session?.id) return null
+  const sent = await agentCall('POST', `/api/session/${session.id}/prompt`, { text })
+  if (!sent?.data) return null
+  return { session: { id: session.id, title: session.title ?? '' }, created }
+}
+
+async function handleAgentSend(res, parsed) {
+  const text = typeof parsed.text === 'string' ? parsed.text.trim() : ''
+  if (!text || text.length > 32_000) return fail(res, 400, 'invalid')
+  const delivered = await deliverToAgent(text)
+  if (!delivered) return fail(res, 502, 'agent-unavailable')
+  return sendJson(res, 200, { delivered: true, ...delivered })
+}
+
 // ---------- routing ----------
 
 async function handleApi(req, res, pathname) {
@@ -966,7 +1054,9 @@ async function handleApi(req, res, pathname) {
           ? 'snapshot'
           : pathname === '/api/revert'
             ? 'revert'
-            : null
+            : pathname === '/api/agent-send'
+              ? 'agent-send'
+              : null
   if (!route) return fail(res, 404, 'not-found')
 
   try {
@@ -1001,6 +1091,7 @@ async function handleApi(req, res, pathname) {
 
     if (route === 'revert') return handleRevert(res, parsed)
     if (!parsed) return fail(res, 400, 'invalid')
+    if (route === 'agent-send') return handleAgentSend(res, parsed)
     if (route === 'comments') return sendJson(res, 200, { comments: handleCommentsPost(parsed) })
     return sendJson(res, 200, { snapshot: handleSnapshot(parsed) })
   } catch (error) {
