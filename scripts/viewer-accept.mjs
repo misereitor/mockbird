@@ -87,7 +87,7 @@ const ok = (label) => {
   console.log(`PASS ${label}`)
 }
 
-await page.goto('http://127.0.0.1:8796/viewer.html?canvas=login', { waitUntil: 'networkidle' })
+await page.goto('http://127.0.0.1:8796/viewer.html?canvas=login', { waitUntil: 'load' })
 await page.waitForTimeout(1500)
 
 // 1. SELECT
@@ -168,6 +168,35 @@ await page.waitForTimeout(4000) // poll (2.5s) + reload
 const marker = await page.evaluate(() => window.__acceptMarker)
 if (marker === undefined) ok('viewer recarrega a si mesmo quando muda')
 else fail('self-reload', 'a aba continuou com o codigo antigo')
+
+// 8. SHARE mode (--share): degradation must be DECLARED, never silent
+const shareServer = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), '8794', '--share', '--no-open'], {
+  cwd: ROOT,
+  windowsHide: true,
+  stdio: ['ignore', 'pipe', 'pipe'],
+})
+await new Promise((resolve, reject) => {
+  const timer = setTimeout(() => reject(new Error('serve.mjs --share nao subiu em 10s')), 10_000)
+  shareServer.stdout.on('data', (chunk) => {
+    if (String(chunk).includes('TOKEN:')) {
+      clearTimeout(timer)
+      resolve()
+    }
+  })
+})
+await page.goto('http://127.0.0.1:8794/viewer.html?canvas=login', { waitUntil: 'load' })
+await page.waitForTimeout(1200)
+const bannerVisible = await page.$eval('#shareBanner', (el) => !el.hidden)
+const commentsHidden = await page.$eval('#commentBtn', (el) => el.hidden)
+if (bannerVisible && commentsHidden) ok('modo leitura: banner visivel e acoes de escrita escondidas')
+else fail('modo leitura', `banner=${bannerVisible} commentBtn.hidden=${commentsHidden}`)
+await page.click('#strip .card-overlay', { button: 'right' })
+await page.waitForTimeout(300)
+const toastText = await page.$eval('#toast', (el) => el.textContent)
+if (/share/i.test(toastText)) ok('modo leitura: botao direito EXPLICA (toast), nunca fica mudo')
+else fail('toast modo leitura', `toast=${JSON.stringify(toastText)}`)
+await page.screenshot({ path: join(shots, 'accept-share.png') })
+shareServer.kill()
 
 if (errors.length) fail('erros de pagina', errors.join(' | '))
 else ok('nenhum erro de pagina em todo o fluxo')

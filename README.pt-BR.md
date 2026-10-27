@@ -189,6 +189,11 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **O modo leitura se explica (v1.0.14)**: sob `--share` o botão direito não
+  fazia *nada* (o menu do elemento se recusava a abrir em silêncio) — agora
+  ele responde "Modo leitura (--share): comentários indisponíveis — rode sem
+  --share para comentar". Degradação declarada, nunca silêncio. O modo leitura
+  agora está coberto pela suíte de aceitação (12/12).
 - **Versão na tela (v1.0.13)**: o viewer mostra uma etiqueta pequena de versão
   no rodapé à direita, e o CI falha se ela divergir do `package.json` — todo
   relato diz exatamente qual versão está rodando (acaba a ambiguidade de aba

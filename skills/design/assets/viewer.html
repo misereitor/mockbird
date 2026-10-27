@@ -628,7 +628,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.0.13</div>
+<div id="versionTag">v1.0.14</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -789,6 +789,7 @@ const I18N = {
     languageTitle: 'Switch language (reloads the page)',
     problemsSummary: ' problem(s) in the canvas — click to see',
     shareBanner: 'read-only mode — comments and snapshots unavailable',
+    shareReadOnlyHint: 'Read-only mode (--share): comments are unavailable — run without --share to comment',
     unavailableBrowser: 'Unavailable in this browser',
     canvasLabel: 'Canvas',
     // canvas picker
@@ -1013,6 +1014,7 @@ const I18N = {
     languageTitle: 'Trocar o idioma (recarrega a página)',
     problemsSummary: ' problema(s) no canvas — clique para ver',
     shareBanner: 'modo leitura — comentários e snapshots indisponíveis',
+    shareReadOnlyHint: 'Modo leitura (--share): comentários indisponíveis — rode sem --share para comentar',
     unavailableBrowser: 'Indisponível neste navegador',
     canvasLabel: 'Canvas',
     // canvas picker
@@ -2591,7 +2593,11 @@ function closeCtxMenu() {
 }
 
 function openCtxMenu(target, clientX, clientY) {
-  if (isReadonly()) return // share: comentar é escrita — o menu nunca abre
+  if (isReadonly()) {
+    // w13: degradação declarada — o menu nunca fica mudo no modo leitura
+    toast(t('shareReadOnlyHint'))
+    return
+  }
   const menu = $('ctxMenu')
   ctxTarget = target
   $('ctxTarget').textContent = `${target.selector}${target.snippet ? ` — "${target.snippet}"` : ''}`

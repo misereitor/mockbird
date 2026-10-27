@@ -185,6 +185,11 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Read-only mode explains itself (v1.0.14)**: under `--share` the right
+  button used to do *nothing* (the element menu silently refused to open) —
+  now it answers with "Read-only mode (--share): comments are unavailable —
+  run without --share to comment". Declared degradation, never silence. The
+  share-mode behavior is now covered by the acceptance suite (12/12).
 - **Version on screen (v1.0.13)**: the viewer now shows a small version tag
   bottom-right, and CI fails if it ever drifts from `package.json` — every
   report can say exactly which version is running (no more stale-tab
