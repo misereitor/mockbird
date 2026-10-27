@@ -185,6 +185,13 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **The viewer updates itself + real-browser acceptance (v1.0.11)**: the
+  viewer now watches its **own** file and reloads the tab automatically when
+  it changes — fixes reach your screen without pressing F5 (this is why
+  recent changes kept "not working": the tab was running old JS). New
+  `npm run test:ui` acceptance suite (Edge/Chrome + `playwright-core`) runs
+  the core workflow in a real browser — select, comment, right-click menu
+  (list and flow mode), box selection, self-reload — 9/9 green.
 - **Mouse contract, finally (v1.0.10)**: left selects (click or drag a
   selection box), the middle button pans, and the **right button opens the
   element menu** (💬/📋/🧩) — always. The right button had been turned into a

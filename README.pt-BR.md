@@ -189,6 +189,13 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **O viewer se atualiza sozinho + aceitação em browser de verdade (v1.0.11)**:
+  o viewer agora vigia o **próprio** arquivo e recarrega a aba sozinho quando
+  ele muda — os fixes chegam na sua tela sem F5 (era por isso que as mudanças
+  "não funcionavam": a aba rodava JS antigo). Nova suíte de aceitação
+  `npm run test:ui` (Edge/Chrome + `playwright-core`) que roda o fluxo
+  central num browser de verdade — selecionar, comentar, menu do botão direito
+  (lista e modo fluxo), seleção por retângulo, auto-reload — 9/9 verde.
 - **Contrato do mouse, finalmente (v1.0.10)**: o esquerdo seleciona (clique ou
   arraste a caixa de seleção), o botão do meio move, e o **botão direito abre
   o menu do elemento** (💬/📋/🧩) — sempre. O botão direito tinha virado gesto

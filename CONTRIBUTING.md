@@ -13,6 +13,7 @@ guess the project's invariants — the CI enforces most of them.
 npm run ci        # unit tests + mock contracts + smoke + validator + security + i18n
 npm test          # plugin/core.test.mjs
 npm run test:mock # mock.js navigation/overlay contracts (scripts/mock-check.mjs)
+npm run test:ui   # real-browser acceptance (needs `npm i playwright-core`; Edge/Chrome)
 npm run smoke     # plugin smoke (frontmatter, loadSkills, syncProject)
 npm run validate  # validator against the example canvas
 npm run security  # serve.mjs security suite (7 checks)

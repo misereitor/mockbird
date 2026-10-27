@@ -4164,7 +4164,7 @@ let pollBaseline = null // Map<path, signature>; null = first pass just baseline
 function watchedFiles() {
   const canvas = [`${state.canvas}/canvas.json`, `${state.canvas}/data.json`]
   const screens = state.screens.map((s) => `${state.canvas}/${String(s.file).split('?')[0]}`)
-  return [...SHARED_FILES, ...canvas, ...screens]
+  return ['viewer.html', ...SHARED_FILES, ...canvas, ...screens]
 }
 
 function cheapHash(text) {
@@ -4211,6 +4211,13 @@ setInterval(async () => {
   const changed = files.filter((file) => current.get(file) !== 'error' && pollBaseline.get(file) !== current.get(file))
   if (changed.length === 0) return
   pollBaseline = current
+  // w12: o viewer vigia a SI MESMO — quando viewer.html muda, esta aba está
+  // rodando código velho; recarrega sozinha (a posição do fluxo volta pela
+  // persistência). Sem isso, os fixes só chegavam com F5 manual.
+  if (changed.includes('viewer.html')) {
+    location.reload()
+    return
+  }
   if (changed.includes(`${state.canvas}/canvas.json`)) {
     state.bust = Date.now()
     await loadCanvas()
