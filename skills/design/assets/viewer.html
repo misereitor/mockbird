@@ -88,7 +88,28 @@
   .card { display: flex; flex-direction: column; gap: 8px; }
   .card-head { display: flex; align-items: baseline; gap: 10px; }
   .card-name { font-weight: 600; }
-  .card-size { color: var(--ui-muted); font-size: 12px; }
+  .card-size {
+    color: var(--ui-muted); font-size: 12px;
+    border: 0; background: transparent; height: auto; min-height: 0; padding: 0 2px;
+    cursor: pointer;
+  }
+  .card-size:hover { color: var(--ui-accent); }
+  /* w17: responsividade dinamica - arrastar as bordas redimensiona a tela ao vivo */
+  .rs-handle { position: absolute; z-index: 6; display: none; }
+  .card.selected .rs-handle, #fsWorld .rs-handle { display: block; }
+  .rs-e { top: 0; right: -3px; width: 8px; height: 100%; cursor: ew-resize; }
+  .rs-s { left: 0; bottom: -3px; width: 100%; height: 8px; cursor: ns-resize; }
+  .rs-se { right: -3px; bottom: -3px; width: 18px; height: 18px; cursor: nwse-resize; }
+  .rs-se::after {
+    content: ''; position: absolute; right: 4px; bottom: 4px; width: 8px; height: 8px;
+    border-right: 2px solid var(--ui-accent); border-bottom: 2px solid var(--ui-accent);
+    border-radius: 0 0 3px 0;
+  }
+  .size-row { display: flex; align-items: flex-end; gap: 8px; margin: 10px 0; }
+  .size-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ui-muted); }
+  .size-field input { width: 92px; height: 32px; padding: 0 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-surface); color: var(--ui-text); font: inherit; }
+  .size-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+  .size-chips button { height: 26px; min-height: 26px; padding: 0 8px; font-size: 11px; border-radius: 6px; }
   .card-frame {
     position: relative; background: var(--ui-surface);
     border: 1px solid var(--ui-border); border-radius: 4px; overflow: hidden;
@@ -184,7 +205,12 @@
   /* modo fluxo: barra compacta (paridade com o cabeçalho, sem virar ruído) */
   #fsTop button { height: 28px; min-height: 28px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
   #fsTop select { height: 28px; padding: 0 6px; font-size: 12px; }
-  .fs-size { color: var(--ui-muted); font-size: 12px; }
+  .fs-size {
+    color: var(--ui-muted); font-size: 12px;
+    border: 0; background: transparent; height: auto; min-height: 0; padding: 0 4px;
+    cursor: pointer;
+  }
+  .fs-size:hover { color: var(--ui-accent); }
   .fs-tools {
     display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
     margin-left: auto;
@@ -552,7 +578,7 @@
     <button id="fsChip" data-i18n-title="chipsBtnTitle" title="Show id/variant chips over each component (inspector)" data-i18n="chipsBtn">🧩 Components</button>
     <button id="fsTheme" data-i18n-title="themeToggle" title="Toggle light/dark theme">🌙</button>
     <strong id="fsTitle"></strong>
-    <span id="fsSize" class="fs-size"></span>
+    <button id="fsSize" type="button" class="fs-size" data-i18n-title="sizeEditTitleAttr" title="Edit screen size (click) or drag the edges"></button>
     <div class="fs-tools">
       <span class="zoomgrp">
         <button id="fsZoomOut" data-i18n-title="zoomOut" data-i18n-aria="zoomOut" title="Zoom out" aria-label="Zoom out">−</button>
@@ -588,6 +614,9 @@
       <div id="fsPins" class="pins" data-share-hide></div>
       <div id="fsOverlay" class="card-overlay" hidden></div>
       <div id="fsHighlight" class="highlight"></div>
+      <div class="rs-handle rs-e" data-share-hide></div>
+      <div class="rs-handle rs-s" data-share-hide></div>
+      <div class="rs-handle rs-se" data-share-hide></div>
     </div>
   </div>
 </div>
@@ -655,6 +684,36 @@
   </form>
 </div>
 
+<div id="sizeDialog" class="overlay" hidden>
+  <form class="box" id="sizeForm">
+    <h2 data-i18n="sizeEditTitle">Screen size</h2>
+    <p class="hint" data-i18n="sizeEditHint">Set the viewport size to test responsiveness - the mock reflows live.</p>
+    <div class="size-row">
+      <label class="size-field"><span data-i18n="sizeW">Width</span>
+        <input id="sizeW" type="number" min="100" max="20000" step="1" required>
+      </label>
+      <label class="size-field"><span data-i18n="sizeH">Height</span>
+        <input id="sizeH" type="number" min="100" max="20000" step="1" required>
+      </label>
+      <button id="sizeSwap" type="button" data-i18n-title="sizeSwapTitle" title="Swap width and height">&#8646;</button>
+    </div>
+    <div class="size-chips" id="sizeChips">
+      <button type="button" data-w="360" data-h="800">360&#215;800</button>
+      <button type="button" data-w="390" data-h="844">390&#215;844</button>
+      <button type="button" data-w="430" data-h="932">430&#215;932</button>
+      <button type="button" data-w="768" data-h="1024">768&#215;1024</button>
+      <button type="button" data-w="1024" data-h="768">1024&#215;768</button>
+      <button type="button" data-w="1280" data-h="800">1280&#215;800</button>
+      <button type="button" data-w="1440" data-h="900">1440&#215;900</button>
+    </div>
+    <div class="row">
+      <button type="button" id="sizeReset" data-i18n="sizeReset">Restore default</button>
+      <button type="button" data-close data-i18n="cancelBtn">Cancel</button>
+      <button type="submit" class="primary" data-i18n="sizeApply">Apply</button>
+    </div>
+  </form>
+</div>
+
 <div id="preview" class="overlay" hidden>
   <div class="box">
     <h2 data-i18n="previewTitle">PNG exported</h2>
@@ -667,7 +726,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.0.20</div>
+<div id="versionTag">v1.0.21</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -933,6 +992,17 @@ const I18N = {
     deleteSelectedBtn: 'Delete selected',
     deleteSelectedConfirm: 'Delete the selected comments permanently?',
     enterHint: 'Enter saves - Ctrl+Enter or Shift+Enter for a new line',
+    sizeEditTitle: 'Screen size',
+    sizeEditHint: 'Set the viewport size to test responsiveness - the mock reflows live.',
+    sizeEditTitleAttr: 'Edit screen size (click) or drag the edges',
+    sizeW: 'Width',
+    sizeH: 'Height',
+    sizeSwapTitle: 'Swap width and height',
+    sizeReset: 'Restore default',
+    sizeApply: 'Apply',
+    sizeSaved: 'Screen size saved',
+    sizeSaveFailed: 'Could not save the screen size',
+    sizeDeviceCleared: 'Global device override cleared - the new size applies',
     pinResolvedToast: 'Comment resolved — listed under Pending › Resolved',
     pinReopenedToast: 'Comment reopened',
     commentCreated: 'Comment saved — pick and send it from 💬 Pending',
@@ -1178,6 +1248,17 @@ const I18N = {
     deleteSelectedBtn: 'Excluir selecionados',
     deleteSelectedConfirm: 'Excluir os comentários selecionados permanentemente?',
     enterHint: 'Enter salva - Ctrl+Enter ou Shift+Enter quebra linha',
+    sizeEditTitle: 'Tamanho da tela',
+    sizeEditHint: 'Defina o tamanho do viewport para testar a responsividade - o mock reage ao vivo.',
+    sizeEditTitleAttr: 'Editar tamanho da tela (clique) ou arraste as bordas',
+    sizeW: 'Largura',
+    sizeH: 'Altura',
+    sizeSwapTitle: 'Trocar largura e altura',
+    sizeReset: 'Restaurar padrão',
+    sizeApply: 'Aplicar',
+    sizeSaved: 'Tamanho da tela salvo',
+    sizeSaveFailed: 'Não consegui salvar o tamanho da tela',
+    sizeDeviceCleared: 'Dispositivo global desmarcado - o novo tamanho vale',
     pinResolvedToast: 'Comentário resolvido — listado em Pendentes › Resolvidos',
     pinReopenedToast: 'Comentário reaberto',
     commentCreated: 'Comentário salvo — selecione e envie por 💬 Pendentes',
@@ -2039,6 +2120,44 @@ $('tabResolved').addEventListener('click', () => {
 
 $('pendingFilter').addEventListener('input', () => renderPendingPanel())
 
+/* ------- w17: dialogo de tamanho da tela + handles do modo fluxo */
+
+$('sizeForm').addEventListener('submit', (event) => {
+  event.preventDefault()
+  const width = Number($('sizeW').value)
+  const height = Number($('sizeH').value)
+  if (!Number.isInteger(width) || !Number.isInteger(height)
+    || width < 100 || width > 20000 || height < 100 || height > 20000) {
+    return toast(t('sizeSaveFailed'))
+  }
+  $('sizeDialog').hidden = true
+  if (sizeTarget) commitScreenSize(sizeTarget.screen, width, height)
+})
+
+$('sizeSwap').addEventListener('click', () => {
+  const width = $('sizeW').value
+  $('sizeW').value = $('sizeH').value
+  $('sizeH').value = width
+})
+
+$('sizeReset').addEventListener('click', () => {
+  $('sizeDialog').hidden = true
+  if (sizeTarget) resetScreenSize(sizeTarget.screen)
+})
+
+$('sizeChips').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-w]')
+  if (!button) return
+  $('sizeW').value = button.dataset.w
+  $('sizeH').value = button.dataset.h
+})
+
+$('fsSize').addEventListener('click', () => openSizeDialog(fsScreen))
+
+document.querySelectorAll('#fsWorld .rs-handle').forEach((handle, index) => {
+  wireResize(handle, ['e', 's', 'se'][index], $('fsFrame'), () => fsScreen, () => fsView.zoom)
+})
+
 /* ------------------------------------------------- snapshots (w5-22) */
 
 const SNAPSHOTS_API = 'api/snapshots'
@@ -2663,9 +2782,12 @@ function cardFor(screen) {
   const name = document.createElement('span')
   name.className = 'card-name'
   name.textContent = screen.name
-  const size = document.createElement('span')
+  const size = document.createElement('button')
+  size.type = 'button'
   size.className = 'card-size'
   size.textContent = sizeLabel(screen, width, height)
+  size.title = t('sizeEditTitleAttr')
+  size.addEventListener('click', () => openSizeDialog(screen)) // w17: tamanho editavel
   const reset = document.createElement('button')
   reset.className = 'card-reset'
   reset.type = 'button'
@@ -2732,7 +2854,7 @@ function cardFor(screen) {
     highlight.dataset.info = `${target.selector}${target.snippet ? ` — "${target.snippet}"` : ''}`
   })
   overlay.addEventListener('mouseleave', () => { highlight.style.display = 'none' })
-  frame.append(iframe, overlay, highlight, pins)
+  frame.append(iframe, overlay, highlight, pins, ...resizeHandles(frame, () => screen, () => state.zoom))
 
   card.append(head, frame)
   return card
@@ -3092,6 +3214,160 @@ function sizeLabel(screen, width, height) {
     ? t(DEVICE_LABEL[state.device])
     : (screen.device in DEVICES ? t(DEVICE_LABEL[screen.device]) : (Number.isInteger(screen.width) ? t('devCustom') : t('devMobile')))
   return `${width}×${height} · ${device}`
+}
+
+/* ---------------------- w17: tamanho da tela (responsividade dinamica) ---- */
+
+const SCREEN_SIZE_API = 'api/screen-size'
+
+let sizeTarget = null // {screen, canvas, file} - alvo do dialogo de tamanho
+
+/** POST /api/screen-size - persiste o tamanho no canvas.json (o poller de
+ *  historico do servidor grava a revisao). null/null = restaurar o padrao. */
+async function persistScreenSize(canvas, file, width, height) {
+  if (isReadonly()) return false
+  try {
+    const response = await fetch(SCREEN_SIZE_API, {
+      method: 'POST',
+      headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ canvas, file, width, height }),
+    })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    return true
+  } catch {
+    toast(t('sizeSaveFailed'))
+    return false
+  }
+}
+
+/** O override global de dispositivo mascara o tamanho da tela - quem edita
+ *  tamanho manda; o override volta para "original" (com aviso declarado). */
+function clearDeviceOverride() {
+  if (state.device === 'original') return
+  state.device = 'original'
+  $('deviceSelect').value = 'original'
+  $('fsDevice').value = 'original'
+  toast(t('sizeDeviceCleared'))
+}
+
+/** w17: pins seguem o reflow - reancora no elemento vivo (selector/snippet)
+ *  e persiste o rect novo; pins sem ancora resolvivel mantem o rect antigo. */
+function reanchorPins(screen, iframe) {
+  const canvas = screen.canvas ?? state.canvas
+  const base = String(screen.file).split('?')[0].split('/').pop()
+  for (const pin of state.allComments ?? []) {
+    if (!pin || pin.canvas !== canvas) continue
+    if (String(pin.file).split('?')[0].split('/').pop() !== base) continue
+    const el = resolveAnchor(iframe?.contentDocument ?? null, pin)
+    const rect = el?.getBoundingClientRect?.()
+    if (!rect || (!rect.width && !rect.height)) continue
+    pin.rect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+    persistPin({ id: pin.id, rect: pin.rect }) // melhor-esforco
+  }
+}
+
+/** Redesenha o tamanho novo: frame do card, label, modo fluxo e pins. */
+function refreshSizeUI(screen) {
+  const [width, height] = screenSize(screen)
+  const card = $('strip')?.querySelector(`.card[data-id="${CSS.escape(screen.id ?? '')}"]`)
+  if (card) {
+    const frame = card.querySelector('.card-frame')
+    if (frame) {
+      frame.style.width = `${width}px`
+      frame.style.height = `${height}px`
+    }
+    card.dataset.device = width <= 430 ? 'mobile' : width <= 900 ? 'tablet' : 'desktop'
+    const label = card.querySelector('.card-size')
+    if (label) label.textContent = sizeLabel(screen, width, height)
+    const iframe = frame?.querySelector('iframe')
+    if (iframe) reanchorPins(screen, iframe)
+    renderPins(screen.id)
+  }
+  if (!$('fullscreen').hidden && fsScreen === screen) {
+    layoutFullscreen()
+    reanchorPins(screen, $('fsFrame'))
+    renderFsPins()
+  }
+}
+
+/** Aplica um tamanho editado (drag ou dialogo) e persiste. */
+function commitScreenSize(screen, width, height) {
+  screen.width = width
+  screen.height = height
+  clearDeviceOverride()
+  refreshSizeUI(screen)
+  persistScreenSize(screen.canvas ?? state.canvas, String(screen.file).split('?')[0], width, height).then((ok) => {
+    if (ok) toast(t('sizeSaved'))
+  })
+}
+
+/** Restaura o padrao do dispositivo (o manifesto solta o override). */
+function resetScreenSize(screen) {
+  delete screen.width
+  delete screen.height
+  clearDeviceOverride()
+  refreshSizeUI(screen)
+  persistScreenSize(screen.canvas ?? state.canvas, String(screen.file).split('?')[0], null, null).then((ok) => {
+    if (ok) toast(t('sizeSaved'))
+  })
+}
+
+function openSizeDialog(screen) {
+  if (isReadonly()) return toast(t('shareReadOnlyHint')) // share: edicao e escrita
+  if (!screen) return
+  sizeTarget = { screen, canvas: screen.canvas ?? state.canvas, file: String(screen.file).split('?')[0] }
+  const [width, height] = screenSize(screen)
+  $('sizeW').value = String(width)
+  $('sizeH').value = String(height)
+  $('sizeDialog').hidden = false
+  $('sizeW').focus()
+}
+
+/** Arraste de borda (e/s/se) = redimensionar a tela ao vivo (reflow na hora).
+ *  `screenRef` devolve o alvo no pointerdown (fsScreen troca a cada fluxo);
+ *  `zoomOf` devolve o zoom vigente - o delta do mouse esta em px de tela. */
+function wireResize(handle, axis, frame, screenRef, zoomOf) {
+  handle.addEventListener('pointerdown', (event) => {
+    const screen = screenRef()
+    if (!screen) return
+    if (isReadonly()) return toast(t('shareReadOnlyHint'))
+    event.preventDefault()
+    event.stopPropagation()
+    const [w0, h0] = screenSize(screen)
+    const x0 = event.clientX
+    const y0 = event.clientY
+    let width = w0
+    let height = h0
+    const move = (moveEvent) => {
+      const zoom = zoomOf() || 1
+      if (axis !== 's') width = Math.min(20000, Math.max(100, Math.round(w0 + (moveEvent.clientX - x0) / zoom)))
+      if (axis !== 'e') height = Math.min(20000, Math.max(100, Math.round(h0 + (moveEvent.clientY - y0) / zoom)))
+      frame.style.width = `${width}px`
+      frame.style.height = `${height}px`
+      const label = frame.parentElement?.querySelector('.card-size')
+      if (label) label.textContent = `${width}\u00d7${height} \u00b7 ${t('devCustom')}`
+      if (frame.id === 'fsFrame') $('fsSize').textContent = `${width}\u00d7${height}`
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      commitScreenSize(screen, width, height)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  })
+  handle.addEventListener('click', (event) => event.stopPropagation())
+}
+
+/** Cria os tres handles (e/s/se) para um frame de card. */
+function resizeHandles(frame, screenRef, zoomOf) {
+  return ['e', 's', 'se'].map((axis) => {
+    const handle = document.createElement('div')
+    handle.className = `rs-handle rs-${axis}`
+    handle.setAttribute('data-share-hide', '')
+    wireResize(handle, axis, frame, screenRef, zoomOf)
+    return handle
+  })
 }
 
 function select(id) {

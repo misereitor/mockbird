@@ -189,6 +189,15 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Responsividade dinâmica (v1.0.21)**: o tamanho de cada tela agora é
+  **editável** — clique no rótulo de tamanho da tela (ou no chip de tamanho no
+  modo fluxo) para medidas exatas de largura/altura com presets rápidos
+  (360…1440) e giro de orientação, ou simplesmente **arraste as bordas da
+  moldura** (direita/baixo/canto) e veja o mock **reflowar ao vivo**. O tamanho
+  é salvo por tela no `canvas.json` pela rota nova `POST /api/screen-size`
+  ("Restaurar padrão" solta o override); os comentários seguem o reflow (pins
+  se reancoram nos elementos e os rects novos persistem). Travado na suíte de
+  browser (34/34, incluindo arraste e a degradação declarada do `--share`).
 - **Barra do painel limpa (v1.0.20)**: as abas não aparecem mais como botões
   com caixa (borda/fundo do estilo base de botão sumiram — aba ativa é um
   sublinhado), a barra de ações não quebra mais palavras no meio (altura

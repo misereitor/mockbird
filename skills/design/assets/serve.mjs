@@ -302,6 +302,7 @@ function handleCommentsPost(body) {
   const existing = hasId ? comments.find((pin) => pin && pin.id === body.id) : undefined
   if (existing) {
     if (body.status !== undefined) existing.status = body.status
+    if (body.rect !== undefined) existing.rect = body.rect // w17: re-ancora ao redimensionar
     if (body.replies !== undefined) {
       if (!Array.isArray(existing.replies)) existing.replies = []
       existing.replies.push(...normalizeReplies(body.replies))
@@ -334,6 +335,56 @@ function handleCommentsPost(body) {
   comments.push(pin)
   saveComments(comments)
   return comments
+}
+
+/** POST /api/screen-size {canvas, file, width, height} - w17: editar o
+ *  tamanho da tela no manifesto (canvas.json), para responsividade dinamica.
+ *  width/height null = restaurar o padrao do dispositivo (o manifesto solta
+ *  o override). O poller de historico ja grava a revisao do canvas.json. */
+function handleScreenSize(body) {
+  if (!body || typeof body.canvas !== 'string' || !SAFE_ID.test(body.canvas)) {
+    throw new ApiError(400, 'invalid')
+  }
+  if (typeof body.file !== 'string' || body.file.length === 0 || body.file.length > 512) {
+    throw new ApiError(400, 'invalid')
+  }
+  const reset = body.width === null && body.height === null
+  let width = 0
+  let height = 0
+  if (!reset) {
+    width = Number(body.width)
+    height = Number(body.height)
+    if (!Number.isInteger(width) || !Number.isInteger(height)) throw new ApiError(400, 'invalid')
+    if (width < 100 || width > 20000 || height < 100 || height > 20000) throw new ApiError(400, 'invalid')
+  }
+  const canvasDir = join(root, body.canvas)
+  if (!existsSync(canvasDir) || !statSync(canvasDir).isDirectory()) throw new ApiError(404, 'not-found')
+  const manifestPath = normalize(join(canvasDir, 'canvas.json'))
+  if (manifestPath !== canvasDir && !manifestPath.startsWith(canvasDir + sep)) throw new ApiError(403, 'traversal')
+  if (!existsSync(manifestPath) || !statSync(manifestPath).isFile()) throw new ApiError(404, 'not-found')
+  let manifest
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  } catch {
+    throw new ApiError(400, 'invalid')
+  }
+  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest) || !Array.isArray(manifest.screens)) {
+    throw new ApiError(400, 'invalid')
+  }
+  const want = String(body.file).split(/[?#]/)[0].split(/[\\/]/).pop()
+  const screen = manifest.screens.find(
+    (s) => s && typeof s.file === 'string' && s.file.split(/[?#]/)[0].split(/[\\/]/).pop() === want,
+  )
+  if (!screen) throw new ApiError(404, 'not-found')
+  if (reset) {
+    delete screen.width
+    delete screen.height
+  } else {
+    screen.width = width
+    screen.height = height
+  }
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+  return { screen: { file: screen.file, width: screen.width ?? null, height: screen.height ?? null } }
 }
 
 // ---------- snapshots ----------
@@ -1218,7 +1269,9 @@ async function handleApi(req, res, pathname) {
                 ? 'history'
                 : pathname === '/api/history/restore'
                   ? 'history-restore'
-                  : null
+                  : pathname === '/api/screen-size'
+                    ? 'screen-size'
+                    : null
   if (!route) return fail(res, 404, 'not-found')
 
   try {
@@ -1274,6 +1327,7 @@ async function handleApi(req, res, pathname) {
     if (!parsed) return fail(res, 400, 'invalid')
     if (route === 'agent-send') return handleAgentSend(res, parsed)
     if (route === 'history-restore') return handleHistoryRestore(res, parsed)
+    if (route === 'screen-size') return sendJson(res, 200, handleScreenSize(parsed))
     if (route === 'comments') return sendJson(res, 200, { comments: handleCommentsPost(parsed) })
     return sendJson(res, 200, { snapshot: handleSnapshot(parsed) })
   } catch (error) {

@@ -185,6 +185,15 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Dynamic responsive sizing (v1.0.21)**: every screen's size is now
+  **editable** — click a screen's size label (or the size chip in flow mode)
+  for exact width/height with quick presets (360…1440) and orientation swap,
+  or just **drag the frame edges** (right/bottom/corner) and watch the mock
+  **reflow live**. The size is saved per screen into `canvas.json` through the
+  new `POST /api/screen-size` route ("Restore default" drops the override);
+  comments follow the reflow (pins re-anchor to their elements and the new
+  rects persist). Locked by the browser suite (34/34, including drag and the
+  `--share` declared degradation).
 - **Panel toolbar cleanup (v1.0.20)**: the tabs no longer render as boxed
   buttons (borders/background from the base button style are gone — an active
   tab is an underline), the action bar no longer breaks words mid-phrase

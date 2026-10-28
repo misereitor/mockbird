@@ -120,7 +120,7 @@
       <tr><th>Control</th><th>What it does</th></tr>
       <tr><td><strong>Canvas</strong></td><td>Jump between the project flows (appears with 2+ canvases). Each canvas remembers its own preferences.</td></tr>
       <tr><td><strong>Scenario</strong></td><td>Swap the fictitious data (e.g. <code>empty</code>, <code>critical</code>). The choice survives navigation and is remembered per canvas.</td></tr>
-      <tr><td><strong>Device</strong></td><td><code>Original</code> respects each screen's size; <code>Phone</code>/<code>Tablet</code>/<code>Desktop</code> forces every screen to the same size.</td></tr>
+      <tr><td><strong>Device</strong></td><td><code>Original</code> respects each screen's size; <code>Phone</code>/<code>Tablet</code>/<code>Desktop</code> forces every screen to the same size. Sizes are editable too: click the screen's size label (or the size chip in flow mode) to type exact dimensions - or just drag the frame edges and watch the mock reflow live. The new size is saved into <code>canvas.json</code>, per screen.</td></tr>
       <tr><td><strong>🌙 Theme</strong></td><td>Light/dark applied inside every screen (they use the design system tokens).</td></tr>
       <tr><td><strong>Zoom</strong></td><td><kbd>−</kbd>/<kbd>+</kbd>/<kbd>Fit</kbd> buttons, <kbd>Ctrl</kbd> + mouse wheel, keys <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Pan with the middle mouse button anywhere — over screens and inside flow mode too (in flow mode a left drag pans as well).</td></tr>
       <tr><td><strong>Search</strong></td><td>Filters screens by name, id or group (<kbd>/</kbd> focuses the box, <kbd>Esc</kbd> clears it) — with arrow keys to step through the visible screens and <kbd>Enter</kbd> to open one.</td></tr>
@@ -322,8 +322,13 @@
       </tr>
       <tr>
         <td><code>POST</code></td><td><code>/api/history/restore</code></td><td><code>{file, revision}</code></td>
-        <td><code>{ restored: {file, revision} }</code> — writes that exact revision back (the restore is recorded as a new revision)</td>
+        <td><code>{ restored: {file, revision} }</code> - writes that exact revision back (the restore is recorded as a new revision)</td>
         <td><strong>200</strong>; <strong>400</strong> (bad body/path); <strong>403</strong> (no token, Host/Origin, traversal); <strong>404</strong> (revision not found)</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td><td><code>/api/screen-size</code></td><td><code>{canvas, file, width, height}</code></td>
+        <td><code>{ screen: {file, width, height} }</code> - edits the screen size in <code>canvas.json</code> (<code>width</code>/<code>height</code> <code>null</code> restores the device default)</td>
+        <td><strong>200</strong>; <strong>400</strong> (invalid size); <strong>403</strong> (no token, Host/Origin); <strong>404</strong> (canvas/file not found); <strong>413</strong></td>
       </tr>
     </table>
     <p>JSON error codes (pinned taxonomy, body <code>{"error": code}</code>): <code>invalid</code> (400), <code>forbidden</code> and <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500), <code>agent-unavailable</code> (502) — success is <strong>200</strong> with the JSON body documented in the table. <code>GET /api/snapshots</code> ignores invalid or desynced manifests in the listing — full validation (schema + inventory against the files on disk) happens at revert. With <code>--share</code> the bind becomes <code>0.0.0.0</code> (LAN preview) and <strong>every <code>/api/*</code> route answers 403</strong> (reads included — nothing leaks).</p>
@@ -430,7 +435,7 @@
     <tr><th>Controle</th><th>O que faz</th></tr>
     <tr><td><strong>Canvas</strong></td><td>Pula entre os fluxos do projeto (aparece com 2+ canvases). Cada canvas lembra suas próprias preferências.</td></tr>
     <tr><td><strong>Cenário</strong></td><td>Troca os dados fictícios (ex.: <code>vazio</code>, <code>critico</code>). A escolha sobrevive à navegação e fica lembrada por canvas.</td></tr>
-    <tr><td><strong>Dispositivo</strong></td><td><code>Original</code> respeita o tamanho de cada tela; <code>Celular</code>/<code>Tablet</code>/<code>Desktop</code> força todas para o mesmo tamanho.</td></tr>
+    <tr><td><strong>Dispositivo</strong></td><td><code>Original</code> respeita o tamanho de cada tela; <code>Celular</code>/<code>Tablet</code>/<code>Desktop</code> força todas para o mesmo tamanho. Os tamanhos também são editáveis: clique no rótulo de tamanho da tela (ou no chip de tamanho no modo fluxo) para digitar medidas exatas — ou simplesmente arraste as bordas da moldura e veja o mock reagir ao vivo. O tamanho novo é salvo no <code>canvas.json</code>, por tela.</td></tr>
     <tr><td><strong>🌙 Tema</strong></td><td>Claro/escuro aplicado dentro de todas as telas (elas usam os tokens do design system).</td></tr>
     <tr><td><strong>Zoom</strong></td><td>Botões <kbd>−</kbd>/<kbd>+</kbd>/<kbd>Ajustar</kbd>, <kbd>Ctrl</kbd> + roda do mouse, teclas <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd>. Mova com o botão do meio do mouse em qualquer lugar — sobre as telas e dentro do modo fluxo também (no modo fluxo o arraste com o esquerdo também move).</td></tr>
       <tr><td><strong>Busca</strong></td><td>Filtra telas por nome, id ou grupo (<kbd>/</kbd> foca o campo, <kbd>Esc</kbd> limpa) — com setas para percorrer as telas visíveis e <kbd>Enter</kbd> para abrir.</td></tr>
@@ -632,8 +637,13 @@
     </tr>
     <tr>
       <td><code>POST</code></td><td><code>/api/history/restore</code></td><td><code>{file, revision}</code></td>
-      <td><code>{ restored: {file, revision} }</code> — grava aquela revisão exata de volta (a restauração vira uma nova revisão)</td>
+      <td><code>{ restored: {file, revision} }</code> - grava aquela revisão exata de volta (a restauração vira uma nova revisão)</td>
       <td><strong>200</strong>; <strong>400</strong> (corpo/caminho inválido); <strong>403</strong> (sem token, Host/Origin, traversal); <strong>404</strong> (revisão inexistente)</td>
+    </tr>
+    <tr>
+      <td><code>POST</code></td><td><code>/api/screen-size</code></td><td><code>{canvas, file, width, height}</code></td>
+      <td><code>{ screen: {file, width, height} }</code> - edita o tamanho da tela no <code>canvas.json</code> (<code>width</code>/<code>height</code> <code>null</code> restaura o padrão do dispositivo)</td>
+      <td><strong>200</strong>; <strong>400</strong> (tamanho inválido); <strong>403</strong> (sem token, Host/Origin); <strong>404</strong> (canvas/arquivo inexistente); <strong>413</strong></td>
     </tr>
   </table>
   <p>Códigos de erro JSON (taxonomia pinada, corpo <code>{"error": código}</code>): <code>invalid</code> (400), <code>forbidden</code> e <code>traversal</code> (403), <code>not-found</code> (404), <code>duplicate</code> (409), <code>too-large</code> (413), <code>internal</code> (500), <code>agent-unavailable</code> (502) — sucesso é <strong>200</strong> com o corpo JSON documentado na tabela. O <code>GET /api/snapshots</code> ignora manifestos inválidos ou dessincronizados na listagem — a validação completa (schema + inventário contra os arquivos em disco) acontece no revert. Com <code>--share</code> o bind vira <code>0.0.0.0</code> (preview em LAN) e <strong>toda rota <code>/api/*</code> responde 403</strong> (leituras incluídas — nada vaza).</p>
