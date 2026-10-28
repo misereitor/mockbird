@@ -185,6 +185,11 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Organized comment panel + Enter to save (v1.0.19)**: the 💬 panel now has
+  **tabs** (Pending · Resolved) with live counts, a **text filter** (comment
+  text, screen, canvas) and **🗑 Delete selected** for batch cleanup. In the
+  comment boxes **Enter saves** and **Ctrl+Enter / Shift+Enter breaks a line**
+  — no more surprises mid-typing. Locked by the browser suite (28/28).
 - **Comments belong to their surface (v1.0.18)**: a comment made inside a
   popup/modal now attaches to **that overlay** — it renders while the overlay
   is open and disappears with it, instead of floating fixed on the screen

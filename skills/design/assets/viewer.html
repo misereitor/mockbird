@@ -327,6 +327,18 @@
   .pending-send button { height: 28px; min-height: 28px; padding: 0 10px; font-size: 12px; }
   .pending-pick { display: flex; align-items: center; }
   .pending-pick input { width: 15px; height: 15px; }
+  /* w16: abas + filtro escrito - o painel de comentarios se organiza */
+  .pending-tabs { display: flex; gap: 4px; padding: 8px 12px 0; }
+  .pending-tab {
+    flex: 1; height: 30px; min-height: 30px; padding: 0 10px; font-size: 12px;
+    border-radius: 6px 6px 0 0; border-bottom: 2px solid transparent;
+    background: transparent; color: var(--ui-muted);
+  }
+  .pending-tab:hover { color: var(--ui-accent); }
+  .pending-tab.active { color: var(--ui-accent); border-bottom-color: var(--ui-accent); font-weight: 700; }
+  .pending-filter { padding: 8px 12px 0; }
+  .pending-filter input { width: 100%; height: 30px; min-height: 30px; padding: 0 10px; font-size: 12px; }
+  .enter-hint { margin: 4px 0 0; font-size: 11px; }
   .pending-reply { display: flex; flex-direction: column; gap: 6px; }
   .pending-reply textarea {
     min-height: 56px; resize: vertical; padding: 8px; font-size: 13px;
@@ -579,6 +591,7 @@
     <h2 id="commentTitle" data-i18n="commentScreenTitle">Comment screen</h2>
     <p class="hint" id="commentHint" data-i18n="commentHint">Describe the desired change. On submit, the formatted message goes to the clipboard — paste it into the agent chat.</p>
     <textarea id="commentText" placeholder="e.g. increase the form spacing and make the button full width" data-i18n-placeholder="commentPlaceholder" required></textarea>
+    <p class="hint enter-hint" data-i18n="enterHint">Enter saves - Ctrl+Enter or Shift+Enter for a new line</p>
     <div class="row">
       <button type="button" data-close data-i18n="cancelBtn">Cancel</button>
       <button type="submit" class="primary" data-i18n="sendCommentBtn">Send comment</button>
@@ -592,6 +605,7 @@
     <p class="msg-code" id="elementTarget"></p>
     <p class="hint" data-i18n="elementHint">Describe the change only in this element. The comment becomes a pin on the screen — copy one or all and paste into the agent chat.</p>
     <textarea id="elementText" placeholder="e.g. make this button full width" data-i18n-placeholder="elementPlaceholder" required></textarea>
+    <p class="hint enter-hint" data-i18n="enterHint">Enter saves - Ctrl+Enter or Shift+Enter for a new line</p>
     <div class="row">
       <button type="button" data-close data-i18n="cancelBtn">Cancel</button>
       <button type="submit" class="primary" data-i18n="commentElementTitle">Comment element</button>
@@ -619,7 +633,8 @@
   <form class="box" id="replyForm">
     <h2 data-i18n="replyTitle">Reply to comment</h2>
     <p class="hint" id="replyHint"></p>
-    <textarea id="replyText" placeholder="e.g. fixed in the last commit — check the spacing" data-i18n-placeholder="replyPlaceholder" required></textarea>
+    <textarea id="replyText" placeholder="e.g. fixed in the last commit - check the spacing" data-i18n-placeholder="replyPlaceholder" required></textarea>
+    <p class="hint enter-hint" data-i18n="enterHint">Enter saves - Ctrl+Enter or Shift+Enter for a new line</p>
     <div class="row">
       <button type="button" data-close data-i18n="cancelBtn">Cancel</button>
       <button type="submit" class="primary" data-i18n="sendReplyBtn">Send reply</button>
@@ -639,7 +654,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.0.18</div>
+<div id="versionTag">v1.0.19</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -682,8 +697,16 @@
     </div>
     <button id="pendingClose" type="button" data-i18n-title="closePanelTitle" title="Close panel">×</button>
   </div>
+  <div class="pending-tabs" role="tablist">
+    <button id="tabOpen" type="button" class="pending-tab active" role="tab" aria-selected="true"><span data-i18n="tabOpen">Pending</span> (<span id="tabOpenCount">0</span>)</button>
+    <button id="tabResolved" type="button" class="pending-tab" role="tab" aria-selected="false"><span data-i18n="tabResolved">Resolved</span> (<span id="tabResolvedCount">0</span>)</button>
+  </div>
+  <div class="pending-filter">
+    <input id="pendingFilter" type="search" data-i18n-placeholder="filterPlaceholder" placeholder="Filter comments (text, screen, canvas)">
+  </div>
   <div class="pending-send" data-share-hide>
     <button id="sendSelected" type="button" class="primary" data-share-hide>🚀 <span data-i18n="sendSelectedBtn">Send selected</span> (<span id="sendSelectedCount">0</span>)</button>
+    <button id="deleteSelected" type="button" data-share-hide data-i18n="deleteSelectedBtn">Delete selected</button>
     <button id="toggleSelectAll" type="button" data-share-hide data-i18n="selectAllBtn">Select all</button>
   </div>
   <div id="pendingBody"></div>
@@ -889,6 +912,14 @@ const I18N = {
     staleHeading: 'Stale — anchor lost ({count})',
     staleHint: 'They do not count as open pending (validate.mjs --mark-stale).',
     resolvedHeading: 'Resolved ({count})',
+    tabOpen: 'Pending',
+    tabResolved: 'Resolved',
+    filterPlaceholder: 'Filter comments (text, screen, canvas)',
+    noMatches: 'No comments match the filter',
+    noResolved: 'No resolved comments yet',
+    deleteSelectedBtn: 'Delete selected',
+    deleteSelectedConfirm: 'Delete the selected comments permanently?',
+    enterHint: 'Enter saves - Ctrl+Enter or Shift+Enter for a new line',
     pinResolvedToast: 'Comment resolved — listed under Pending › Resolved',
     pinReopenedToast: 'Comment reopened',
     commentCreated: 'Comment saved — pick and send it from 💬 Pending',
@@ -1126,6 +1157,14 @@ const I18N = {
     staleHeading: 'Stale — âncora perdida ({count})',
     staleHint: 'Não contam como pendentes abertas (validate.mjs --mark-stale).',
     resolvedHeading: 'Resolvidos ({count})',
+    tabOpen: 'Pendentes',
+    tabResolved: 'Resolvidos',
+    filterPlaceholder: 'Filtrar comentários (texto, tela, canvas)',
+    noMatches: 'Nenhum comentário corresponde ao filtro',
+    noResolved: 'Nenhum comentário resolvido ainda',
+    deleteSelectedBtn: 'Excluir selecionados',
+    deleteSelectedConfirm: 'Excluir os comentários selecionados permanentemente?',
+    enterHint: 'Enter salva - Ctrl+Enter ou Shift+Enter quebra linha',
     pinResolvedToast: 'Comentário resolvido — listado em Pendentes › Resolvidos',
     pinReopenedToast: 'Comentário reaberto',
     commentCreated: 'Comentário salvo — selecione e envie por 💬 Pendentes',
@@ -1637,25 +1676,36 @@ async function persistPin(body) {
 }
 
 /** w13: excluir comentário (DELETE /api/comments) — com confirmação. */
-async function deleteComment(pin) {
-  if (!window.confirm(t('deleteConfirm'))) return
-  try {
-    const response = await fetch(COMMENTS_API, {
-      method: 'DELETE',
-      headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: pin.id }),
-    })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    const payload = await response.json()
+/** Exclui um ou varios comentarios (DELETE /api/comments por id). */
+async function deleteComments(ids) {
+  let payload = null
+  for (const id of ids) {
+    try {
+      const response = await fetch(COMMENTS_API, {
+        method: 'DELETE',
+        headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      payload = await response.json()
+    } catch {
+      toast(t('deleteFailed'))
+      return false
+    }
+  }
+  if (payload) {
     state.comments = payload.comments.filter((p) => p && p.canvas === state.canvas)
     state.allComments = payload.comments.filter((p) => p && typeof p === 'object')
     renderAllPins()
     updateCopyAll()
     renderPendingPanel()
-    toast(t('commentDeleted'))
-  } catch {
-    toast(t('deleteFailed'))
   }
+  return true
+}
+
+async function deleteComment(pin) {
+  if (!window.confirm(t('deleteConfirm'))) return
+  if (await deleteComments([pin.id])) toast(t('commentDeleted'))
 }
 
 /* ------------------------------------------ pending comments panel (w4-19) */
@@ -1810,69 +1860,90 @@ $('replyForm').addEventListener('submit', async (event) => {
 })
 
 /** Panel body: pending list + sweep bar position + stale section + empty state. */
+/** w16: abas Pendentes | Resolvidos + filtro escrito - o painel se organiza. */
+let pendingTab = 'open'
+
+function pendingFilterQuery() {
+  return String($('pendingFilter')?.value ?? '').trim().toLowerCase()
+}
+
+/** Filtro escrito: casa com canvas, tela e todo o texto do comentário. */
+function pinMatchesFilter(pin, query) {
+  if (!query) return true
+  const replies = Array.isArray(pin?.replies) ? pin.replies.map((r) => r?.text ?? '') : []
+  return [pendingLabel(pin), ...replies].join(' ').toLowerCase().includes(query)
+}
+
 function renderPendingPanel() {
   const body = $('pendingBody')
   if (!body) return
   const all = Array.isArray(state.allComments) ? state.allComments : []
   const open = pendingPins(all)
   const stale = stalePins(all)
+  const resolved = resolvedPins(all)
   updatePendingBadge(openPinCount(all))
   if (state.sweepIndex > open.length - 1) state.sweepIndex = open.length - 1
   $('sweepPos').textContent = open.length === 0 ? '0/0' : `${state.sweepIndex + 1}/${open.length}`
+
+  // w16: abas - contagens vivas e estado ativo
+  $('tabOpenCount').textContent = String(open.length + stale.length)
+  $('tabResolvedCount').textContent = String(resolved.length)
+  $('tabOpen').classList.toggle('active', pendingTab === 'open')
+  $('tabResolved').classList.toggle('active', pendingTab === 'resolved')
+  $('tabOpen').setAttribute('aria-selected', String(pendingTab === 'open'))
+  $('tabResolved').setAttribute('aria-selected', String(pendingTab === 'resolved'))
+
+  const query = pendingFilterQuery()
+  const emptyFiltered = query ? t('noMatches') : ''
   body.innerHTML = ''
 
-  const section = document.createElement('section')
-  section.className = 'pending-section'
-  const heading = document.createElement('h3')
-  heading.textContent = t('openPendingHeading', { count: open.length })
-  section.appendChild(heading)
-  if (open.length === 0) {
-    const empty = document.createElement('p')
-    empty.className = 'pending-empty'
-    empty.textContent = t('noPending')
-    section.appendChild(empty)
-  } else {
-    const list = document.createElement('ul')
-    list.className = 'pending-list'
-    open.forEach((pin, index) => {
-      const entry = pendingEntry(pin)
-      if (index === state.sweepIndex) entry.classList.add('current')
-      list.appendChild(entry)
+  const addSection = (headingText, pins, opts = {}) => {
+    const section = document.createElement('section')
+    section.className = 'pending-section'
+    const heading = document.createElement('h3')
+    heading.textContent = headingText
+    section.appendChild(heading)
+    if (opts.hint) {
+      const hintEl = document.createElement('p')
+      hintEl.className = 'pending-empty'
+      hintEl.textContent = opts.hint
+      section.appendChild(hintEl)
+    }
+    if (pins.length === 0) {
+      const empty = document.createElement('p')
+      empty.className = 'pending-empty'
+      empty.textContent = opts.emptyText || ''
+      section.appendChild(empty)
+    } else {
+      const list = document.createElement('ul')
+      list.className = 'pending-list'
+      for (const pin of pins) {
+        const entry = pendingEntry(pin)
+        if (opts.sweep && pin === open[state.sweepIndex]) entry.classList.add('current')
+        list.appendChild(entry)
+      }
+      section.appendChild(list)
+    }
+    body.appendChild(section)
+  }
+
+  if (pendingTab === 'resolved') {
+    const doneList = resolved.filter((pin) => pinMatchesFilter(pin, query))
+    addSection(t('resolvedHeading', { count: doneList.length }), doneList, {
+      emptyText: emptyFiltered || t('noResolved'),
     })
-    section.appendChild(list)
-  }
-  body.appendChild(section)
-
-  if (stale.length > 0) {
-    const staleSection = document.createElement('section')
-    staleSection.className = 'pending-section'
-    const staleHeading = document.createElement('h3')
-    staleHeading.textContent = t('staleHeading', { count: stale.length })
-    staleSection.appendChild(staleHeading)
-    const hint = document.createElement('p')
-    hint.className = 'pending-empty'
-    hint.textContent = t('staleHint')
-    staleSection.appendChild(hint)
-    const list = document.createElement('ul')
-    list.className = 'pending-list'
-    for (const pin of stale) list.appendChild(pendingEntry(pin))
-    staleSection.appendChild(list)
-    body.appendChild(staleSection)
-  }
-
-  // w12: resolvidos ficam listados — antes sumiam do painel e "desapareciam"
-  const resolved = resolvedPins(all)
-  if (resolved.length > 0) {
-    const doneSection = document.createElement('section')
-    doneSection.className = 'pending-section'
-    const doneHeading = document.createElement('h3')
-    doneHeading.textContent = t('resolvedHeading', { count: resolved.length })
-    doneSection.appendChild(doneHeading)
-    const list = document.createElement('ul')
-    list.className = 'pending-list'
-    for (const pin of resolved) list.appendChild(pendingEntry(pin))
-    doneSection.appendChild(list)
-    body.appendChild(doneSection)
+  } else {
+    const openList = open.filter((pin) => pinMatchesFilter(pin, query))
+    addSection(t('openPendingHeading', { count: openList.length }), openList, {
+      sweep: true,
+      emptyText: emptyFiltered || t('noPending'),
+    })
+    const staleList = stale.filter((pin) => pinMatchesFilter(pin, query))
+    if (staleList.length > 0) {
+      addSection(t('staleHeading', { count: staleList.length }), staleList, {
+        hint: t('staleHint'),
+      })
+    }
   }
   updateSendCount()
   $('toggleSelectAll').textContent = t('selectAllBtn')
@@ -1931,6 +2002,29 @@ $('sendSelected').addEventListener('click', () => {
   // w14: abre o modal de revisão — nada é enviado ainda
   openSendModal(messages.join('\n'))
 })
+
+/* ------- w16: abas, filtro escrito e exclusao em lote da caixa de saida */
+
+$('deleteSelected').addEventListener('click', async () => {
+  const ids = [...$('pendingBody').querySelectorAll('.pending-check')]
+    .filter((box) => box.checked)
+    .map((box) => box.dataset.pinId)
+  if (ids.length === 0) return toast(t('nothingSelected'))
+  if (!window.confirm(t('deleteSelectedConfirm'))) return
+  if (await deleteComments(ids)) toast(t('commentDeleted'))
+})
+
+$('tabOpen').addEventListener('click', () => {
+  pendingTab = 'open'
+  renderPendingPanel()
+})
+
+$('tabResolved').addEventListener('click', () => {
+  pendingTab = 'resolved'
+  renderPendingPanel()
+})
+
+$('pendingFilter').addEventListener('input', () => renderPendingPanel())
 
 /* ------------------------------------------------- snapshots (w5-22) */
 
@@ -3921,6 +4015,18 @@ $('commentForm').addEventListener('submit', async (event) => {
   await persistPin({ canvas: state.canvas, file: screen.file, replies: [{ text }] })
   toast(t('commentCreated'))
 })
+
+/** w16: Enter salva - Ctrl+Enter / Shift+Enter quebra linha (sem surpresa). */
+function enterSubmits(textarea) {
+  textarea.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || event.isComposing || event.shiftKey || event.ctrlKey) return
+    event.preventDefault()
+    textarea.form?.requestSubmit()
+  })
+}
+enterSubmits($('commentText'))
+enterSubmits($('elementText'))
+enterSubmits($('replyText'))
 
 $('copyAgain').addEventListener('click', () => copyToClipboard(composeFinalMessage()))
 

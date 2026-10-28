@@ -189,6 +189,12 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Painel de comentários organizado + Enter para salvar (v1.0.19)**: o painel
+  💬 agora tem **abas** (Pendentes · Resolvidos) com contagens vivas, **filtro
+  por texto** (texto do comentário, tela, canvas) e **🗑 Excluir selecionados**
+  para limpeza em lote. Nas caixas de comentário **Enter salva** e
+  **Ctrl+Enter / Shift+Enter quebra linha** — nada de surpresa no meio da
+  digitação. Travado na suíte de browser (28/28).
 - **Comentários pertencem à sua superfície (v1.0.18)**: comentário feito
   dentro de um popup/modal agora se amarra àquele overlay — aparece enquanto
   ele está aberto e desaparece com ele, em vez de flutuar fixo na tela de
