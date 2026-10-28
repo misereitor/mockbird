@@ -54,9 +54,12 @@ const server = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), '8796
 })
 // wait for the real startup line (a leftover server holding the port would
 // otherwise turn into a confusing goto timeout later)
+let token = ''
 await new Promise((resolve, reject) => {
   const timer = setTimeout(() => reject(new Error('serve.mjs nao subiu em 10s (porta ocupada?)')), 10_000)
   server.stdout.on('data', (chunk) => {
+    const m = /TOKEN: ([a-f0-9]+)/.exec(String(chunk))
+    if (m) token = m[1]
     if (String(chunk).includes('TOKEN:')) {
       clearTimeout(timer)
       resolve()
@@ -217,8 +220,38 @@ if (flowOpen) {
   if (await page.$eval('#ctxMenu', (el) => !el.hidden)) ok('botao direito abre o menu dentro da tela (fluxo)')
   else fail('menu no fluxo', '#ctxMenu escondido')
   await page.keyboard.press('Escape')
+
+  // 6.2 SURFACE: a comment inside a mock overlay (popup/modal) belongs to the
+  // MODAL file and disappears with it - never fixed on the screen below
+  const frame = await (await page.$('#fsFrame')).contentFrame()
+  await frame.click('a[href="03-modal.html"]')
+  await page.waitForTimeout(700)
+  if (await frame.$('.mock-overlay')) ok('mock overlay (popup/modal) abre')
+  else fail('mock overlay', 'nao abriu')
+  await page.click('#fsInspect')
+  await page.waitForTimeout(200)
+  await page.click('#fsOverlay', { position: { x: 195, y: 420 } })
+  await page.waitForTimeout(400)
+  await page.fill('#elementText', 'comentario dentro do modal')
+  await page.click('#elementForm button[type="submit"]')
+  await page.waitForTimeout(600)
+  const apiPins = await (await fetch('http://127.0.0.1:8796/api/comments', { headers: { 'X-Design-Token': token } })).json()
+  const newest = (apiPins.comments ?? []).at(-1)
+  if (newest?.file === '03-modal.html') ok(`comentario no modal pertence ao modal (${newest.file})`)
+  else fail('superficie do comentario', `file=${newest?.file}`)
+  await page.click('#fsInspect')
+  await page.waitForTimeout(200)
+  const countModalPins = () => page.$$eval('#fsPins .pin', (els) =>
+    els.filter((el) => (el.title || '').includes('comentario dentro do modal')).length)
+  const beforeClose = await countModalPins()
+  await frame.click('.mock-overlay >> text=Voltar')
+  await page.waitForTimeout(800)
+  const afterClose = await countModalPins()
+  if (beforeClose === 1 && afterClose === 0) ok('comentario do modal some quando o modal fecha')
+  else fail('pins de overlay', `antes=${beforeClose} depois=${afterClose}`)
 }
-await page.keyboard.press('Escape')
+// fecha o modo fluxo de forma deterministica (Escape nao atravessa o iframe)
+await page.evaluate(() => { document.getElementById('fsBack').click() })
 
 // 6.5 RESOLVED comments stay visible in the panel (regression: they vanished)
 await page.click('#pendingBtn')

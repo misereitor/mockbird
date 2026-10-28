@@ -264,6 +264,9 @@
     color: var(--ui-muted); cursor: pointer; font-size: 12px; line-height: 1;
     pointer-events: auto;
   }
+  /* w15: no modo fluxo o mock está VIVO por baixo — os pins nunca capturam o
+   * mouse (nenhum clique bloqueado); a gestão dos comentários é o painel 💬 */
+  #fsPins .pin, #fsPins .pin-badge, #fsPins .pin-act { pointer-events: none; }
   .pin:hover .pin-act { display: block; }
   .pin.resolved .pin-badge { background: var(--ui-muted); }
   .pin.stale { opacity: .55; filter: grayscale(1); }
@@ -636,7 +639,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.0.17</div>
+<div id="versionTag">v1.0.18</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -1517,6 +1520,15 @@ function clearCommentsAlert() {
 function pinScreen(pin) {
   const file = String(pin?.file ?? '').split('?')[0]
   return state.screens.find((s) => String(s.file).split('?')[0] === file) ?? null
+}
+
+/** w15: a superfície exata do elemento — dentro de um overlay do mock
+ *  (popup/modal) o comentário pertence ao arquivo do overlay; fora dele,
+ *  à tela. É o que impede o comentário de "flutuar" fixo na tela de baixo. */
+function surfaceFileOf(el) {
+  const layer = el?.closest?.('.mock-overlay[data-mock-src]')
+  const src = layer ? layer.getAttribute('data-mock-src') : null
+  return src ? String(src).split(/[?#]/)[0].split('/').pop() : ''
 }
 
 function pinText(pin) {
@@ -2677,7 +2689,7 @@ $('elementForm').addEventListener('submit', async (event) => {
   const rect = point ?? el?.getBoundingClientRect?.()
   const pin = {
     canvas: screen.canvas ?? state.canvas,
-    file: screen.file,
+    file: surfaceFileOf(el) || screen.file, // w15: popup/modal = a superfície manda
     selector,
     snippet,
     replies: [{ text }],
@@ -2807,13 +2819,15 @@ function pinMarker(pin, index, layer) {
   return marker
 }
 
-/** Preenche uma camada .pins com os pins do arquivo da tela (card ou #fsPins). */
+/** Preenche uma camada .pins — `file` pode ser um arquivo ou uma lista de
+ *  superfícies ativas (tela + overlays do mock abertos). */
 function renderPinLayer(layer, file, pins = state.comments) {
   if (!layer) return
   layer.innerHTML = ''
   if (isReadonly() || !file) return // share: pins são recurso de /api — nunca renderizam
-  const base = String(file).split('?')[0].split('/').pop()
-  const mine = pins.filter((pin) => String(pin?.file ?? '').split('?')[0].split('/').pop() === base)
+  const files = Array.isArray(file) ? file : [file]
+  const bases = new Set(files.map((f) => String(f).split('?')[0].split('/').pop()).filter(Boolean))
+  const mine = pins.filter((pin) => bases.has(String(pin?.file ?? '').split('?')[0].split('/').pop()))
   mine.forEach((pin, index) => layer.appendChild(pinMarker(pin, index, layer)))
 }
 
@@ -2825,14 +2839,44 @@ function renderPins(screenId) {
   renderPinLayer(layer, screen ? String(screen.file) : '')
 }
 
-/** Pins do modo fluxo sobre o #fsFrame — a tela exibida agora (navegação troca).
- *  Em canvas visitado os pins saem de allComments (filtrados pelo canvas dele). */
+/** Pins do modo fluxo sobre o #fsFrame — a tela exibida MAIS qualquer
+ *  overlay do mock (popup/modal) aberto; ao fechar o overlay, os comentários
+ *  dele somem com ele (nada fica fixo na tela). */
 function renderFsPins() {
   const canvasName = fsScreen?.canvas ?? state.canvas
   const pins = canvasName === state.canvas
     ? state.comments
     : state.allComments.filter((pin) => pin && pin.canvas === canvasName)
-  renderPinLayer($('fsPins'), fsCurrentFile(), pins)
+  const surfaces = [fsCurrentFile()]
+  try {
+    for (const layer of $('fsFrame').contentDocument.querySelectorAll('.mock-overlay[data-mock-src]')) {
+      const src = layer.getAttribute('data-mock-src')
+      if (src) surfaces.push(String(src).split(/[?#]/)[0].split('/').pop())
+    }
+  } catch { /* frame opaco */ }
+  renderPinLayer($('fsPins'), surfaces, pins)
+}
+
+/** w15: overlays abrem/fecham sem navegação — a camada de pins segue viva. */
+function watchOverlayChanges(frame) {
+  try {
+    const doc = frame.contentDocument
+    if (!doc?.body || typeof MutationObserver !== 'function') return
+    if (frame.__overlayWatch) frame.__overlayWatch.disconnect()
+    const touched = (node) => node.nodeType === 1 && (
+      node.classList?.contains('mock-overlay') ||
+      node.querySelector?.('.mock-overlay') ||
+      node.closest?.('.mock-overlay')
+    )
+    frame.__overlayWatch = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of [...mutation.addedNodes, ...mutation.removedNodes]) {
+          if (touched(node)) return renderFsPins()
+        }
+      }
+    })
+    frame.__overlayWatch.observe(doc.body, { childList: true, subtree: true })
+  } catch { /* frame opaco */ }
 }
 
 function renderAllPins() {
@@ -3595,6 +3639,7 @@ function injectFrameInteraction(frame) {
         event.stopPropagation()
       }
     }, true) // captura: o clique residual do drag não vira navegação
+    watchOverlayChanges(frame) // w15: overlays abrem/fecham sem navegação
   } catch { /* frame opaco; interações comentáveis ficam só no modo inspetor */ }
 }
 

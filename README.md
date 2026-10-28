@@ -185,6 +185,14 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Comments belong to their surface (v1.0.18)**: a comment made inside a
+  popup/modal now attaches to **that overlay** — it renders while the overlay
+  is open and disappears with it, instead of floating fixed on the screen
+  below. The mock runtime tags every overlay with its source file
+  (`data-mock-src`), the viewer resolves the surface at comment time, and a
+  MutationObserver keeps the pin layer in sync as overlays open/close. Also:
+  pins never capture the mouse in flow mode (the live mock underneath wins;
+  management lives in the 💬 panel).
 - **Review before sending (v1.0.17)**: "Send selected" now opens a review
   modal instead of delivering — the message is shown with a **note field**
   to complement it, and it only goes to the agent when you click **🚀 Send to

@@ -189,6 +189,14 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Comentários pertencem à sua superfície (v1.0.18)**: comentário feito
+  dentro de um popup/modal agora se amarra àquele overlay — aparece enquanto
+  ele está aberto e desaparece com ele, em vez de flutuar fixo na tela de
+  baixo. O runtime marca cada overlay com o arquivo de origem
+  (`data-mock-src`), o viewer resolve a superfície no momento do comentário e
+  um MutationObserver mantém a camada de pins em sincronia conforme overlays
+  abrem/fecham. Também: pins nunca capturam o mouse no modo fluxo (o mock vivo
+  por baixo vence; a gestão fica no painel 💬).
 - **Revisão antes de enviar (v1.0.17)**: "Enviar selecionados" agora abre um
   modal de revisão em vez de entregar — a mensagem aparece com um **campo de
   observação** para complementar, e só vai para o agente quando você clica em

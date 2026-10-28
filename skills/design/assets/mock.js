@@ -388,6 +388,9 @@
       layer.className = 'mock-overlay'
       const depth = String(Math.min(stack.length, 9))
       layer.setAttribute('data-depth', depth)
+      // w15: origem do overlay — o comentário criado aqui pertence a ESTA
+      // superfície (o arquivo do modal), não à tela de baixo
+      layer.setAttribute('data-mock-src', String(url).split(/[?#]/)[0])
       layer.setAttribute('role', 'dialog')
       layer.setAttribute('aria-modal', 'true')
       layer.setAttribute('tabindex', '-1')
