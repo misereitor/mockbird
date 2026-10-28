@@ -185,6 +185,12 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Panel toolbar cleanup (v1.0.20)**: the tabs no longer render as boxed
+  buttons (borders/background from the base button style are gone — an active
+  tab is an underline), the action bar no longer breaks words mid-phrase
+  (auto-height + nowrap: the 🚀 CTA gets its own line, Delete selected / Select
+  all share the row), and the header is deliberate (title on top, sweep + close
+  aligned below). Verified with real screenshots before release.
 - **Organized comment panel + Enter to save (v1.0.19)**: the 💬 panel now has
   **tabs** (Pending · Resolved) with live counts, a **text filter** (comment
   text, screen, canvas) and **🗑 Delete selected** for batch cleanup. In the

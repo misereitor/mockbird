@@ -284,7 +284,9 @@
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
     padding: 10px 12px; border-bottom: 1px solid var(--ui-border);
   }
-  .pending-top strong { flex: 1; min-width: 120px; font-size: 14px; }
+  /* titulo na primeira linha; controles + fechar na segunda - nunca soltos */
+  .pending-top strong { flex: 1 1 100%; min-width: 120px; font-size: 14px; }
+  .pending-top #pendingClose { margin-left: auto; }
   .pending-sweep { display: flex; align-items: center; gap: 4px; }
   .pending-sweep button { height: 28px; min-height: 28px; padding: 0 10px; font-size: 12px; }
   .pending-sweep span {
@@ -323,19 +325,30 @@
   .pending-actions { display: flex; gap: 6px; flex-wrap: wrap; }
   .pending-actions button { height: 26px; min-height: 26px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
   /* w13: caixa de saída — seleção explícita + envio sob demanda */
-  .pending-send { display: flex; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--ui-border); }
-  .pending-send button { height: 28px; min-height: 28px; padding: 0 10px; font-size: 12px; }
+  .pending-send {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 10px 12px; border-bottom: 1px solid var(--ui-border);
+  }
+  /* altura automatica + nowrap: o texto nunca quebra no meio nem transborda */
+  .pending-send button {
+    height: auto; min-height: 30px; padding: 6px 10px; font-size: 12px;
+    white-space: nowrap; flex: 1 1 auto;
+  }
+  .pending-send #sendSelected { flex: 1 1 100%; } /* CTA principal: linha propria */
   .pending-pick { display: flex; align-items: center; }
   .pending-pick input { width: 15px; height: 15px; }
   /* w16: abas + filtro escrito - o painel de comentarios se organiza */
   .pending-tabs { display: flex; gap: 4px; padding: 8px 12px 0; }
   .pending-tab {
-    flex: 1; height: 30px; min-height: 30px; padding: 0 10px; font-size: 12px;
-    border-radius: 6px 6px 0 0; border-bottom: 2px solid transparent;
-    background: transparent; color: var(--ui-muted);
+    flex: 1; height: 32px; min-height: 32px; padding: 0 10px; font-size: 12px;
+    border: 0; border-radius: 8px 8px 0 0; /* sem "caixa" de botao - a aba e uma aba */
+    background: transparent; color: var(--ui-muted); white-space: nowrap;
   }
-  .pending-tab:hover { color: var(--ui-accent); }
-  .pending-tab.active { color: var(--ui-accent); border-bottom-color: var(--ui-accent); font-weight: 700; }
+  .pending-tab:hover { color: var(--ui-accent); background: rgb(13 148 136 / .08); }
+  .pending-tab.active {
+    color: var(--ui-accent); font-weight: 700;
+    box-shadow: inset 0 -2px 0 var(--ui-accent);
+  }
   .pending-filter { padding: 8px 12px 0; }
   .pending-filter input { width: 100%; height: 30px; min-height: 30px; padding: 0 10px; font-size: 12px; }
   .enter-hint { margin: 4px 0 0; font-size: 11px; }
@@ -654,7 +667,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.0.19</div>
+<div id="versionTag">v1.0.20</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">

@@ -189,6 +189,13 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Barra do painel limpa (v1.0.20)**: as abas não aparecem mais como botões
+  com caixa (borda/fundo do estilo base de botão sumiram — aba ativa é um
+  sublinhado), a barra de ações não quebra mais palavras no meio (altura
+  automática + nowrap: o CTA 🚀 fica em linha própria, Excluir selecionados /
+  Selecionar tudo dividem a outra) e o cabeçalho ficou deliberado (título em
+  cima, sweep + fechar alinhados embaixo). Verificado com screenshots reais
+  antes do release.
 - **Painel de comentários organizado + Enter para salvar (v1.0.19)**: o painel
   💬 agora tem **abas** (Pendentes · Resolvidos) com contagens vivas, **filtro
   por texto** (texto do comentário, tela, canvas) e **🗑 Excluir selecionados**
