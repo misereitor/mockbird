@@ -209,6 +209,9 @@ Done. Next steps:
    node design/scripts/gen-tokens.mjs (regenerates the token CSS),
    node design/scripts/sync-components.mjs (rematerializes components) and
    node design/scripts/export-tokens.mjs (exports tokens.w3c.json).
+   validate.mjs and sync-components.mjs read design/validate.config.json
+   (shipped by the skill's one-time copy list); without it they exit 3 and
+   point at setup-design.mjs.
 3. The impeccable skill downloads its engine binary on first run
    (once, needs network; if it fails it falls back to no engine).
 4. Invoke it: type /design, /taste, /emil-design-eng or /impeccable (OpenCode
