@@ -1,0 +1,35 @@
+{
+  "exemptDirs": ["vendor", "scripts", "snapshots", ".history"],
+  "exemptFiles": ["design-system.css", "utilities.css", "mock.css", "viewer.html", "docs.html", "mock.js", "tokens.w3c.json"],
+  "exemptFilesSync": ["viewer.html", "docs.html", "mock.js"],
+  "componentVariantKeys": ["size", "tone", "state"],
+  "toolchainScripts": ["legacy-validate.mjs"],
+  "actions": {
+    "namespacePattern": "^[a-z0-9_-]+\\.[a-z0-9_-]+$",
+    "allowLegacy": []
+  },
+  "handlers": {
+    "allowLegacy": []
+  },
+  "encoding": {
+    "textExtensions": ["html", "css", "js", "mjs", "json", "md"],
+    "allowlist": []
+  },
+  "metrics": {
+    "baseline": "metrics.json"
+  },
+  "canvasMeta": {
+    "breakpoints": {
+      "mobileMax": 640,
+      "tabletMax": 900
+    }
+  },
+  "classes": {
+    "allow": []
+  },
+  "smoke": {
+    "timeoutMs": 15000,
+    "viewports": [[390, 844], [375, 667]],
+    "snapshotThreshold": 0.02
+  }
+}

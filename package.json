@@ -13,10 +13,11 @@
     "test": "node --test plugin/core.test.mjs",
     "smoke": "node plugin/smoke.mjs",
     "validate": "node skills/design/scripts/validate.mjs --config skills/design/assets/validate.config.json skills/design/assets/example",
+    "qa": "node skills/design/scripts/qa.mjs --config skills/design/assets/validate.config.json --target skills/design/assets/example",
     "security": "node skills/design/scripts/fixtures/security-suite.mjs",
     "check:i18n": "node scripts/i18n-check.mjs",
     "test:mock": "node scripts/mock-check.mjs",
     "test:ui": "node scripts/viewer-accept.mjs",
-    "ci": "npm test && npm run test:mock && npm run smoke && npm run validate && npm run security && npm run check:i18n"
+    "ci": "npm test && npm run test:mock && npm run smoke && npm run validate && npm run qa && npm run security && npm run check:i18n"
   }
 }
