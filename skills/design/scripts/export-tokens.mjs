@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* mockbird:config-driven:v2 */
 /**
  * export-tokens.mjs - W3C/DTCG interchange export (todo 26).
  *

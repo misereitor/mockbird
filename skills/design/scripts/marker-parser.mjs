@@ -1,3 +1,4 @@
+/* mockbird:config-driven:v2 */
 /**
  * marker-parser.mjs — parser for the component marker grammar (w2-7).
  *

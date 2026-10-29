@@ -31,7 +31,7 @@ jobs:
         run: node install.mjs --dir "${{ runner.temp }}/mockbird-install"
 
       - name: Validator on the example canvas
-        run: node skills/design/scripts/validate.mjs skills/design/assets/example
+        run: node skills/design/scripts/validate.mjs --config skills/design/assets/validate.config.json skills/design/assets/example
 
       - name: Security suite (serve.mjs)
         run: node skills/design/scripts/fixtures/security-suite.mjs

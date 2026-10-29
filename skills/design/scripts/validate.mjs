@@ -1,11 +1,12 @@
 #!/usr/bin/env node
+/* mockbird:config-driven:v2 */
 /**
  * Design validator (read-only except the explicit --mark-stale write).
  * Prints one line per problem. Never throws: any internal error becomes an
  * `internal:` line.
  *
  * Usage: node design/validate.mjs [target] [--allow-stale] [--mark-stale]
- *          [--example-inventory]
+ *          [--example-inventory] [--config <path>]
  *   target = design-root (no canvas.json at its root -> project mode)
  *          | canvas (has canvas.json -> canvas mode)
  *   no target = ./design relative to cwd
@@ -37,10 +38,16 @@
  *             input-label (todo 28) is a SCREEN check like img-alt (listed
  *             screens only, both modes)
  *
- * Exit codes: 0 = no issues, 1 = issues found, 2 = usage/input error.
+ * Config (config-driven v2): the exempt lists and component variant keys are
+ * read from validate.config.json — discovery chain: --config <path> ->
+ * validate.config.json in the validated root -> in the CWD. Absent = exit 3
+ * with guided setup (NEVER a silent fallback to hardcoded values).
+ *
+ * Exit codes: 0 = no issues, 1 = issues found, 2 = usage/input error (incl.
+ * toolchainScripts marker/entry integrity), 3 = missing/broken config.
  */
 import { readFileSync, statSync, readdirSync, writeFileSync, existsSync } from 'node:fs'
-import { join, resolve, sep, extname, basename } from 'node:path'
+import { join, resolve, sep, extname, basename, dirname } from 'node:path'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
@@ -50,18 +57,13 @@ const MAX_SIZE = 10000
 // Screen "transition" enum (todo 14): absent = default "none" (schema-tolerant).
 const TRANSITIONS = new Set(['fade', 'slide-left', 'none'])
 
-// Bans walker: **/*.{html,css,js,jsx,mjs,svg} minus the exempt list
+// Bans walker: **/*.{html,css,js,jsx,mjs,svg} minus the exempt list.
+// Exempt names come from the external validate.config.json (loaded below) —
+// never hardcoded here: re-copying the scripts cannot change the rules (the
+// config lives outside the re-copied files — flip-flop settle, §3.3/R2).
 const WALK_EXT = /\.(?:html|css|js|jsx|mjs|svg)$/i
-const EXEMPT_FILES = new Set([
-  'design-system.css',
-  'utilities.css',
-  'mock.css',
-  'viewer.html',
-  'docs.html',
-  'mock.js',
-  'tokens.w3c.json',
-])
-const EXEMPT_DIRS = new Set(['vendor', 'scripts', 'snapshots']) // **/snapshots/** exempt whole tree
+let EXEMPT_FILES = new Set()
+let EXEMPT_DIRS = new Set() // **/snapshots/** exempt whole tree
 const ROOT_TOOLS = new Set(['validate.mjs', 'serve.mjs']) // exempt at the root of the run only
 
 const PALETTE_CLASS =
@@ -73,10 +75,11 @@ const REMOTE_URL = /https?:\/\/[^\s"'<>()\\]+/g
 // contrast (todo 28): fg/bg slot accepts a color literal OR a token name
 const COLOR_LITERAL_RE = /^(?:#(?:[0-9a-fA-F]{3,8})|rgba?\()/i
 
-// Component checks (todo 9): variant keys and the tag scan for instance attrs.
+// Component checks (todo 9): variant keys (from validate.config.json) and the
+// tag scan for instance attrs.
 // The scan ALTERNATION consumes comments/script/style wholesale so markup text
 // inside them can never masquerade as an element (byte offsets stay valid).
-const COMPONENT_VARIANT_KEYS = ['size', 'tone', 'state']
+let COMPONENT_VARIANT_KEYS = []
 const TAG_SCAN_RE =
   /<!--[\s\S]*?-->|<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>|<([a-zA-Z][a-zA-Z0-9-]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>/gi
 const DATA_ATTR_RE =
@@ -86,16 +89,32 @@ const DATA_ATTR_RE =
 // CLI contract
 // ---------------------------------------------------------------------------
 const usage =
-  'usage: node design/validate.mjs [target] [--allow-stale] [--mark-stale] [--example-inventory]'
+  'usage: node design/validate.mjs [target] [--allow-stale] [--mark-stale] [--example-inventory] [--config <path>]'
 const argv = process.argv.slice(2)
-const flags = argv.filter((a) => a.startsWith('--'))
+const flags = []
+const positional = []
+let configArg = null
+for (let i = 0; i < argv.length; i += 1) {
+  const token = argv[i]
+  if (token === '--config') {
+    const value = argv[i + 1]
+    if (value === undefined || value.startsWith('--')) {
+      console.error(`--config requires a path — ${usage}`)
+      process.exit(2)
+    }
+    configArg = value
+    i += 1
+    continue
+  }
+  if (token.startsWith('--')) flags.push(token)
+  else positional.push(token)
+}
 const KNOWN_FLAGS = new Set(['--allow-stale', '--mark-stale', '--example-inventory'])
 const unknownFlags = flags.filter((f) => !KNOWN_FLAGS.has(f))
 if (unknownFlags.length > 0) {
   console.error(`unknown flag "${unknownFlags[0]}" — ${usage}`)
   process.exit(2)
 }
-const positional = argv.filter((a) => !a.startsWith('--'))
 if (positional.length > 1) {
   console.error(`${usage} (got ${positional.length} positional args)`)
   process.exit(2)
@@ -104,6 +123,87 @@ const allowStale = flags.includes('--allow-stale')
 const markStale = flags.includes('--mark-stale')
 const exampleInventory = flags.includes('--example-inventory')
 const arg = positional[0] ?? './design'
+
+// ---------------------------------------------------------------------------
+// External config — validate.config.json (config-driven v2). Discovery chain:
+//   --config <path> -> validate.config.json in the validated root -> in the CWD
+// Absent = exit 3 with guided setup — NEVER a silent fallback to hardcoded
+// values. toolchainScripts entries resolve RELATIVE to the config file's own
+// directory; every entry must exist and carry the config marker (R2), else
+// exit 2 citing the exact file. Config file problems (missing, unreadable,
+// invalid JSON) = exit 3; content problems (shape, toolchain integrity) = 2.
+// ---------------------------------------------------------------------------
+const CONFIG_NAME = 'validate.config.json'
+const CONFIG_MARKER = '/* mockbird:config-driven:v2 */'
+const CONFIG_SEED_HINT = `run setup-design.mjs to seed it (or copy skills/design/assets/${CONFIG_NAME} from the skill folder)`
+
+function configFatal(message, code) {
+  console.error(message)
+  process.exit(code)
+}
+
+function configStringArray(parsed, key) {
+  const value = parsed[key]
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    configFatal(`${CONFIG_NAME}: "${key}" must be a list of strings`, 2)
+  }
+  return value
+}
+
+function loadConfig() {
+  let configPath = null
+  if (configArg !== null) {
+    if (!pathExists(configArg)) {
+      configFatal(`${configArg}: ${CONFIG_NAME} not found — ${CONFIG_SEED_HINT}`, 3)
+    }
+    configPath = configArg
+  } else {
+    const targetDir = resolve(process.cwd(), arg.replaceAll('\\', '/').replace(/\/+$/, ''))
+    const candidates = [join(targetDir, CONFIG_NAME), join(process.cwd(), CONFIG_NAME)]
+    configPath = candidates.find((candidate) => pathExists(candidate)) ?? null
+    if (configPath === null) {
+      configFatal(`${CONFIG_NAME} not found (checked ${candidates[0]} and ${candidates[1]}) — ${CONFIG_SEED_HINT}`, 3)
+    }
+  }
+  let raw = null
+  try {
+    raw = readFileSync(configPath, 'utf8')
+  } catch {
+    configFatal(`${configPath}: cannot read ${CONFIG_NAME} — ${CONFIG_SEED_HINT}`, 3)
+  }
+  let parsed = null
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    configFatal(`${configPath}: ${CONFIG_NAME} is not valid JSON — ${CONFIG_SEED_HINT}`, 3)
+  }
+  if (!isPlainObject(parsed)) {
+    configFatal(`${configPath}: ${CONFIG_NAME} must have a JSON object at its root`, 2)
+  }
+  const exemptFiles = configStringArray(parsed, 'exemptFiles')
+  const exemptDirs = configStringArray(parsed, 'exemptDirs')
+  const variantKeys = configStringArray(parsed, 'componentVariantKeys')
+  const toolchain = configStringArray(parsed, 'toolchainScripts')
+  // R2: every toolchain script must exist and carry the config marker.
+  const configDir = dirname(resolve(configPath))
+  for (const entry of toolchain) {
+    const full = resolve(configDir, entry)
+    let content = null
+    try {
+      content = readFileSync(full, 'utf8')
+    } catch {
+      configFatal(`toolchainScripts: ${full} not found (entries resolve relative to ${configDir})`, 2)
+    }
+    if (!content.includes(CONFIG_MARKER)) {
+      configFatal(`toolchainScripts: ${full} lacks the ${CONFIG_MARKER} marker (pre-config script?)`, 2)
+    }
+  }
+  console.log(`config: ${configPath}`)
+  EXEMPT_FILES = new Set(exemptFiles)
+  EXEMPT_DIRS = new Set(exemptDirs)
+  COMPONENT_VARIANT_KEYS = variantKeys
+}
+loadConfig()
 
 const problems = []
 const fail = (code, message) => problems.push(`- ${code}: ${message}`)

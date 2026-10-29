@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* mockbird:config-driven:v2 */
 /**
  * gen-tokens.mjs — generate design-system.css from tokens.json (DTCG-ish).
  *

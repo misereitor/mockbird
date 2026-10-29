@@ -12,7 +12,7 @@
   "scripts": {
     "test": "node --test plugin/core.test.mjs",
     "smoke": "node plugin/smoke.mjs",
-    "validate": "node skills/design/scripts/validate.mjs skills/design/assets/example",
+    "validate": "node skills/design/scripts/validate.mjs --config skills/design/assets/validate.config.json skills/design/assets/example",
     "security": "node skills/design/scripts/fixtures/security-suite.mjs",
     "check:i18n": "node scripts/i18n-check.mjs",
     "test:mock": "node scripts/mock-check.mjs",

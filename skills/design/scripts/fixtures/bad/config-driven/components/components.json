@@ -1,0 +1,22 @@
+{
+  "button": {
+    "id": "button",
+    "file": "button.html",
+    "variants": {
+      "size": ["sm", "md", "lg"],
+      "tone": ["primary", "ghost"],
+      "state": ["default", "hover", "active", "disabled"]
+    },
+    "slots": ["label"]
+  },
+  "card": {
+    "id": "card",
+    "file": "card.html",
+    "variants": {
+      "size": ["sm", "md", "lg"],
+      "tone": ["primary", "ghost"],
+      "state": ["default", "hover", "active", "disabled"]
+    },
+    "slots": ["title", "body"]
+  }
+}

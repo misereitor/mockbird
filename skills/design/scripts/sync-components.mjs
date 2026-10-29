@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* mockbird:config-driven:v2 */
 /**
  * sync-components.mjs — marker-based component rematerializer (w2-8).
  *
@@ -20,15 +21,18 @@
  *     (data-size/data-tone/data-state).
  *   - The opener/closer marker comments stay EXACTLY as the user wrote them.
  *
- * Usage: node sync-components.mjs [design-root] [--check]
+ * Usage: node sync-components.mjs [design-root] [--check] [--config <path>]
  *   design-root   default `./design` relative to cwd
  *   --check       dry-run: report `file:line` for every region whose current
  *                 bytes differ from the materialized bytes (with a line diff);
  *                 exit 1 if any divergence, 0 if clean; never writes
+ *   --config      explicit validate.config.json path (config-driven v2; the
+ *                 same discovery chain as validate.mjs applies without it)
  *
  * Exit codes: 0 = up to date / clean, 1 = --check found divergence(s),
  * 2 = usage error or marker/slot parse error (the message carries the parser's
- * `component-marker` / `slot-marker` code).
+ * `component-marker` / `slot-marker` code), 3 = missing/broken
+ * validate.config.json (guided setup — never a silent fallback).
  *
  * Node 18+, stdlib only, ZERO deps. Imports the shared marker grammar parser
  * (marker-parser.mjs) — `parseAll`, `parseSlots`, `variantCompare`,
@@ -40,7 +44,7 @@
  * only when executed directly (`node sync-components.mjs …`).
  */
 import { readFileSync, writeFileSync, readdirSync, statSync, realpathSync } from "node:fs";
-import { join, resolve, sep } from "node:path";
+import { join, resolve, sep, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   parseAll,
@@ -56,12 +60,13 @@ import {
 // ---------------------------------------------------------------------------
 // CLI contract
 // ---------------------------------------------------------------------------
-const usage = "usage: node sync-components.mjs [design-root] [--check]";
+const usage = "usage: node sync-components.mjs [design-root] [--check] [--config <path>]";
 
-// Walk exemptions = the validator's exempt names (the .css/.json ones are n/a
-// for an .html-only walk; kept for parity with validate.mjs).
-const EXEMPT_FILES = new Set(["viewer.html", "docs.html", "mock.js"]);
-const EXEMPT_DIRS = new Set(["vendor", "scripts", "snapshots"]); // **/snapshots/** exempt whole tree
+// Walk exemptions come from the external validate.config.json (loaded in
+// main(): `exemptFilesSync` for the .html-only walk, `exemptDirs` shared with
+// validate.mjs) — never hardcoded here (flip-flop settle, §3.3/R2).
+let EXEMPT_FILES = new Set();
+let EXEMPT_DIRS = new Set(); // **/snapshots/** exempt whole tree
 
 /** Non-marker input error (missing partial, unusable registry, ...) -> exit 2. */
 class InputError extends Error {
@@ -313,24 +318,129 @@ function loadPartial(rootDir, entry, id) {
 }
 
 // ---------------------------------------------------------------------------
+// External config — validate.config.json (config-driven v2): the SAME loader
+// logic as validate.mjs. Discovery chain: --config <path> ->
+// validate.config.json in the validated root -> in the CWD; absent = exit 3
+// guided, never a silent fallback. toolchainScripts entries resolve RELATIVE
+// to the config file's own directory; every entry must exist and carry the
+// config marker (R2), else exit 2 citing the exact file.
+// ---------------------------------------------------------------------------
+const CONFIG_NAME = "validate.config.json";
+const CONFIG_MARKER = "/* mockbird:config-driven:v2 */";
+const CONFIG_SEED_HINT = `run setup-design.mjs to seed it (or copy skills/design/assets/${CONFIG_NAME} from the skill folder)`;
+
+function configFatal(message, code) {
+  console.error(message);
+  process.exit(code);
+}
+
+function configStringArray(parsed, key) {
+  const value = parsed[key];
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    configFatal(`${CONFIG_NAME}: "${key}" must be a list of strings`, 2);
+  }
+  return value;
+}
+
+function loadConfig(configArg, targetDir) {
+  let configPath = null;
+  if (configArg !== null) {
+    if (!pathExists(configArg)) {
+      configFatal(`${configArg}: ${CONFIG_NAME} not found — ${CONFIG_SEED_HINT}`, 3);
+    }
+    configPath = configArg;
+  } else {
+    const candidates = [join(targetDir, CONFIG_NAME), join(process.cwd(), CONFIG_NAME)];
+    configPath = candidates.find((candidate) => pathExists(candidate)) ?? null;
+    if (configPath === null) {
+      configFatal(`${CONFIG_NAME} not found (checked ${candidates[0]} and ${candidates[1]}) — ${CONFIG_SEED_HINT}`, 3);
+    }
+  }
+  let raw = null;
+  try {
+    raw = readFileSync(configPath, "utf8");
+  } catch {
+    configFatal(`${configPath}: cannot read ${CONFIG_NAME} — ${CONFIG_SEED_HINT}`, 3);
+  }
+  let parsed = null;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    configFatal(`${configPath}: ${CONFIG_NAME} is not valid JSON — ${CONFIG_SEED_HINT}`, 3);
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    configFatal(`${configPath}: ${CONFIG_NAME} must have a JSON object at its root`, 2);
+  }
+  const exemptFilesSync = configStringArray(parsed, "exemptFilesSync");
+  const exemptDirs = configStringArray(parsed, "exemptDirs");
+  const toolchain = configStringArray(parsed, "toolchainScripts");
+  // R2: every toolchain script must exist and carry the config marker.
+  const configDir = dirname(resolve(configPath));
+  for (const entry of toolchain) {
+    const full = resolve(configDir, entry);
+    let content = null;
+    try {
+      content = readFileSync(full, "utf8");
+    } catch {
+      configFatal(`toolchainScripts: ${full} not found (entries resolve relative to ${configDir})`, 2);
+    }
+    if (!content.includes(CONFIG_MARKER)) {
+      configFatal(`toolchainScripts: ${full} lacks the ${CONFIG_MARKER} marker (pre-config script?)`, 2);
+    }
+  }
+  console.log(`config: ${configPath}`);
+  EXEMPT_FILES = new Set(exemptFilesSync);
+  EXEMPT_DIRS = new Set(exemptDirs);
+}
+
+function pathExists(target) {
+  try {
+    statSync(target);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main (two-phase: materialize everything first, then write — a marker error
 // exits 2 with ZERO writes). CLI-only: see the isMain guard at the bottom.
 // ---------------------------------------------------------------------------
 function main() {
   const argv = process.argv.slice(2);
-  const flags = argv.filter((a) => a.startsWith("--"));
+  const flags = [];
+  const positional = [];
+  let configArg = null;
+  for (let i = 0; i < argv.length; i += 1) {
+    const token = argv[i];
+    if (token === "--config") {
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith("--")) {
+        console.error(`--config requires a path — ${usage}`);
+        process.exit(2);
+      }
+      configArg = value;
+      i += 1;
+      continue;
+    }
+    if (token.startsWith("--")) flags.push(token);
+    else positional.push(token);
+  }
   const unknownFlags = flags.filter((f) => f !== "--check");
   if (unknownFlags.length > 0) {
     console.error(`unknown flag "${unknownFlags[0]}" — ${usage}`);
     process.exit(2);
   }
-  const positional = argv.filter((a) => !a.startsWith("--"));
   if (positional.length > 1) {
     console.error(`${usage} (got ${positional.length} positional args)`);
     process.exit(2);
   }
   const check = flags.includes("--check");
   const designRootArg = positional[0] ?? "./design";
+
+  // Config-driven v2: same discovery chain as validate.mjs (validated root =
+  // the resolved design-root), loaded before anything else.
+  loadConfig(configArg, resolve(process.cwd(), designRootArg.replaceAll("\\", "/")));
 
 try {
   const rootDir = resolve(process.cwd(), designRootArg.replaceAll("\\", "/"));

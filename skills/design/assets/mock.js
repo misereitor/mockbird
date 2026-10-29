@@ -1,3 +1,4 @@
+/* mockbird:config-driven:v2 */
 /**
  * Design canvas mock runtime — optional include for interactive screens:
  *   <script src="../mock.js"></script>

@@ -92,6 +92,7 @@ If `design/` does not exist yet, create it and copy from this skill's folder
 - `scripts/export-tokens.mjs` → `design/scripts/export-tokens.mjs` (the W3C/DTCG
   interchange export: tokens.json → tokens.w3c.json; derived artifact, never
   edited by hand)
+- `assets/validate.config.json` → `design/validate.config.json` (the validator's external config — its `toolchainScripts` must match the layout above when copied: `validate.mjs`, `scripts/sync-components.mjs`, `scripts/marker-parser.mjs`, `scripts/gen-tokens.mjs`, `scripts/export-tokens.mjs`, `mock.js`)
 
 Rule for this copy list: only files that already exist enter it ("só entra no
 copy list arquivo que já existe"). Files still to come join only at their
