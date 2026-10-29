@@ -385,6 +385,18 @@ if (/resolvido|resolved/i.test(panelText) && resolvedShown >= 1) ok('comentarios
 else fail('resolvidos no painel', `itens=${resolvedShown} texto=${JSON.stringify(panelText.slice(0, 120))}`)
 await page.click('#pendingClose')
 
+// 6.8 PRESENT: clean view like the real system - no editor chrome (w21)
+await page.click('#presentBtn')
+await page.waitForTimeout(700)
+const presentOpenNow = await page.$eval('#present', (el) => !el.hidden)
+const presentLoaded = await page.$eval('#presentFrame', (el) => !!el.contentDocument?.body)
+if (presentOpenNow && presentLoaded) ok('modo apresentacao abre (tela limpa, sem editor)')
+else fail('apresentacao', `aberto=${presentOpenNow} frame=${presentLoaded}`)
+await page.keyboard.press('Escape')
+await page.waitForTimeout(300)
+if (await page.$eval('#present', (el) => el.hidden)) ok('esc volta ao editor')
+else fail('fechar apresentacao', 'ainda aberto')
+
 // 7. SELF-RELOAD: touch viewer.html on disk -> the tab reloads itself
 await page.evaluate(() => { window.__acceptMarker = 'stale' })
 const viewerFile = join(ROOT, 'design', 'viewer.html')
@@ -432,6 +444,13 @@ else fail('toast modo leitura', `toast=${JSON.stringify(toastText)}`)
 const sizeCtlHidden = await page.$eval('#sizeCtl', (el) => el.hidden)
 if (sizeCtlHidden) ok('modo leitura: controle de tamanho oculto (escrita)')
 else fail('tamanho no share', '#sizeCtl visivel em modo leitura')
+// share: apresentar e permitido - visualizar nunca e escrita
+await page.click('#presentBtn')
+await page.waitForTimeout(500)
+const sharePresent = await page.$eval('#present', (el) => !el.hidden)
+if (sharePresent) ok('modo leitura: apresentacao disponivel')
+else fail('apresentacao no share', 'nao abriu')
+await page.keyboard.press('Escape')
 await page.screenshot({ path: join(shots, 'accept-share.png') })
 shareServer.kill()
 

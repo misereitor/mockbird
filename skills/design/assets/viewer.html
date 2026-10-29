@@ -273,6 +273,23 @@
     border: 1px dashed var(--ui-accent); background: rgb(13 148 136 / .12);
   }
   /* versão do viewer — pequena, no rodapé à direita (sempre visível) */
+  /* w21: modo apresentacao - o mock como o sistema real, zero chrome do editor */
+  #present {
+    position: fixed; inset: 0; z-index: 50; background: #101418;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #presentWorld { transform-origin: center center; }
+  #presentFrame {
+    display: block; border: 0; background: #fff;
+    box-shadow: 0 24px 64px rgb(0 0 0 / .45);
+  }
+  #presentExit {
+    position: fixed; top: 12px; right: 12px; z-index: 51;
+    height: 32px; padding: 0 12px; border-radius: 8px; font-size: 12px;
+    background: rgb(255 255 255 / .12); color: #fff; border: 1px solid rgb(255 255 255 / .25);
+    opacity: .35; transition: opacity .15s;
+  }
+  #presentExit:hover { opacity: 1; }
   #versionTag {
     position: fixed; right: 8px; bottom: 6px; z-index: 41; pointer-events: none;
     color: var(--ui-muted); font-size: 10px; opacity: .8;
@@ -548,6 +565,7 @@
     <button id="docsBtn" data-i18n-title="docsBtnTitle" title="Open the usage docs">📘 Docs</button>
     <button id="inspectBtn" data-share-hide data-i18n-title="elementBtnTitle" title="Comment a specific element on the screen (Esc leaves the mode)" data-i18n="elementBtn">🎯 Element</button>
     <button id="chipBtn" data-i18n-title="chipsBtnTitle" title="Show id/variant chips over each component (inspector)" data-i18n="chipsBtn">🧩 Components</button>
+    <button id="presentBtn" data-i18n-title="presentBtnTitle" title="View the screen like the real system (Esc exits)">&#9654; <span data-i18n="presentBtn">Present</span></button>
     <button id="commentBtn" data-share-hide disabled data-i18n="commentScreenBtn">💬 Comment this screen</button>
     <button id="copyAllBtn" data-share-hide data-i18n-title="copyAllBtnTitle" title="View/copy every element comment">⧉ Comments (0)</button>
     <button id="pendingBtn" data-share-hide data-i18n-title="pendingBtnTitle" title="Open the pending comments panel (all canvases)"><span data-i18n="pendingBtn">💬 Pending</span> <span id="pendingBadge">0</span></button>
@@ -582,6 +600,13 @@
   </form>
 </section>
 
+<div id="present" hidden>
+  <div id="presentWorld">
+    <iframe id="presentFrame" sandbox="allow-scripts allow-same-origin allow-forms" title="Presentation"></iframe>
+  </div>
+  <button id="presentExit" type="button" data-i18n-title="presentExitTitle" title="Back to the editor"><span aria-hidden="true">&#10005;</span> <span data-i18n="presentExit">Exit</span> (Esc)</button>
+</div>
+
 <div id="fullscreen" hidden>
   <div id="fsTop">
     <button id="fsBack" data-i18n-title="fsBackTitle" title="Back to list mode" data-i18n="fsBackBtn">← Back</button>
@@ -591,6 +616,7 @@
     <button id="fsInspect" data-share-hide data-i18n-title="fsElementBtnTitle" title="Comment an element of the screen (Esc leaves the mode)" data-i18n="elementBtn">🎯 Element</button>
     <button id="fsChip" data-i18n-title="chipsBtnTitle" title="Show id/variant chips over each component (inspector)" data-i18n="chipsBtn">🧩 Components</button>
     <button id="fsTheme" data-i18n-title="themeToggle" title="Toggle light/dark theme">🌙</button>
+    <button id="fsPresent" data-i18n-title="presentBtnTitle" title="View the screen like the real system (Esc exits)">&#9654;</button>
     <strong id="fsTitle"></strong>
     <span id="fsSize" class="fs-size"></span>
     <div class="fs-tools">
@@ -715,7 +741,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.0.24</div>
+<div id="versionTag">v1.0.25</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -989,6 +1015,10 @@ const I18N = {
     sizeSwapTitle: 'Swap width and height',
     sizeSaved: 'Screen size saved',
     sizeSaveFailed: 'Could not save the screen size',
+    presentBtn: 'Present',
+    presentBtnTitle: 'View the screen like the real system (Esc exits)',
+    presentExit: 'Exit',
+    presentExitTitle: 'Back to the editor',
     pinResolvedToast: 'Comment resolved — listed under Pending › Resolved',
     pinReopenedToast: 'Comment reopened',
     commentCreated: 'Comment saved — pick and send it from 💬 Pending',
@@ -1242,6 +1272,10 @@ const I18N = {
     sizeSwapTitle: 'Trocar largura e altura',
     sizeSaved: 'Tamanho da tela salvo',
     sizeSaveFailed: 'Não consegui salvar o tamanho da tela',
+    presentBtn: 'Apresentar',
+    presentBtnTitle: 'Ver a tela como o sistema real (Esc volta)',
+    presentExit: 'Sair',
+    presentExitTitle: 'Voltar ao editor',
     pinResolvedToast: 'Comentário resolvido — listado em Pendentes › Resolvidos',
     pinReopenedToast: 'Comentário reaberto',
     commentCreated: 'Comentário salvo — selecione e envie por 💬 Pendentes',
@@ -3407,6 +3441,7 @@ function applySelection() {
   const count = state.selectedIds.length
   $('exportBtn').title = count > 1 ? t('exportSelectedTitle', { count }) : ''
   refreshSizeControls() // w18: o controle unico segue o alvo
+  $('presentBtn').disabled = state.screens.length === 0 // w21: sem telas, sem apresentacao
 }
 
 function selectedScreen() {
@@ -3699,6 +3734,61 @@ function fsScreenNow() {
   const file = fsCurrentFile()
   return { ...fsScreen, id: file.replace(/\.[^.]+$/, ''), name: file, file }
 }
+
+/* --------------------------- w21: modo apresentacao (estilo Figma/Penpot) -- */
+/* Ver o mock como o sistema real: tela limpa, zero chrome do editor. O mock
+ * esta vivo (links, overlays e transicoes funcionam); Esc volta ao editor. */
+
+let presentNatural = [0, 0]
+
+function presentOpen() {
+  return !$('present').hidden
+}
+
+function fitPresentation() {
+  if (!presentOpen() || !presentNatural[0]) return
+  const [width, height] = presentNatural
+  const scale = Math.min(window.innerWidth / width, window.innerHeight / height)
+  $('presentWorld').style.transform = `scale(${scale})`
+}
+
+function openPresentation(screen) {
+  if (!screen) return
+  const [width, height] = screenSize(screen)
+  presentNatural = [width, height]
+  const frame = $('presentFrame')
+  frame.onload = () => applyThemeToFrame(frame) // tema segue o viewer
+  frame.style.width = `${width}px`
+  frame.style.height = `${height}px`
+  frame.src = screenUrl(screen)
+  $('present').hidden = false
+  fitPresentation()
+  try {
+    const request = document.documentElement.requestFullscreen?.()
+    if (request && typeof request.catch === 'function') request.catch(() => {})
+  } catch { /* fullscreen indisponivel: a apresentacao ainda preenche a janela */ }
+}
+
+function closePresentation() {
+  if (!presentOpen()) return
+  $('present').hidden = true
+  $('presentFrame').src = 'about:blank' // para o mock - nada roda apos a vista
+  if (document.fullscreenElement) {
+    try {
+      const exit = document.exitFullscreen?.()
+      if (exit && typeof exit.catch === 'function') exit.catch(() => {})
+    } catch { /* sem fullscreen para sair */ }
+  }
+}
+
+window.addEventListener('resize', fitPresentation)
+// Esc do navegador sai do fullscreen nativo -> sai da apresentacao junto
+document.addEventListener('fullscreenchange', () => {
+  if (presentOpen() && !document.fullscreenElement) closePresentation()
+})
+$('presentExit').addEventListener('click', closePresentation)
+$('presentBtn').addEventListener('click', () => openPresentation(selectedScreen() ?? state.screens[0]))
+$('fsPresent').addEventListener('click', () => openPresentation(fsScreen ?? state.screens[0]))
 
 function openFullscreen(screen) {
   fsScreen = screen
@@ -4477,6 +4567,7 @@ $('filterInput').addEventListener('keydown', (event) => {
 })
 
 document.addEventListener('keydown', (event) => {
+  if (presentOpen()) return // apresentacao: o editor nao responde a teclas
   const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(event.target.tagName) || event.target.isContentEditable
   if (event.key === '/' && !typing) {
     event.preventDefault()
@@ -4733,6 +4824,7 @@ for (const closer of document.querySelectorAll('[data-close]')) {
 window.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     // ESC em camadas: menu → diálogo → inspetor → modo fluxo (uma camada por tecla)
+    if (presentOpen()) { closePresentation(); return } // apresentacao: camada de cima
     if (closeCtxMenu()) return
     const dialogOpen = [...document.querySelectorAll('.overlay')].some((overlay) => !overlay.hidden)
     if (dialogOpen) {

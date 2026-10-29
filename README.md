@@ -185,6 +185,13 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Presentation mode (v1.0.25)**: the ▶ **Present** button (toolbar and flow
+  mode) opens the mock **like the real system** — clean view with zero editor
+  chrome, scaled to fit the window, native fullscreen attempted on entry. The
+  mock stays fully alive (links, overlays and transitions work); a subtle
+  "✕ Exit (Esc)" chip is the only control, and Esc returns to the editor
+  (one layer at a time, like the other overlays). Available under `--share`
+  too — viewing is never writing. 42/42 in the browser suite.
 - **Busy ports fall through to the next free one (v1.0.24)**: starting a
   second instance (say `--share` next to a full one) used to bind the **same
   port** (wildcard vs localhost trickery) and the browser opened the **old

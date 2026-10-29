@@ -189,6 +189,13 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Modo apresentação (v1.0.25)**: o botão ▶ **Apresentar** (barra e modo
+  fluxo) abre o mock **como o sistema real** — visualização limpa, zero chrome
+  do editor, escalada para caber na janela, com tela cheia nativa tentada ao
+  entrar. O mock continua vivo (links, overlays e transições funcionam); um
+  chip sutil "✕ Sair (Esc)" é o único controle, e o Esc volta ao editor (uma
+  camada por vez, como os demais overlays). Disponível no `--share` também —
+  visualizar nunca é escrita. 42/42 na suíte de browser.
 - **Porta ocupada cede para a próxima livre (v1.0.24)**: subir uma segunda
   instância (um `--share` ao lado de uma completa) prendia a **mesma porta**
   (truque de wildcard vs localhost) e o navegador abria a **instância antiga —
