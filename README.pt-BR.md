@@ -189,6 +189,17 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Responsivo no `--share` + o canvas realmente troca (v1.0.26)**: duas
+  correções do dono. (1) O controle de tamanho responsivo sumia no `--share`
+  como se redimensionar fosse escrita — agora ele continua disponível como
+  override **só de visualização** (o toast declara que a mudança não é salva);
+  o arraste de bordas também funciona. (2) Trocar de canvas no modo fluxo
+  deixava o "Canvas" do visualizador para trás (só o frame mudava) — agora a
+  troca vale para o **visualizador inteiro** (seletores, strip, painéis,
+  parâmetros da URL como `?lang=` preservados) e o fluxo reabre na primeira
+  tela do canvas novo. Bônus: o poller de auto-reload baselina já no boot
+  (mudanças nos primeiros 2,5s não passam mais batidas). 44/44 na suíte de
+  browser.
 - **Modo apresentação (v1.0.25)**: o botão ▶ **Apresentar** (barra e modo
   fluxo) abre o mock **como o sistema real** — visualização limpa, zero chrome
   do editor, escalada para caber na janela, com tela cheia nativa tentada ao

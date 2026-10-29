@@ -534,7 +534,7 @@
     <input id="filterInput" type="search" placeholder="Search screens… (/)" title="Filter screens by name, id or group — / focuses, Esc clears" data-i18n-placeholder="searchPlaceholder" data-i18n-title="searchTitle" autocomplete="off">
     <button id="gridBtn" data-i18n-title="gridBtnTitle" title="Toggle between the horizontal strip and a wrapping grid" data-i18n="gridBtn">▦ Grid</button>
     <button id="bezelBtn" data-i18n-title="bezelBtnTitle" title="Device frames (phone/tablet) around the screens" data-i18n="bezelBtn">📱 Frame</button>
-    <div class="size-ctl" id="sizeCtl" data-share-hide data-i18n-title="sizeCtlTitle" title="Screen size - pick the scope (all/selected) and the size">
+    <div class="size-ctl" id="sizeCtl" data-i18n-title="sizeCtlTitle" title="Screen size - pick the scope (all/selected) and the size">
       <select id="sizeScope" data-i18n-title="sizeScopeTitle" title="What the size applies to">
         <option value="all" data-i18n="sizeScopeAll">All screens</option>
         <option value="selection">Selected</option>
@@ -633,7 +633,7 @@
       <label class="fs-field" id="fsScenarioField" hidden><span data-i18n="scenarioLabel">Scenario</span>
         <select id="fsScenario" data-i18n-title="fsScenarioTitle" title="Data scenario applied to the screens" data-i18n-aria="scenarioLabel" aria-label="Scenario"></select>
       </label>
-      <div class="size-ctl" id="fsSizeCtl" data-share-hide data-i18n-title="sizeCtlTitle" title="Screen size">
+      <div class="size-ctl" id="fsSizeCtl" data-i18n-title="sizeCtlTitle" title="Screen size">
         <select id="fsDevice" data-i18n-aria="deviceLabel" aria-label="Device">
           <option value="original" data-i18n="devOriginal">Original</option>
           <option value="custom" data-i18n="devCustom">custom</option>
@@ -741,7 +741,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.0.25</div>
+<div id="versionTag">v1.0.26</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -1014,6 +1014,7 @@ const I18N = {
     sizeH: 'Height',
     sizeSwapTitle: 'Swap width and height',
     sizeSaved: 'Screen size saved',
+    sizeShareLocal: 'Read-only mode: the size applies to your view only (not saved)',
     sizeSaveFailed: 'Could not save the screen size',
     presentBtn: 'Present',
     presentBtnTitle: 'View the screen like the real system (Esc exits)',
@@ -1271,6 +1272,7 @@ const I18N = {
     sizeH: 'Altura',
     sizeSwapTitle: 'Trocar largura e altura',
     sizeSaved: 'Tamanho da tela salvo',
+    sizeShareLocal: 'Modo leitura: o tamanho vale só na sua visualização (não salva)',
     sizeSaveFailed: 'Não consegui salvar o tamanho da tela',
     presentBtn: 'Apresentar',
     presentBtnTitle: 'Ver a tela como o sistema real (Esc volta)',
@@ -1854,7 +1856,7 @@ function jumpToPin(pin) {
   if (!pin || !pin.canvas || !pin.file) return
   const file = String(pin.file).split('?')[0]
   if (pin.canvas !== state.canvas) {
-    location.search = `?canvas=${encodeURIComponent(pin.canvas)}&screen=${encodeURIComponent(file)}`
+    goToCanvas(pin.canvas, file) // w22: preserva os demais parametros (lang etc.)
     return
   }
   const screen = state.screens.find((s) => String(s.file).split('?')[0] === file) ?? null
@@ -2146,7 +2148,7 @@ function wireSizeControl([selId, wId, hId], rotateId) {
     if (value === 'original') {
       const targets = sizeTargetScreens()
       for (const screen of targets) resetScreenSize(screen, true)
-      if (targets.length) toast(t('sizeSaved'))
+      if (targets.length) sizeToast(isReadonly() ? 'local' : true, false)
       return refreshSizeControls()
     }
     if (DEVICES[value]) applySizeToTargets(DEVICES[value][0], DEVICES[value][1])
@@ -2169,7 +2171,7 @@ function wireSizeControl([selId, wId, hId], rotateId) {
       const [width, height] = screenSize(screen)
       commitScreenSize(screen, height, width, true)
     }
-    if (targets.length) toast(t('sizeSaved'))
+    if (targets.length) sizeToast(isReadonly() ? 'local' : true, false)
     refreshSizeControls()
   })
 }
@@ -3242,7 +3244,7 @@ const SCREEN_SIZE_API = 'api/screen-size'
 /** POST /api/screen-size - persiste o tamanho no canvas.json (o poller de
  *  historico do servidor grava a revisao). null/null = restaurar o padrao. */
 async function persistScreenSize(canvas, file, width, height) {
-  if (isReadonly()) return false
+  if (isReadonly()) return 'local' // share: a mudanca e de visualizacao (declarado)
   try {
     const response = await fetch(SCREEN_SIZE_API, {
       method: 'POST',
@@ -3255,6 +3257,14 @@ async function persistScreenSize(canvas, file, width, height) {
     toast(t('sizeSaveFailed'))
     return false
   }
+}
+
+/** Toast do tamanho: "salvo" ou, no --share, "so na sua visualizacao" -
+ *  a degradacao e declarada, nunca muda. `false` = erro (ja avisado). */
+function sizeToast(result, silent) {
+  if (silent || result === false) return
+  if (result === 'local') toast(t('sizeShareLocal'))
+  else toast(t('sizeSaved'))
 }
 
 /** w18: alvo do controle unico - telas selecionadas (lista) ou fluxo. */
@@ -3299,7 +3309,7 @@ function refreshSizeControls() {
 function applySizeToTargets(width, height) {
   const targets = sizeTargetScreens()
   for (const screen of targets) commitScreenSize(screen, width, height, true)
-  if (targets.length) toast(t('sizeSaved'))
+  if (targets.length) sizeToast(isReadonly() ? 'local' : true, false)
   refreshSizeControls()
 }
 
@@ -3351,8 +3361,8 @@ function commitScreenSize(screen, width, height, silent = false) {
   screen.width = width
   screen.height = height
   refreshSizeUI(screen)
-  persistScreenSize(screen.canvas ?? state.canvas, String(screen.file).split('?')[0], width, height).then((ok) => {
-    if (ok && !silent) toast(t('sizeSaved'))
+  persistScreenSize(screen.canvas ?? state.canvas, String(screen.file).split('?')[0], width, height).then((result) => {
+    sizeToast(result, silent)
   })
 }
 
@@ -3361,8 +3371,8 @@ function resetScreenSize(screen, silent = false) {
   delete screen.width
   delete screen.height
   refreshSizeUI(screen)
-  persistScreenSize(screen.canvas ?? state.canvas, String(screen.file).split('?')[0], null, null).then((ok) => {
-    if (ok && !silent) toast(t('sizeSaved'))
+  persistScreenSize(screen.canvas ?? state.canvas, String(screen.file).split('?')[0], null, null).then((result) => {
+    sizeToast(result, silent)
   })
 }
 
@@ -3373,7 +3383,6 @@ function wireResize(handle, axis, frame, screenRef, zoomOf) {
   handle.addEventListener('pointerdown', (event) => {
     const screen = screenRef()
     if (!screen) return
-    if (isReadonly()) return toast(t('shareReadOnlyHint'))
     event.preventDefault()
     event.stopPropagation()
     const [w0, h0] = screenSize(screen)
@@ -4248,10 +4257,9 @@ function openFsScreen(screen) {
   renderFsPins()
 }
 
-/* Troca de canvas pelo modo fluxo (escolha documentada): carrega a PRIMEIRA
- * tela do canvas escolhido dentro do fsFrame, sem sair do modo fluxo. Pins,
- * painéis e snapshots seguem amarrados ao canvas aberto no visualizador; pin
- * criado em tela de canvas visitado grava no canvas dela (screen.canvas). */
+/* Troca de canvas pelo modo fluxo: troca o canvas DO VISUALIZADOR inteiro
+ * (mesmo caminho do cabecalho) e reabre o fluxo na primeira tela do canvas
+ * novo - o "Canvas" sempre acompanha a rota em que voce esta. */
 $('fsCanvas').addEventListener('change', async () => {
   const name = $('fsCanvas').value
   if (!name) return
@@ -4261,8 +4269,15 @@ $('fsCanvas').addEventListener('change', async () => {
       ? manifest.screens.find((s) => s && typeof s.file === 'string' && s.file)
       : null
     if (!first) { toast(t('canvasNoScreens', { name })); return }
-    openFsScreen({ ...first, canvas: name })
-    toast(`Canvas: ${name} › ${first.name ?? first.file}`)
+    // o estado do fluxo aponta para a primeira tela do canvas novo e o
+    // restoreFlowState reabre o modo fluxo la apos a troca
+    try {
+      sessionStorage.setItem('design.viewer.flow', JSON.stringify({
+        canvas: name,
+        file: String(first.file).split('?')[0],
+      }))
+    } catch { /* sem storage: o canvas abre em modo lista */ }
+    goToCanvas(name)
   } catch {
     toast(t('canvasNotFound', { name }))
   }
@@ -4906,7 +4921,9 @@ function reloadScreenFrame(file) {
   }
 }
 
-setInterval(async () => {
+setInterval(pollFiles, POLL_MS)
+
+async function pollFiles() {
   if (!state.canvas || document.hidden) return
   const files = watchedFiles()
   const signatures = await Promise.all(files.map(fileSignature))
@@ -4946,7 +4963,7 @@ setInterval(async () => {
   } else if (screensChanged.length > 1) {
     toast(t('runtimeUpdated'))
   }
-}, POLL_MS)
+}
 
 /* --------------------------------------------------------------- boot */
 
@@ -4999,6 +5016,7 @@ async function boot() {
   }
   fitSoon()
   restoreFlowState() // w10: reload/F5 mantém o modo fluxo e a tela atual
+  pollFiles() // baseline agora - mudancas nos primeiros 2.5s nao passam batidas
 }
 
 /** Canvas discovery: design/index.json first, then a directory listing. */
@@ -5066,9 +5084,18 @@ async function loadCanvasSelect() {
   }
 }
 
+/** w22: troca de canvas preservando os demais parametros da URL (lang etc.). */
+function goToCanvas(name, screenFile = '') {
+  const next = new URLSearchParams(location.search)
+  next.set('canvas', name)
+  if (screenFile) next.set('screen', screenFile)
+  else next.delete('screen')
+  location.search = `?${next.toString()}`
+}
+
 $('canvasSelect').addEventListener('change', () => {
   const name = $('canvasSelect').value
-  if (name && name !== state.canvas) location.search = `?canvas=${encodeURIComponent(name)}`
+  if (name && name !== state.canvas) goToCanvas(name)
 })
 
 /** Picker page: one button per canvas, with screen counts. */

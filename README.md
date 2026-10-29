@@ -185,6 +185,16 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Responsive under `--share` + the canvas actually switches (v1.0.26)**: two
+  fixes from the owner. (1) The responsive size control was hidden under
+  `--share` as if resizing were writing — it now stays available as a
+  **view-only** override (the toast declares the change is not saved); edge
+  dragging works too. (2) Switching canvas in flow mode left the viewer's
+  "Canvas" behind (only the frame moved) — it now switches the **whole
+  viewer** (selectors, strip, panels, URL params like `?lang=` preserved) and
+  the flow reopens on the first screen of the new canvas. Bonus: the
+  self-reload poller baselines immediately at boot (changes in the first 2.5s
+  no longer slip through). 44/44 in the browser suite.
 - **Presentation mode (v1.0.25)**: the ▶ **Present** button (toolbar and flow
   mode) opens the mock **like the real system** — clean view with zero editor
   chrome, scaled to fit the window, native fullscreen attempted on entry. The
