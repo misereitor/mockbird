@@ -10,7 +10,7 @@
  *   node scripts/viewer-accept.mjs
  */
 import { spawn } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
@@ -40,6 +40,13 @@ for (const item of ['mock.js', 'mock.css', 'vendor', 'scripts', 'validate.mjs', 
   } catch { /* optional file */ }
 }
 // fixture: one open + one RESOLVED comment (resolved ones must stay visible)
+// w19: the THIRD screen drops its device - proves the desktop default (1440x900)
+{
+  const manifestPath = join(ROOT, 'design', 'login', 'canvas.json')
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  if (manifest.screens[2]) delete manifest.screens[2].device
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
+}
 writeFileSync(join(ROOT, 'design', 'comments.json'), JSON.stringify({
   comments: [
     { id: 'p-open1', canvas: 'login', file: '01-login.html', selector: 'body', snippet: 'x', rect: { x: 10, y: 10, width: 20, height: 20 }, status: 'open', replies: [{ text: 'aberto', createdAt: '2026-01-01T00:00:00.000Z' }], createdAt: '2026-01-01T00:00:00.000Z' },
@@ -248,29 +255,42 @@ if (boxed >= 2) ok(`selecao por retangulo (${boxed} telas selecionadas)`)
 else fail('selecao por retangulo', `somente ${boxed} selecionadas`)
 await page.screenshot({ path: join(shots, 'accept-marquee.png') })
 
-// 5.5 SCREEN SIZE: the single Chrome-like control + live drag (w18)
-await page.click('#strip .card-overlay') // uma tela so = alvo do controle
+// 5.5 SCREEN SIZE: single control + scope (all/selection) + live drag (w19)
+await page.click('#strip .card-overlay') // uma tela so = escopo Selecionadas
 await page.waitForTimeout(200)
 const ctlVisible = await page.$eval('#sizeCtl', (el) => !!el.offsetParent)
 const ctlW = await page.$eval('#sizeWField', (el) => el.value)
 if (ctlVisible && ctlW !== '') ok(`controle unico visivel e reflete o alvo (W=${ctlW})`)
 else fail('controle unico', `visivel=${ctlVisible} W=${JSON.stringify(ctlW)}`)
+const defaultLabel = await page.$eval('.card[data-id="excluir"] .card-size', (el) => el.textContent)
+if (defaultLabel.includes('1440') && defaultLabel.includes('900')) ok(`padrao desktop (${defaultLabel.trim()})`)
+else fail('padrao desktop', `label=${JSON.stringify(defaultLabel)}`)
+const scopeDefault = await page.$eval('#sizeScope', (el) => el.value)
+if (scopeDefault === 'all') ok('escopo padrao: Todas as telas')
+else fail('escopo padrao', `value=${scopeDefault}`)
 await page.fill('#sizeWField', '500')
 await page.fill('#sizeHField', '700')
 await page.keyboard.press('Enter')
-await page.waitForTimeout(500)
+await page.waitForTimeout(700)
 const frameW = await page.$eval('.card .card-frame', (el) => el.style.width)
-const manifest1 = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
-const size0 = manifest1.screens[0]
-if (frameW === '500px' && size0.width === 500 && size0.height === 700) ok('campos aplicam (500x700) e persistem no canvas.json')
-else fail('aplicar tamanho', `frame=${frameW} manifesto=${size0.width}x${size0.height}`)
+const manAll = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
+const allUniform = manAll.screens.every((s) => s.width === 500 && s.height === 700)
+if (frameW === '500px' && allUniform) ok('mudar tudo: um comando alcanca todas as telas (500x700)')
+else fail('aplicar em todas', `frame=${frameW} manifesto=${JSON.stringify(manAll.screens.map((s) => `${s.width}x${s.height}`))}`)
+await page.selectOption('#sizeScope', 'selection')
+await page.fill('#sizeWField', '640')
+await page.fill('#sizeHField', '480')
+await page.keyboard.press('Enter')
+await page.waitForTimeout(700)
+const manSel = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
+if (manSel.screens[0].width === 640 && manSel.screens[1].width === 500) ok('escopo Selecionadas muda so a selecionada')
+else fail('escopo selecionadas', JSON.stringify(manSel.screens.map((s) => `${s.width}x${s.height}`)))
 await page.selectOption('#deviceSelect', 'tablet')
-await page.waitForTimeout(500)
+await page.waitForTimeout(700)
 const framePreset = await page.$eval('.card .card-frame', (el) => el.style.width)
-const manifestPreset = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
-const sizePreset = manifestPreset.screens[0]
-if (framePreset === '834px' && sizePreset.width === 834 && sizePreset.height === 1112) ok('preset Tablet (834x1112) aplica')
-else fail('preset tablet', `frame=${framePreset} manifesto=${sizePreset.width}x${sizePreset.height}`)
+const manPreset = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
+if (framePreset === '834px' && manPreset.screens[0].width === 834 && manPreset.screens[1].width === 500) ok('preset Tablet (834x1112) segue o escopo')
+else fail('preset tablet', `frame=${framePreset} manifesto=${JSON.stringify(manPreset.screens.map((s) => `${s.width}x${s.height}`))}`)
 const seHandle = await page.$('.card.selected .rs-se')
 if (seHandle) ok('handle de arraste visivel na tela selecionada')
 else fail('handle de arraste', '.rs-se ausente')
@@ -280,11 +300,11 @@ await page.mouse.move(hbox.x + hbox.width / 2, hbox.y + hbox.height / 2)
 await page.mouse.down()
 await page.mouse.move(hbox.x + hbox.width / 2 + 60, hbox.y + hbox.height / 2 + 40, { steps: 5 })
 await page.mouse.up()
-await page.waitForTimeout(500)
+await page.waitForTimeout(700)
 const draggedW = parseInt(await page.$eval('.card .card-frame', (el) => el.style.width), 10)
-const manifest2 = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
-if (draggedW > beforeDrag && manifest2.screens[0].width === draggedW) ok(`arraste redimensiona ao vivo (${draggedW} px)`)
-else fail('arraste de tamanho', `antes=${beforeDrag} frame=${draggedW} manifesto=${manifest2.screens[0].width}`)
+const manDrag = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
+if (draggedW > beforeDrag && manDrag.screens[0].width === draggedW) ok(`arraste redimensiona ao vivo (${draggedW} px)`)
+else fail('arraste de tamanho', `antes=${beforeDrag} frame=${draggedW} manifesto=${manDrag.screens[0].width}`)
 
 // 6. FLOW mode: double-click + right-click menu inside the screen
 const target = await page.$('#strip .card-overlay')

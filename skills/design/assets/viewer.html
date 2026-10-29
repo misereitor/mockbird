@@ -106,6 +106,7 @@
   }
   .size-num:focus { outline: 2px solid var(--ui-accent); outline-offset: -1px; }
   .size-x { color: var(--ui-muted); font-size: 12px; }
+  .size-sep { width: 1px; height: 20px; background: var(--ui-border); }
   .size-ctl button { height: 28px; min-height: 28px; padding: 0 8px; font-size: 13px; border-radius: 6px; }
   /* w17: responsividade dinamica - arrastar as bordas redimensiona a tela ao vivo */
   .rs-handle { position: absolute; z-index: 6; display: none; }
@@ -516,7 +517,12 @@
     <input id="filterInput" type="search" placeholder="Search screens… (/)" title="Filter screens by name, id or group — / focuses, Esc clears" data-i18n-placeholder="searchPlaceholder" data-i18n-title="searchTitle" autocomplete="off">
     <button id="gridBtn" data-i18n-title="gridBtnTitle" title="Toggle between the horizontal strip and a wrapping grid" data-i18n="gridBtn">▦ Grid</button>
     <button id="bezelBtn" data-i18n-title="bezelBtnTitle" title="Device frames (phone/tablet) around the screens" data-i18n="bezelBtn">📱 Frame</button>
-    <div class="size-ctl" id="sizeCtl" data-share-hide data-i18n-title="sizeCtlTitle" title="Screen size - applies to the selected screen(s)">
+    <div class="size-ctl" id="sizeCtl" data-share-hide data-i18n-title="sizeCtlTitle" title="Screen size - pick the scope (all/selected) and the size">
+      <select id="sizeScope" data-i18n-title="sizeScopeTitle" title="What the size applies to">
+        <option value="all" data-i18n="sizeScopeAll">All screens</option>
+        <option value="selection">Selected</option>
+      </select>
+      <span class="size-sep"></span>
       <select id="deviceSelect" data-i18n-aria="deviceLabel" aria-label="Device">
         <option value="original" data-i18n="devOriginal">Original</option>
         <option value="custom" data-i18n="devCustom">custom</option>
@@ -709,7 +715,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.0.22</div>
+<div id="versionTag">v1.0.23</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -974,7 +980,10 @@ const I18N = {
     deleteSelectedBtn: 'Delete selected',
     deleteSelectedConfirm: 'Delete the selected comments permanently?',
     enterHint: 'Enter saves - Ctrl+Enter or Shift+Enter for a new line',
-    sizeCtlTitle: 'Screen size - applies to the selected screen(s)',
+    sizeCtlTitle: 'Screen size - pick the scope (all/selected) and the size',
+    sizeScopeTitle: 'What the size applies to',
+    sizeScopeAll: 'All screens',
+    sizeScopeSelection: 'Selected ({count})',
     sizeW: 'Width',
     sizeH: 'Height',
     sizeSwapTitle: 'Swap width and height',
@@ -1224,7 +1233,10 @@ const I18N = {
     deleteSelectedBtn: 'Excluir selecionados',
     deleteSelectedConfirm: 'Excluir os comentários selecionados permanentemente?',
     enterHint: 'Enter salva - Ctrl+Enter ou Shift+Enter quebra linha',
-    sizeCtlTitle: 'Tamanho da tela - vale para a(s) tela(s) selecionada(s)',
+    sizeCtlTitle: 'Tamanho da tela - escolha o escopo (todas/selecionadas) e o tamanho',
+    sizeScopeTitle: 'Aonde o tamanho é aplicado',
+    sizeScopeAll: 'Todas as telas',
+    sizeScopeSelection: 'Selecionadas ({count})',
     sizeW: 'Largura',
     sizeH: 'Altura',
     sizeSwapTitle: 'Trocar largura e altura',
@@ -2129,6 +2141,7 @@ function wireSizeControl([selId, wId, hId], rotateId) {
 }
 wireSizeControl(['deviceSelect', 'sizeWField', 'sizeHField'], 'sizeRotate')
 wireSizeControl(['fsDevice', 'fsSizeWField', 'fsSizeHField'], 'fsSizeRotate')
+$('sizeScope').addEventListener('change', () => refreshSizeControls())
 
 document.querySelectorAll('#fsWorld .rs-handle').forEach((handle, index) => {
   wireResize(handle, ['e', 's', 'se'][index], $('fsFrame'), () => fsScreen, () => fsView.zoom)
@@ -2695,7 +2708,7 @@ $('historyFile').addEventListener('change', loadHistoryList)
 
 function screenSize(screen) {
   if (Number.isInteger(screen.width) && Number.isInteger(screen.height)) return [screen.width, screen.height]
-  return [...(DEVICES[screen.device] ?? DEVICES.mobile)]
+  return [...(DEVICES[screen.device] ?? DEVICES.desktop)] // w19: padrao = desktop
 }
 
 function renderStrip() {
@@ -3218,12 +3231,15 @@ const SIZE_CONTROLS = [
 
 function sizeTargetScreens() {
   if (!$('fullscreen').hidden && fsScreen) return [fsScreen]
-  return selectedScreens()
+  const scope = $('sizeScope')?.value ?? 'all'
+  return scope === 'selection' ? selectedScreens() : state.screens
 }
 
 /** Campos do controle refletem o alvo (preset que casa, senao "custom"). */
 function refreshSizeControls() {
   const targets = sizeTargetScreens()
+  const selectionOption = $('sizeScope')?.querySelector('option[value="selection"]')
+  if (selectionOption) selectionOption.textContent = t('sizeScopeSelection', { count: selectedScreens().length })
   const [width, height] = targets.length ? screenSize(targets[0]) : ['', '']
   const match = Object.keys(DEVICES).find((key) => DEVICES[key][0] === width && DEVICES[key][1] === height)
   for (const [selId, wId, hId] of SIZE_CONTROLS) {

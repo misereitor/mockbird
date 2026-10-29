@@ -189,6 +189,13 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Desktop por padrão + um jeito fácil de mudar tudo (v1.0.23)**: telas sem
+  tamanho nem device declarados agora valem **Desktop 1440×900** (antes caíam
+  em mobile), e o controle de tamanho ganhou um seletor de **escopo** —
+  **Todas as telas** (padrão) ou **Selecionadas (n)** — então mudar todas as
+  telas é um comando só, sem ginástica de seleção retangular. Presets e campos
+  seguem o escopo; o modo fluxo continua editando a tela do fluxo. 38/38 na
+  suíte de browser.
 - **Um controle de tamanho só, estilo Chrome (v1.0.22)**: a responsividade
   agora vive em **um lugar só** — dropdown de aparelho + largura × altura
   editáveis + girar (como a barra de dispositivos do Chrome), espelhado no

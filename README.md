@@ -185,6 +185,12 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Desktop by default + an easy way to change everything (v1.0.23)**: screens
+  with no size or device declared now default to **Desktop 1440×900** (was
+  mobile), and the size control gained a **scope** dropdown — **All screens**
+  (default) or **Selected (n)** — so changing every screen is one command, no
+  marquee gymnastics. Presets and fields follow the scope; flow mode still
+  edits the flow screen. 38/38 in the browser suite.
 - **One Chrome-style size control (v1.0.22)**: responsiveness now lives in
   **one place** — a device preset dropdown + editable width × height + rotate
   (like the Chrome device bar), mirrored in flow mode, applying to the
