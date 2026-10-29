@@ -185,6 +185,13 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **One Chrome-style size control (v1.0.22)**: responsiveness now lives in
+  **one place** — a device preset dropdown + editable width × height + rotate
+  (like the Chrome device bar), mirrored in flow mode, applying to the
+  **selected screen(s)** (or the flow screen). The size dialog and the global
+  device override are gone; the card size label is display-only again, and the
+  duplicated "Dispositivo Dispositivo" label bug is fixed. Drag handles stay.
+  35/35 in the browser suite.
 - **Dynamic responsive sizing (v1.0.21)**: every screen's size is now
   **editable** — click a screen's size label (or the size chip in flow mode)
   for exact width/height with quick presets (360…1440) and orientation swap,

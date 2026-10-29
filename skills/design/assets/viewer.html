@@ -88,12 +88,25 @@
   .card { display: flex; flex-direction: column; gap: 8px; }
   .card-head { display: flex; align-items: baseline; gap: 10px; }
   .card-name { font-weight: 600; }
-  .card-size {
-    color: var(--ui-muted); font-size: 12px;
-    border: 0; background: transparent; height: auto; min-height: 0; padding: 0 2px;
-    cursor: pointer;
+  .card-size { color: var(--ui-muted); font-size: 12px; }
+  /* w18: controle unico de tamanho (estilo barra de dispositivos do Chrome) */
+  .size-ctl {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 6px; border: 1px solid var(--ui-border); border-radius: 8px;
   }
-  .card-size:hover { color: var(--ui-accent); }
+  .size-ctl select {
+    height: 28px; min-height: 28px; padding: 0 4px;
+    border: 0; background: transparent; font-size: 12px;
+  }
+  .size-num {
+    width: 62px; height: 28px; min-height: 28px; padding: 0 6px;
+    border: 1px solid var(--ui-border); border-radius: 6px;
+    background: var(--ui-surface); color: var(--ui-text); font: inherit; font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .size-num:focus { outline: 2px solid var(--ui-accent); outline-offset: -1px; }
+  .size-x { color: var(--ui-muted); font-size: 12px; }
+  .size-ctl button { height: 28px; min-height: 28px; padding: 0 8px; font-size: 13px; border-radius: 6px; }
   /* w17: responsividade dinamica - arrastar as bordas redimensiona a tela ao vivo */
   .rs-handle { position: absolute; z-index: 6; display: none; }
   .card.selected .rs-handle, #fsWorld .rs-handle { display: block; }
@@ -105,11 +118,6 @@
     border-right: 2px solid var(--ui-accent); border-bottom: 2px solid var(--ui-accent);
     border-radius: 0 0 3px 0;
   }
-  .size-row { display: flex; align-items: flex-end; gap: 8px; margin: 10px 0; }
-  .size-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ui-muted); }
-  .size-field input { width: 92px; height: 32px; padding: 0 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-surface); color: var(--ui-text); font: inherit; }
-  .size-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
-  .size-chips button { height: 26px; min-height: 26px; padding: 0 8px; font-size: 11px; border-radius: 6px; }
   .card-frame {
     position: relative; background: var(--ui-surface);
     border: 1px solid var(--ui-border); border-radius: 4px; overflow: hidden;
@@ -205,12 +213,7 @@
   /* modo fluxo: barra compacta (paridade com o cabeçalho, sem virar ruído) */
   #fsTop button { height: 28px; min-height: 28px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
   #fsTop select { height: 28px; padding: 0 6px; font-size: 12px; }
-  .fs-size {
-    color: var(--ui-muted); font-size: 12px;
-    border: 0; background: transparent; height: auto; min-height: 0; padding: 0 4px;
-    cursor: pointer;
-  }
-  .fs-size:hover { color: var(--ui-accent); }
+  .fs-size { color: var(--ui-muted); font-size: 12px; }
   .fs-tools {
     display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
     margin-left: auto;
@@ -507,20 +510,25 @@
     <label id="canvasLabel" hidden>Canvas
       <select id="canvasSelect"></select>
     </label>
-    <label id="scenarioLabel" hidden><span data-i18n="scenarioLabel">Scenario</span>Cenário
+    <label id="scenarioLabel" hidden><span data-i18n="scenarioLabel">Scenario</span>
       <select id="scenarioSelect"></select>
     </label>
     <input id="filterInput" type="search" placeholder="Search screens… (/)" title="Filter screens by name, id or group — / focuses, Esc clears" data-i18n-placeholder="searchPlaceholder" data-i18n-title="searchTitle" autocomplete="off">
     <button id="gridBtn" data-i18n-title="gridBtnTitle" title="Toggle between the horizontal strip and a wrapping grid" data-i18n="gridBtn">▦ Grid</button>
     <button id="bezelBtn" data-i18n-title="bezelBtnTitle" title="Device frames (phone/tablet) around the screens" data-i18n="bezelBtn">📱 Frame</button>
-    <label><span data-i18n="deviceLabel">Device</span>Dispositivo
-      <select id="deviceSelect">
+    <div class="size-ctl" id="sizeCtl" data-share-hide data-i18n-title="sizeCtlTitle" title="Screen size - applies to the selected screen(s)">
+      <select id="deviceSelect" data-i18n-aria="deviceLabel" aria-label="Device">
         <option value="original" data-i18n="devOriginal">Original</option>
+        <option value="custom" data-i18n="devCustom">custom</option>
         <option value="mobile" data-i18n="devMobile">Phone</option>
         <option value="tablet" data-i18n="devTablet">Tablet</option>
         <option value="desktop" data-i18n="devDesktop">Desktop</option>
       </select>
-    </label>
+      <input id="sizeWField" class="size-num" type="number" min="100" max="20000" step="1" data-i18n-title="sizeW" title="Width" aria-label="Width">
+      <span class="size-x">&#215;</span>
+      <input id="sizeHField" class="size-num" type="number" min="100" max="20000" step="1" data-i18n-title="sizeH" title="Height" aria-label="Height">
+      <button id="sizeRotate" type="button" data-i18n-title="sizeSwapTitle" title="Swap width and height">&#8646;</button>
+    </div>
     <button id="themeBtn" data-i18n-title="themeToggle" title="Toggle light/dark theme" data-i18n="themeDark">🌙 Dark</button>
     <span class="zoomgrp">
       <button id="zoomOut" data-i18n-title="zoomOut" title="Zoom out">−</button>
@@ -578,7 +586,7 @@
     <button id="fsChip" data-i18n-title="chipsBtnTitle" title="Show id/variant chips over each component (inspector)" data-i18n="chipsBtn">🧩 Components</button>
     <button id="fsTheme" data-i18n-title="themeToggle" title="Toggle light/dark theme">🌙</button>
     <strong id="fsTitle"></strong>
-    <button id="fsSize" type="button" class="fs-size" data-i18n-title="sizeEditTitleAttr" title="Edit screen size (click) or drag the edges"></button>
+    <span id="fsSize" class="fs-size"></span>
     <div class="fs-tools">
       <span class="zoomgrp">
         <button id="fsZoomOut" data-i18n-title="zoomOut" data-i18n-aria="zoomOut" title="Zoom out" aria-label="Zoom out">−</button>
@@ -590,17 +598,22 @@
       <label class="fs-field" id="fsCanvasField">Canvas
         <select id="fsCanvas" data-i18n-title="fsCanvasTitle" data-i18n-aria="canvasLabel" title="Switch canvas (loads its first screen)" aria-label="Canvas"></select>
       </label>
-      <label class="fs-field" id="fsScenarioField" hidden><span data-i18n="scenarioLabel">Scenario</span>Cenário
+      <label class="fs-field" id="fsScenarioField" hidden><span data-i18n="scenarioLabel">Scenario</span>
         <select id="fsScenario" data-i18n-title="fsScenarioTitle" title="Data scenario applied to the screens" data-i18n-aria="scenarioLabel" aria-label="Scenario"></select>
       </label>
-      <label class="fs-field"><span data-i18n="deviceLabel">Device</span>Dispositivo
-        <select id="fsDevice" data-i18n-title="fsDeviceTitle" title="Viewing device" data-i18n-aria="deviceLabel" aria-label="Device">
+      <div class="size-ctl" id="fsSizeCtl" data-share-hide data-i18n-title="sizeCtlTitle" title="Screen size">
+        <select id="fsDevice" data-i18n-aria="deviceLabel" aria-label="Device">
           <option value="original" data-i18n="devOriginal">Original</option>
+          <option value="custom" data-i18n="devCustom">custom</option>
           <option value="mobile" data-i18n="devMobile">Phone</option>
           <option value="tablet" data-i18n="devTablet">Tablet</option>
           <option value="desktop" data-i18n="devDesktop">Desktop</option>
         </select>
-      </label>
+        <input id="fsSizeWField" class="size-num" type="number" min="100" max="20000" step="1" data-i18n-title="sizeW" title="Width" aria-label="Width">
+        <span class="size-x">&#215;</span>
+        <input id="fsSizeHField" class="size-num" type="number" min="100" max="20000" step="1" data-i18n-title="sizeH" title="Height" aria-label="Height">
+        <button id="fsSizeRotate" type="button" data-i18n-title="sizeSwapTitle" title="Swap width and height">&#8646;</button>
+      </div>
       <span class="fs-sep"></span>
       <button id="fsDocs" data-i18n-title="docsBtnTitle" title="Open the usage docs">📘 Docs</button>
       <button id="fsExport" data-i18n-title="fsExportTitle" title="Export the current flow screen as PNG">⬇ PNG</button>
@@ -684,36 +697,6 @@
   </form>
 </div>
 
-<div id="sizeDialog" class="overlay" hidden>
-  <form class="box" id="sizeForm">
-    <h2 data-i18n="sizeEditTitle">Screen size</h2>
-    <p class="hint" data-i18n="sizeEditHint">Set the viewport size to test responsiveness - the mock reflows live.</p>
-    <div class="size-row">
-      <label class="size-field"><span data-i18n="sizeW">Width</span>
-        <input id="sizeW" type="number" min="100" max="20000" step="1" required>
-      </label>
-      <label class="size-field"><span data-i18n="sizeH">Height</span>
-        <input id="sizeH" type="number" min="100" max="20000" step="1" required>
-      </label>
-      <button id="sizeSwap" type="button" data-i18n-title="sizeSwapTitle" title="Swap width and height">&#8646;</button>
-    </div>
-    <div class="size-chips" id="sizeChips">
-      <button type="button" data-w="360" data-h="800">360&#215;800</button>
-      <button type="button" data-w="390" data-h="844">390&#215;844</button>
-      <button type="button" data-w="430" data-h="932">430&#215;932</button>
-      <button type="button" data-w="768" data-h="1024">768&#215;1024</button>
-      <button type="button" data-w="1024" data-h="768">1024&#215;768</button>
-      <button type="button" data-w="1280" data-h="800">1280&#215;800</button>
-      <button type="button" data-w="1440" data-h="900">1440&#215;900</button>
-    </div>
-    <div class="row">
-      <button type="button" id="sizeReset" data-i18n="sizeReset">Restore default</button>
-      <button type="button" data-close data-i18n="cancelBtn">Cancel</button>
-      <button type="submit" class="primary" data-i18n="sizeApply">Apply</button>
-    </div>
-  </form>
-</div>
-
 <div id="preview" class="overlay" hidden>
   <div class="box">
     <h2 data-i18n="previewTitle">PNG exported</h2>
@@ -726,7 +709,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.0.21</div>
+<div id="versionTag">v1.0.22</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -916,7 +899,6 @@ const I18N = {
     fsReloadTitle: 'Reload this screen (keeps the flow position)',
     fsCanvasTitle: 'Switch canvas (loads its first screen)',
     fsScenarioTitle: 'Data scenario applied to the screens',
-    fsDeviceTitle: 'Viewing device',
     fsExportTitle: 'Export the current flow screen as PNG',
     // context menu
     ctxMenuAria: 'Element actions',
@@ -992,17 +974,12 @@ const I18N = {
     deleteSelectedBtn: 'Delete selected',
     deleteSelectedConfirm: 'Delete the selected comments permanently?',
     enterHint: 'Enter saves - Ctrl+Enter or Shift+Enter for a new line',
-    sizeEditTitle: 'Screen size',
-    sizeEditHint: 'Set the viewport size to test responsiveness - the mock reflows live.',
-    sizeEditTitleAttr: 'Edit screen size (click) or drag the edges',
+    sizeCtlTitle: 'Screen size - applies to the selected screen(s)',
     sizeW: 'Width',
     sizeH: 'Height',
     sizeSwapTitle: 'Swap width and height',
-    sizeReset: 'Restore default',
-    sizeApply: 'Apply',
     sizeSaved: 'Screen size saved',
     sizeSaveFailed: 'Could not save the screen size',
-    sizeDeviceCleared: 'Global device override cleared - the new size applies',
     pinResolvedToast: 'Comment resolved — listed under Pending › Resolved',
     pinReopenedToast: 'Comment reopened',
     commentCreated: 'Comment saved — pick and send it from 💬 Pending',
@@ -1172,7 +1149,6 @@ const I18N = {
     fsReloadTitle: 'Recarregar esta tela (mantém a posição do fluxo)',
     fsCanvasTitle: 'Trocar de canvas (carrega a primeira tela dele)',
     fsScenarioTitle: 'Cenário de dados aplicado às telas',
-    fsDeviceTitle: 'Dispositivo de visualização',
     fsExportTitle: 'Exportar a tela atual do fluxo como PNG',
     // context menu
     ctxMenuAria: 'Ações do elemento',
@@ -1248,17 +1224,12 @@ const I18N = {
     deleteSelectedBtn: 'Excluir selecionados',
     deleteSelectedConfirm: 'Excluir os comentários selecionados permanentemente?',
     enterHint: 'Enter salva - Ctrl+Enter ou Shift+Enter quebra linha',
-    sizeEditTitle: 'Tamanho da tela',
-    sizeEditHint: 'Defina o tamanho do viewport para testar a responsividade - o mock reage ao vivo.',
-    sizeEditTitleAttr: 'Editar tamanho da tela (clique) ou arraste as bordas',
+    sizeCtlTitle: 'Tamanho da tela - vale para a(s) tela(s) selecionada(s)',
     sizeW: 'Largura',
     sizeH: 'Altura',
     sizeSwapTitle: 'Trocar largura e altura',
-    sizeReset: 'Restaurar padrão',
-    sizeApply: 'Aplicar',
     sizeSaved: 'Tamanho da tela salvo',
     sizeSaveFailed: 'Não consegui salvar o tamanho da tela',
-    sizeDeviceCleared: 'Dispositivo global desmarcado - o novo tamanho vale',
     pinResolvedToast: 'Comentário resolvido — listado em Pendentes › Resolvidos',
     pinReopenedToast: 'Comentário reaberto',
     commentCreated: 'Comentário salvo — selecione e envie por 💬 Pendentes',
@@ -1396,7 +1367,7 @@ $('langBtn').addEventListener('click', () => {
 
 
 const state = {
-  canvas: '', theme: 'light', device: 'original',
+  canvas: '', theme: 'light',
   zoom: 1, x: 0, y: 0,
   screens: [], selectedId: null, selectedIds: [], bust: 0,
   inspect: false, comments: [],
@@ -1460,7 +1431,7 @@ function savePrefs() {
   if (!state.canvas) return
   try {
     localStorage.setItem(prefsKey(), JSON.stringify({
-      scenario: state.scenario, theme: state.theme, device: state.device,
+      scenario: state.scenario, theme: state.theme,
       chips: state.chips, grid: state.grid, bezel: state.bezel,
     }))
   } catch { /* storage unavailable; prefs stay per-session */ }
@@ -2120,39 +2091,44 @@ $('tabResolved').addEventListener('click', () => {
 
 $('pendingFilter').addEventListener('input', () => renderPendingPanel())
 
-/* ------- w17: dialogo de tamanho da tela + handles do modo fluxo */
+/* ------- w18: controle unico de tamanho (estilo Chrome) + handles do fluxo */
 
-$('sizeForm').addEventListener('submit', (event) => {
-  event.preventDefault()
-  const width = Number($('sizeW').value)
-  const height = Number($('sizeH').value)
-  if (!Number.isInteger(width) || !Number.isInteger(height)
-    || width < 100 || width > 20000 || height < 100 || height > 20000) {
-    return toast(t('sizeSaveFailed'))
+function wireSizeControl([selId, wId, hId], rotateId) {
+  $(selId).addEventListener('change', () => {
+    const value = $(selId).value
+    if (value === 'custom') return refreshSizeControls()
+    if (value === 'original') {
+      const targets = sizeTargetScreens()
+      for (const screen of targets) resetScreenSize(screen, true)
+      if (targets.length) toast(t('sizeSaved'))
+      return refreshSizeControls()
+    }
+    if (DEVICES[value]) applySizeToTargets(DEVICES[value][0], DEVICES[value][1])
+  })
+  for (const id of [wId, hId]) {
+    $(id).addEventListener('change', () => {
+      const width = Number($(wId).value)
+      const height = Number($(hId).value)
+      if (!Number.isInteger(width) || !Number.isInteger(height)
+        || width < 100 || width > 20000 || height < 100 || height > 20000) {
+        toast(t('sizeSaveFailed'))
+        return refreshSizeControls()
+      }
+      applySizeToTargets(width, height)
+    })
   }
-  $('sizeDialog').hidden = true
-  if (sizeTarget) commitScreenSize(sizeTarget.screen, width, height)
-})
-
-$('sizeSwap').addEventListener('click', () => {
-  const width = $('sizeW').value
-  $('sizeW').value = $('sizeH').value
-  $('sizeH').value = width
-})
-
-$('sizeReset').addEventListener('click', () => {
-  $('sizeDialog').hidden = true
-  if (sizeTarget) resetScreenSize(sizeTarget.screen)
-})
-
-$('sizeChips').addEventListener('click', (event) => {
-  const button = event.target.closest('button[data-w]')
-  if (!button) return
-  $('sizeW').value = button.dataset.w
-  $('sizeH').value = button.dataset.h
-})
-
-$('fsSize').addEventListener('click', () => openSizeDialog(fsScreen))
+  $(rotateId).addEventListener('click', () => {
+    const targets = sizeTargetScreens()
+    for (const screen of targets) {
+      const [width, height] = screenSize(screen)
+      commitScreenSize(screen, height, width, true)
+    }
+    if (targets.length) toast(t('sizeSaved'))
+    refreshSizeControls()
+  })
+}
+wireSizeControl(['deviceSelect', 'sizeWField', 'sizeHField'], 'sizeRotate')
+wireSizeControl(['fsDevice', 'fsSizeWField', 'fsSizeHField'], 'fsSizeRotate')
 
 document.querySelectorAll('#fsWorld .rs-handle').forEach((handle, index) => {
   wireResize(handle, ['e', 's', 'se'][index], $('fsFrame'), () => fsScreen, () => fsView.zoom)
@@ -2718,7 +2694,6 @@ $('historyFile').addEventListener('change', loadHistoryList)
 /* ----------------------------------------------------------------- strip */
 
 function screenSize(screen) {
-  if (state.device !== 'original' && DEVICES[state.device]) return [...DEVICES[state.device]]
   if (Number.isInteger(screen.width) && Number.isInteger(screen.height)) return [screen.width, screen.height]
   return [...(DEVICES[screen.device] ?? DEVICES.mobile)]
 }
@@ -2782,12 +2757,9 @@ function cardFor(screen) {
   const name = document.createElement('span')
   name.className = 'card-name'
   name.textContent = screen.name
-  const size = document.createElement('button')
-  size.type = 'button'
+  const size = document.createElement('span')
   size.className = 'card-size'
   size.textContent = sizeLabel(screen, width, height)
-  size.title = t('sizeEditTitleAttr')
-  size.addEventListener('click', () => openSizeDialog(screen)) // w17: tamanho editavel
   const reset = document.createElement('button')
   reset.className = 'card-reset'
   reset.type = 'button'
@@ -3209,18 +3181,16 @@ function showBroken(frame, screen) {
   frame.appendChild(broken)
 }
 
+/** w18: o rotulo e informativo - mostra o preset que casa com o tamanho que
+ *  se ve, senao "personalizado". Quem edita e o controle unico (ou o arraste). */
 function sizeLabel(screen, width, height) {
-  const device = state.device !== 'original'
-    ? t(DEVICE_LABEL[state.device])
-    : (screen.device in DEVICES ? t(DEVICE_LABEL[screen.device]) : (Number.isInteger(screen.width) ? t('devCustom') : t('devMobile')))
-  return `${width}×${height} · ${device}`
+  const match = Object.keys(DEVICES).find((key) => DEVICES[key][0] === width && DEVICES[key][1] === height)
+  return `${width}\u00d7${height} \u00b7 ${t(DEVICE_LABEL[match] ?? 'devCustom')}`
 }
 
 /* ---------------------- w17: tamanho da tela (responsividade dinamica) ---- */
 
 const SCREEN_SIZE_API = 'api/screen-size'
-
-let sizeTarget = null // {screen, canvas, file} - alvo do dialogo de tamanho
 
 /** POST /api/screen-size - persiste o tamanho no canvas.json (o poller de
  *  historico do servidor grava a revisao). null/null = restaurar o padrao. */
@@ -3240,14 +3210,47 @@ async function persistScreenSize(canvas, file, width, height) {
   }
 }
 
-/** O override global de dispositivo mascara o tamanho da tela - quem edita
- *  tamanho manda; o override volta para "original" (com aviso declarado). */
-function clearDeviceOverride() {
-  if (state.device === 'original') return
-  state.device = 'original'
-  $('deviceSelect').value = 'original'
-  $('fsDevice').value = 'original'
-  toast(t('sizeDeviceCleared'))
+/** w18: alvo do controle unico - telas selecionadas (lista) ou fluxo. */
+const SIZE_CONTROLS = [
+  ['deviceSelect', 'sizeWField', 'sizeHField'],
+  ['fsDevice', 'fsSizeWField', 'fsSizeHField'],
+]
+
+function sizeTargetScreens() {
+  if (!$('fullscreen').hidden && fsScreen) return [fsScreen]
+  return selectedScreens()
+}
+
+/** Campos do controle refletem o alvo (preset que casa, senao "custom"). */
+function refreshSizeControls() {
+  const targets = sizeTargetScreens()
+  const [width, height] = targets.length ? screenSize(targets[0]) : ['', '']
+  const match = Object.keys(DEVICES).find((key) => DEVICES[key][0] === width && DEVICES[key][1] === height)
+  for (const [selId, wId, hId] of SIZE_CONTROLS) {
+    const sel = $(selId)
+    const w = $(wId)
+    const h = $(hId)
+    if (sel) {
+      sel.value = targets.length ? (match ?? 'custom') : ''
+      sel.disabled = targets.length === 0
+    }
+    if (w) {
+      w.value = width
+      w.disabled = targets.length === 0
+    }
+    if (h) {
+      h.value = height
+      h.disabled = targets.length === 0
+    }
+  }
+}
+
+/** Aplica um tamanho a todos os alvos (uma tela ou a selecao inteira). */
+function applySizeToTargets(width, height) {
+  const targets = sizeTargetScreens()
+  for (const screen of targets) commitScreenSize(screen, width, height, true)
+  if (targets.length) toast(t('sizeSaved'))
+  refreshSizeControls()
 }
 
 /** w17: pins seguem o reflow - reancora no elemento vivo (selector/snippet)
@@ -3288,39 +3291,29 @@ function refreshSizeUI(screen) {
     reanchorPins(screen, $('fsFrame'))
     renderFsPins()
   }
+  if (!$('compareView').hidden && compareSpec) renderCompare() // comparacao segue o tamanho
+  refreshSizeControls()
 }
 
-/** Aplica um tamanho editado (drag ou dialogo) e persiste. */
-function commitScreenSize(screen, width, height) {
+/** Aplica um tamanho editado (drag ou controle) e persiste; `silent` evita
+ *  toast por tela quando o controle aplica em lote. */
+function commitScreenSize(screen, width, height, silent = false) {
   screen.width = width
   screen.height = height
-  clearDeviceOverride()
   refreshSizeUI(screen)
   persistScreenSize(screen.canvas ?? state.canvas, String(screen.file).split('?')[0], width, height).then((ok) => {
-    if (ok) toast(t('sizeSaved'))
+    if (ok && !silent) toast(t('sizeSaved'))
   })
 }
 
 /** Restaura o padrao do dispositivo (o manifesto solta o override). */
-function resetScreenSize(screen) {
+function resetScreenSize(screen, silent = false) {
   delete screen.width
   delete screen.height
-  clearDeviceOverride()
   refreshSizeUI(screen)
   persistScreenSize(screen.canvas ?? state.canvas, String(screen.file).split('?')[0], null, null).then((ok) => {
-    if (ok) toast(t('sizeSaved'))
+    if (ok && !silent) toast(t('sizeSaved'))
   })
-}
-
-function openSizeDialog(screen) {
-  if (isReadonly()) return toast(t('shareReadOnlyHint')) // share: edicao e escrita
-  if (!screen) return
-  sizeTarget = { screen, canvas: screen.canvas ?? state.canvas, file: String(screen.file).split('?')[0] }
-  const [width, height] = screenSize(screen)
-  $('sizeW').value = String(width)
-  $('sizeH').value = String(height)
-  $('sizeDialog').hidden = false
-  $('sizeW').focus()
 }
 
 /** Arraste de borda (e/s/se) = redimensionar a tela ao vivo (reflow na hora).
@@ -3342,11 +3335,14 @@ function wireResize(handle, axis, frame, screenRef, zoomOf) {
       const zoom = zoomOf() || 1
       if (axis !== 's') width = Math.min(20000, Math.max(100, Math.round(w0 + (moveEvent.clientX - x0) / zoom)))
       if (axis !== 'e') height = Math.min(20000, Math.max(100, Math.round(h0 + (moveEvent.clientY - y0) / zoom)))
+      screen.width = width // ao vivo: label e campos do controle acompanham
+      screen.height = height
       frame.style.width = `${width}px`
       frame.style.height = `${height}px`
       const label = frame.parentElement?.querySelector('.card-size')
-      if (label) label.textContent = `${width}\u00d7${height} \u00b7 ${t('devCustom')}`
+      if (label) label.textContent = sizeLabel(screen, width, height)
       if (frame.id === 'fsFrame') $('fsSize').textContent = `${width}\u00d7${height}`
+      refreshSizeControls()
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
@@ -3394,6 +3390,7 @@ function applySelection() {
   $('exportBtn').disabled = state.selectedIds.length === 0
   const count = state.selectedIds.length
   $('exportBtn').title = count > 1 ? t('exportSelectedTitle', { count }) : ''
+  refreshSizeControls() // w18: o controle unico segue o alvo
 }
 
 function selectedScreen() {
@@ -3654,16 +3651,6 @@ $('themeBtn').addEventListener('click', () => {
   state.theme = state.theme === 'dark' ? 'light' : 'dark'
   applyTheme()
   savePrefs()
-})
-
-/* ---------------------------------------------------------------- device */
-
-$('deviceSelect').addEventListener('change', () => {
-  state.device = $('deviceSelect').value
-  $('fsDevice').value = state.device
-  savePrefs()
-  renderStrip()
-  requestAnimationFrame(fitView)
 })
 
 /* ------------------------------------------------------------- fullscreen */
@@ -4185,18 +4172,6 @@ $('fsScenario').addEventListener('change', () => {
   renderStrip()
   toast(state.scenario ? t('scenarioToast', { name: state.scenario }) : t('scenarioToastDefault'))
   if (fsScreen) openFsScreen(fsCurrentScreen() ?? fsScreen)
-})
-
-/* Dispositivo pelo modo fluxo: re-layout do frame (tamanho natural novo) + fit. */
-$('fsDevice').addEventListener('change', () => {
-  state.device = $('fsDevice').value
-  $('deviceSelect').value = state.device
-  savePrefs()
-  renderStrip()
-  if (fsScreen) {
-    layoutFullscreen()
-    fitFsView()
-  }
 })
 
 /* Docs/PNG pelo modo fluxo — mesmos mecanismos do cabeçalho. */
@@ -4891,7 +4866,6 @@ async function boot() {
   const prefs = loadPrefs()
   state.scenario = prefs.scenario ?? ''
   state.theme = prefs.theme ?? 'light'
-  state.device = prefs.device ?? 'original'
   // 🧩 inspector toggle persists per canvas (like theme/device)
   state.chips = prefs.chips === true
   // w9: grade e moldura persistem por canvas (como tema/dispositivo)
@@ -4902,9 +4876,6 @@ async function boot() {
   $('gridBtn').classList.toggle('primary', state.grid)
   $('bezelBtn').classList.toggle('primary', state.bezel)
   // element comments persist in comments.json (GET/POST /api/comments)
-  if (![...$('deviceSelect').options].some((option) => option.value === state.device)) state.device = 'original'
-  $('deviceSelect').value = state.device
-  $('fsDevice').value = state.device
   $('chipBtn').classList.toggle('primary', state.chips)
   $('fsChip').classList.toggle('primary', state.chips)
   $('bar').hidden = false

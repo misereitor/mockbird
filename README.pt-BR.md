@@ -189,6 +189,14 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Um controle de tamanho só, estilo Chrome (v1.0.22)**: a responsividade
+  agora vive em **um lugar só** — dropdown de aparelho + largura × altura
+  editáveis + girar (como a barra de dispositivos do Chrome), espelhado no
+  modo fluxo, aplicando à(s) **tela(s) selecionada(s)** (ou à tela do fluxo).
+  O diálogo de tamanho e o override global de dispositivo saíram; o rótulo de
+  tamanho do card voltou a ser só informativo, e o bug do label duplicado
+  "Dispositivo Dispositivo" está corrigido. Os handles de arraste continuam.
+  35/35 na suíte de browser.
 - **Responsividade dinâmica (v1.0.21)**: o tamanho de cada tela agora é
   **editável** — clique no rótulo de tamanho da tela (ou no chip de tamanho no
   modo fluxo) para medidas exatas de largura/altura com presets rápidos
