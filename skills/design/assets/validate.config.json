@@ -13,7 +13,12 @@
   },
   "encoding": {
     "textExtensions": ["html", "css", "js", "mjs", "json", "md"],
-    "allowlist": []
+    "allowlist": [
+      {
+        "path": "citacao.md",
+        "reason": "citação intencional do caractere U+FFFD em doc (fixture ok/encoding-citation-allowlist); path relativo à raiz validada"
+      }
+    ]
   },
   "metrics": {
     "baseline": "metrics.json"

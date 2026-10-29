@@ -109,8 +109,12 @@ for (let i = 0; i < argv.length; i += 1) {
   if (token.startsWith('--')) flags.push(token)
   else positional.push(token)
 }
+// rules/*.mjs (todo 2) load BEFORE flag validation so a rule can claim its own
+// flags (optional `flags` export) without editing this file. Broken rule
+// modules are toolchain integrity damage: exit 2 citing the file.
+const ruleBook = await loadRules()
 const KNOWN_FLAGS = new Set(['--allow-stale', '--mark-stale', '--example-inventory'])
-const unknownFlags = flags.filter((f) => !KNOWN_FLAGS.has(f))
+const unknownFlags = flags.filter((f) => !KNOWN_FLAGS.has(f) && !ruleBook.flags.has(f))
 if (unknownFlags.length > 0) {
   console.error(`unknown flag "${unknownFlags[0]}" — ${usage}`)
   process.exit(2)
@@ -136,6 +140,7 @@ const arg = positional[0] ?? './design'
 const CONFIG_NAME = 'validate.config.json'
 const CONFIG_MARKER = '/* mockbird:config-driven:v2 */'
 const CONFIG_SEED_HINT = `run setup-design.mjs to seed it (or copy skills/design/assets/${CONFIG_NAME} from the skill folder)`
+let loadedConfig = null // parsed config object, handed to rules/*.mjs via ctx.config
 
 function configFatal(message, code) {
   console.error(message)
@@ -202,6 +207,7 @@ function loadConfig() {
   EXEMPT_FILES = new Set(exemptFiles)
   EXEMPT_DIRS = new Set(exemptDirs)
   COMPONENT_VARIANT_KEYS = variantKeys
+  loadedConfig = parsed
 }
 loadConfig()
 
@@ -236,6 +242,21 @@ try {
       runCanvasMode(canvasDir, canvasArg)
     } else {
       runProjectMode(canvasDir, canvasArg)
+    }
+    // rules/*.mjs (todo 2, append-only extension point): every registered rule
+    // runs AFTER the inline checks in BOTH modes; --mark-stale and
+    // --example-inventory replace the run, so they skip rules too (pinned).
+    if (st?.isDirectory() && !markStale && !exampleInventory) {
+      await runRules({
+        rootDir: canvasDir,
+        rootArg: canvasArg,
+        mode: pathExists(join(canvasDir, 'canvas.json')) ? 'canvas' : 'project',
+        config: loadedConfig,
+        argv,
+        flags,
+        fail,
+        relLabel,
+      })
     }
   }
 } catch (error) {
@@ -1310,6 +1331,76 @@ function jsonErrorWhere(error, raw) {
 
 function lineOf(text, position) {
   return text.slice(0, position).split('\n').length
+}
+
+// ---------------------------------------------------------------------------
+// rules/ loader + runner (todo 2) — APPEND-ONLY extension point: the inline
+// rules above are never moved here. Every `rules/*.mjs` module registers via
+// named exports and is invoked without any further edit to this file:
+//   id    - non-empty string; used for error attribution (must be unique)
+//   run   - (ctx) => {} sync or async; reports via ctx.fail(code, message)
+//   flags - OPTIONAL list of `--flag` strings the rule claims; claimed flags
+//           bypass the unknown-flag rejection above (e.g. future --metrics)
+// ctx = { rootDir, rootArg, mode: 'canvas'|'project', config, argv, flags,
+//         fail, relLabel } where config is the parsed validate.config.json.
+// A module that fails to import or lacks { id, run } is toolchain integrity
+// damage (same class as toolchainScripts): exit 2 citing the file.
+// Layout: rules/ next to this file (pack source) or under scripts/ (installed).
+// ---------------------------------------------------------------------------
+async function loadRules() {
+  const book = { rules: [], flags: new Set() }
+  for (const rel of ['./rules/', './scripts/rules/']) {
+    const dirUrl = new URL(rel, import.meta.url)
+    let entries = null
+    try {
+      entries = readdirSync(fileURLToPath(dirUrl), { withFileTypes: true })
+    } catch {
+      continue // absence policy: no rules dir in this layout = no rules
+    }
+    const files = entries.filter((e) => e.isFile() && e.name.endsWith('.mjs'))
+    files.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+    for (const entry of files) {
+      const label = `${rel}${entry.name}`
+      let mod = null
+      try {
+        mod = await import(new URL(entry.name, dirUrl).href)
+      } catch (error) {
+        configFatal(`rules: ${label}: cannot import (${String(error?.message ?? error)})`, 2)
+      }
+      const { id, run } = mod ?? {}
+      if (typeof id !== 'string' || id.length === 0 || typeof run !== 'function') {
+        configFatal(`rules: ${label}: contract violation — must export { id: <string>, run: <function> }`, 2)
+      }
+      if (mod.flags !== undefined) {
+        if (!Array.isArray(mod.flags) || mod.flags.some((f) => typeof f !== 'string' || !f.startsWith('--'))) {
+          configFatal(`rules: ${label}: "flags" must be a list of --flag strings`, 2)
+        }
+        for (const flag of mod.flags) book.flags.add(flag)
+      }
+      book.rules.push({ id, run, file: label })
+    }
+    break // first layout that exists wins (mirrors importFromLayout)
+  }
+  return book
+}
+
+/** Invokes every registered rule. Rule problems print to stderr (rule output
+ * contract) AND join `problems` (the pinned stdout "Fix these issues:" block
+ * stays untouched, exit 1 = issues found). A rule that throws becomes one
+ * `internal:` line — one broken rule never takes the run down. */
+async function runRules(ctx) {
+  for (const rule of ruleBook.rules) {
+    const ruleFail = (code, message) => {
+      const line = `- ${code}: ${message}`
+      problems.push(line)
+      console.error(line)
+    }
+    try {
+      await rule.run({ ...ctx, fail: ruleFail })
+    } catch (error) {
+      fail('internal', `rule ${rule.id} (${rule.file}): ${String(error?.message ?? error)}`)
+    }
+  }
 }
 
 if (problems.length > 0) {
