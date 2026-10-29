@@ -8,7 +8,7 @@
  * point at `design/`). Run it from the project root: `node design/serve.mjs`.
  *
  * Usage: node design/serve.mjs [porta] [--share] [--open[=canvas]] [--no-open]
- *   [porta]  TCP port (default 8765)
+ *   [porta]  TCP port (default 8765; when busy, the next free one is used)
  *   --share  bind 0.0.0.0 for LAN preview; every /api/* then answers 403
  *            (read-only degradation — writes and API reads are refused)
  *   --open[=canvas]  force-open the default browser at the viewer (optionally
@@ -66,6 +66,7 @@
  * banner. Static routes keep serving normally to the LAN.
  */
 import { createServer } from 'node:http'
+import { createConnection } from 'node:net'
 import { spawn, spawnSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
 import {
@@ -1426,19 +1427,72 @@ function lanAddress() {
   return null
 }
 
-server.listen(port, bindHost, () => {
-  const host = bindHost === '0.0.0.0' ? '0.0.0.0' : '127.0.0.1'
-  console.log(`URL: http://${host}:${port} TOKEN: ${token}`)
-  if (share) {
-    // o endereço que se cola para a pessoa na rede (0.0.0.0 não é navegável)
-    const lan = lanAddress()
-    if (lan) console.log(`LAN: http://${lan}:${port}/viewer.html (somente leitura)`)
+/* w20: a porta pedida pode estar ocupada (outra instancia do viewer rodando).
+ *  Sem tratamento, o --share subia junto com a instancia antiga e o navegador
+ *  abria NA INSTANCIA ERRADA - com permissoes totais por cima do modo leitura.
+ *  Porta ocupada cede a proxima livre, com aviso claro; o browser sempre abre
+ *  na instancia correta. */
+function portInUse(portToCheck) {
+  return new Promise((resolve) => {
+    const probe = createConnection({ host: '127.0.0.1', port: portToCheck })
+    probe.setTimeout(400)
+    probe.once('connect', () => {
+      probe.destroy()
+      resolve(true)
+    })
+    probe.once('error', () => {
+      probe.destroy()
+      resolve(false)
+    })
+    probe.once('timeout', () => {
+      probe.destroy()
+      resolve(false)
+    })
+  })
+}
+
+function tryListen(portToUse) {
+  return new Promise((resolve) => {
+    const onError = () => {
+      server.removeListener('listening', onListening)
+      resolve(false) // EADDRINUSE/EACCES: a proxima candidata tenta
+    }
+    const onListening = () => {
+      server.removeListener('error', onError)
+      resolve(true)
+    }
+    server.once('error', onError)
+    server.once('listening', onListening)
+    server.listen(portToUse, bindHost)
+  })
+}
+
+let servePort = port
+for (let tries = 0; tries < 20 && !server.listening; tries++) {
+  const candidate = port + tries
+  if (candidate > 65535) break
+  if (await portInUse(candidate)) continue
+  if (await tryListen(candidate)) {
+    servePort = candidate
+    break
   }
-  // Browser policy: --open forces, --no-open forbids, otherwise only from an
-  // interactive terminal (so tests, CI and the plugin never spawn browsers).
-  const shouldOpen = openArg !== undefined ? !noOpen : !noOpen && process.stdout.isTTY
-  if (shouldOpen) {
-    const viewer = `http://127.0.0.1:${port}/viewer.html${openCanvas ? `?canvas=${encodeURIComponent(openCanvas)}` : ''}`
-    openBrowser(viewer)
-  }
-})
+}
+if (!server.listening) {
+  console.error(`PORTA: nenhuma livre a partir de ${port} - rode com uma porta explicita`)
+  process.exit(1)
+}
+if (servePort !== port) console.log(`PORTA: ${port} ocupada - usando ${servePort}`)
+const host = bindHost === '0.0.0.0' ? '0.0.0.0' : '127.0.0.1'
+console.log(`URL: http://${host}:${servePort} TOKEN: ${token}`)
+if (share) {
+  // o endereco que se cola para a pessoa na rede (0.0.0.0 nao e navegavel)
+  const lan = lanAddress()
+  if (lan) console.log(`LAN: http://${lan}:${servePort}/viewer.html (somente leitura)`)
+}
+// Browser policy: --open forces, --no-open forbids, otherwise only from an
+// interactive terminal (so tests, CI and the plugin never spawn browsers).
+const shouldOpen = openArg !== undefined ? !noOpen : !noOpen && process.stdout.isTTY
+if (shouldOpen) {
+  const viewer = `http://127.0.0.1:${servePort}/viewer.html${openCanvas ? `?canvas=${encodeURIComponent(openCanvas)}` : ''}`
+  openBrowser(viewer)
+}

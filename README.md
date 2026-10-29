@@ -185,6 +185,14 @@ for the invariants, test commands and PR checklist. A few pointers:
 
 ## Changelog
 
+- **Busy ports fall through to the next free one (v1.0.24)**: starting a
+  second instance (say `--share` next to a full one) used to bind the **same
+  port** (wildcard vs localhost trickery) and the browser opened the **old
+  instance — with full permissions** where you expected read-only. The server
+  now probes the port, warns (`PORTA: 8765 ocupada - usando 8766`) and serves
+  on the next free one; the browser always opens the right instance. Locked by
+  the browser suite (39/39, the share instance asks for the occupied port on
+  purpose).
 - **Desktop by default + an easy way to change everything (v1.0.23)**: screens
   with no size or device declared now default to **Desktop 1440×900** (was
   mobile), and the size control gained a **scope** dropdown — **All screens**

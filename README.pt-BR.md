@@ -189,6 +189,13 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **Porta ocupada cede para a próxima livre (v1.0.24)**: subir uma segunda
+  instância (um `--share` ao lado de uma completa) prendia a **mesma porta**
+  (truque de wildcard vs localhost) e o navegador abria a **instância antiga —
+  com permissões totais** onde se esperava somente leitura. O servidor agora
+  testa a porta, avisa (`PORTA: 8765 ocupada - usando 8766`) e serve na próxima
+  livre; o navegador sempre abre a instância certa. Travado na suíte de browser
+  (39/39, a instância share pede a porta ocupada de propósito).
 - **Desktop por padrão + um jeito fácil de mudar tudo (v1.0.23)**: telas sem
   tamanho nem device declarados agora valem **Desktop 1440×900** (antes caíam
   em mobile), e o controle de tamanho ganhou um seletor de **escopo** —

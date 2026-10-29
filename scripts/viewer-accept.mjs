@@ -396,21 +396,28 @@ if (marker === undefined) ok('viewer recarrega a si mesmo quando muda')
 else fail('self-reload', 'a aba continuou com o codigo antigo')
 
 // 8. SHARE mode (--share): degradation must be DECLARED, never silent
-const shareServer = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), '8794', '--share', '--no-open'], {
+const shareServer = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), '8796', '--share', '--no-open'], {
   cwd: ROOT,
   windowsHide: true,
   stdio: ['ignore', 'pipe', 'pipe'],
 })
+// w20: a porta pedida (8796) esta OCUPADA pela instancia com permissoes -
+// o --share precisa ceder para a proxima livre e abrir a INSTANCIA certa
+let sharePort = ''
 await new Promise((resolve, reject) => {
   const timer = setTimeout(() => reject(new Error('serve.mjs --share nao subiu em 10s')), 10_000)
   shareServer.stdout.on('data', (chunk) => {
+    const m = /URL: http:\/\/[\d.]+:(\d+)/.exec(String(chunk))
+    if (m) sharePort = m[1]
     if (String(chunk).includes('TOKEN:')) {
       clearTimeout(timer)
       resolve()
     }
   })
 })
-await page.goto('http://127.0.0.1:8794/viewer.html?canvas=login', { waitUntil: 'load' })
+if (sharePort && sharePort !== '8796') ok(`porta ocupada cede (${sharePort} no lugar de 8796)`)
+else fail('porta do share', `porta=${sharePort} (esperado != 8796)`)
+await page.goto(`http://127.0.0.1:${sharePort}/viewer.html?canvas=login`, { waitUntil: 'load' })
 await page.waitForTimeout(1200)
 const bannerVisible = await page.$eval('#shareBanner', (el) => !el.hidden)
 const commentsHidden = await page.$eval('#commentBtn', (el) => el.hidden)
