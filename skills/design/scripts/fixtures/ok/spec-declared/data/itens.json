@@ -1,0 +1,5 @@
+{
+  "lista": [
+    { "id": 1, "name": "Item A", "qty": 3, "min": 1 }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "states": [
+    "default"
+  ],
+  "flows": [
+    {
+      "from": "login",
+      "to": "excluir",
+      "target": "03-modal.html",
+      "via": "link-overlay"
+    },
+    {
+      "from": "login",
+      "to": "overview",
+      "target": "../dashboard/01-overview.html",
+      "via": "Mock.go"
+    }
+  ],
+  "texts": [
+    "Login",
+    "Entrar",
+    "Acesse sua conta para continuar.",
+    "E-mail",
+    "voce@empresa.com.br",
+    "Senha",
+    "Sua senha",
+    "Esqueci minha senha",
+    "Não usa mais o Estoque?",
+    "Excluir conta"
+  ],
+  "rules": [
+    {
+      "source": "marker",
+      "rule": "e-mail sem cadastro entra como usuário demo"
+    }
+  ],
+  "parity": [
+    {
+      "component": "button",
+      "realComponent": "Button",
+      "status": "pending"
+    },
+    {
+      "component": "card",
+      "realComponent": "Card",
+      "status": "pending"
+    },
+    {
+      "component": "field",
+      "realComponent": "Field",
+      "status": "pending"
+    }
+  ]
+}

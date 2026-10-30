@@ -1,0 +1,79 @@
+{
+  "states": [
+    "default",
+    "vazio",
+    "critico"
+  ],
+  "flows": [
+    {
+      "from": "overview",
+      "to": "login",
+      "target": "../login/01-login.html",
+      "via": "Mock.go"
+    },
+    {
+      "from": "overview",
+      "to": "overview",
+      "target": "01-overview.html",
+      "via": "Mock.go"
+    }
+  ],
+  "texts": [
+    "Visão geral",
+    "Estoque",
+    "Ações da conta",
+    "↻",
+    "Atualizar lista",
+    "→",
+    "Sair",
+    "Nome do item",
+    "SKU",
+    "Quantidade",
+    "Qtd",
+    "Adicionar"
+  ],
+  "rules": [
+    {
+      "source": "marker",
+      "rule": "item com quantidade abaixo do mínimo vira crítico (badge repor)"
+    },
+    {
+      "source": "data.json",
+      "rule": "scenario \"vazio\" overrides: items",
+      "scenario": "vazio",
+      "overrides": {
+        "items": []
+      }
+    },
+    {
+      "source": "data.json",
+      "rule": "scenario \"critico\" overrides: items",
+      "scenario": "critico",
+      "overrides": {
+        "items": [
+          {
+            "id": 1,
+            "name": "Teclado mecânico",
+            "sku": "TEC-011",
+            "qty": 0,
+            "min": 5
+          },
+          {
+            "id": 2,
+            "name": "Monitor 24 polegadas",
+            "sku": "MON-024",
+            "qty": 1,
+            "min": 5
+          }
+        ]
+      }
+    }
+  ],
+  "parity": [
+    {
+      "component": "menu-row",
+      "realComponent": "MenuRow",
+      "status": "pending"
+    }
+  ]
+}

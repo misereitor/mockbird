@@ -1,0 +1,71 @@
+{
+  "states": [
+    "default",
+    "vazio"
+  ],
+  "flows": [
+    {
+      "from": "tela-1",
+      "to": "tela-1",
+      "target": "01-tela.html",
+      "via": "data-go"
+    },
+    {
+      "from": "tela-1",
+      "to": "tela-1",
+      "target": "01-tela.html",
+      "via": "link-overlay"
+    },
+    {
+      "from": "tela-1",
+      "to": "tela-1",
+      "target": "01-tela.html",
+      "via": "Mock.overlay"
+    }
+  ],
+  "texts": [
+    "Tela um",
+    "Lista de itens",
+    "Atualizar",
+    "Ir para",
+    "ver vazio",
+    "abrir camada",
+    "Nome do item"
+  ],
+  "rules": [
+    {
+      "source": "marker",
+      "rule": "item com quantidade abaixo do mínimo vira crítico"
+    },
+    {
+      "source": "data.json",
+      "rule": "scenario \"vazio\" overrides: items",
+      "scenario": "vazio",
+      "overrides": {
+        "items": []
+      }
+    },
+    {
+      "source": "data.json",
+      "rule": "scenario \"cheio\" overrides: items",
+      "scenario": "cheio",
+      "overrides": {
+        "items": [
+          {
+            "id": 1,
+            "name": "Item A",
+            "qty": 3,
+            "min": 1
+          }
+        ]
+      }
+    }
+  ],
+  "parity": [
+    {
+      "component": "button",
+      "realComponent": "Button",
+      "status": "pending"
+    }
+  ]
+}

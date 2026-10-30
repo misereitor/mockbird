@@ -1,0 +1,38 @@
+{
+  "states": [
+    "default"
+  ],
+  "flows": [
+    {
+      "from": "excluir",
+      "to": "overview",
+      "target": "../dashboard/01-overview.html",
+      "via": "Mock.go"
+    },
+    {
+      "from": "excluir",
+      "to": "login",
+      "target": "01-login.html",
+      "via": "Mock.go"
+    }
+  ],
+  "texts": [
+    "Excluir conta",
+    "Excluir conta?",
+    "A conta de demonstração e os dados criados no fluxo serão apagados deste dispositivo. Essa ação não pode ser desfeita.",
+    "Voltar"
+  ],
+  "rules": [
+    {
+      "source": "marker",
+      "rule": "excluir conta limpa o estado do fluxo e não pode ser desfeita"
+    }
+  ],
+  "parity": [
+    {
+      "component": "modal",
+      "realComponent": "Modal",
+      "status": "pending"
+    }
+  ]
+}

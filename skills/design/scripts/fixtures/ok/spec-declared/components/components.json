@@ -1,0 +1,15 @@
+{
+  "button": {
+    "name": "button",
+    "template": "button.html",
+    "variants": {
+      "size": ["sm", "md", "lg"],
+      "tone": ["primary", "secondary", "ghost", "danger"],
+      "state": ["default", "hover", "active", "disabled"],
+      "device": []
+    },
+    "slots": ["label"],
+    "realComponent": "Button",
+    "dataProps": { "data-action": "action" }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "items": {
+    "$ref": "itens.json#lista"
+  },
+  "scenarios": {
+    "vazio": {
+      "items": []
+    },
+    "cheio": {
+      "items": {
+        "$ref": "itens.json#lista"
+      }
+    }
+  }
+}

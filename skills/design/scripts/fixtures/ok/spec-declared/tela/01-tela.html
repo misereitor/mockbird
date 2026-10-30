@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tela um</title>
+</head>
+<body>
+  <!-- state:default -->
+  <!-- rule: item com quantidade abaixo do mínimo vira crítico -->
+  <h1>Lista de itens</h1>
+  <!-- component:button size=md tone=primary state=default --><button type="button" data-component="button" data-size="md" data-tone="primary" data-state="default" class="rounded-md font-body p-2 text-body bg-accent text-bg"><!-- slot:label -->Atualizar<!-- /slot:label --></button><!-- /component:button -->
+  <button type="button" data-go="01-tela.html">Ir para</button>
+  <a href="#vazio">ver vazio</a>
+  <a href="01-tela.html">abrir camada</a>
+  <label hidden for="nome">Nome do item</label>
+  <input id="nome" type="text" placeholder="Nome do item">
+  <script>
+    const abrir = document.querySelector('a[href="01-tela.html"]')
+    abrir.addEventListener('click', (event) => {
+      event.preventDefault()
+      Mock.overlay('01-tela.html')
+    })
+  </script>
+</body>
+</html>

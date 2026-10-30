@@ -1,0 +1,6 @@
+{
+  "title": "Spec declared",
+  "screens": [
+    { "id": "tela-1", "name": "Tela um", "file": "01-tela.html" }
+  ]
+}

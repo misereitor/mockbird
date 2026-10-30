@@ -1,0 +1,6 @@
+{
+  "title": "Spec undeclared",
+  "screens": [
+    { "id": "sem-estado", "name": "Sem estado", "file": "01-tela.html" }
+  ]
+}
