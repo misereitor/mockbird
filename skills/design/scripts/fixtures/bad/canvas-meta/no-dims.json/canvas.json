@@ -1,0 +1,6 @@
+{
+  "title": "canvas-meta fixture: device declarado sem dimensoes",
+  "screens": [
+    { "id": "sem-dims", "name": "Sem dimensoes", "file": "01-s.html", "device": "mobile" }
+  ]
+}

@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /* mockbird:config-driven:v2 */
 /**
- * Design validator (read-only except the explicit --mark-stale write).
+ * Design validator (read-only except the explicit --mark-stale write and the
+ * baseline writes owned by rules/metrics.mjs behind --metrics/--update-metrics).
  * Prints one line per problem. Never throws: any internal error becomes an
  * `internal:` line.
  *
  * Usage: node design/validate.mjs [target] [--allow-stale] [--mark-stale]
- *          [--example-inventory] [--config <path>]
+ *          [--example-inventory] [--config <path>] [--metrics] [--update-metrics]
  *   target = design-root (no canvas.json at its root -> project mode)
  *          | canvas (has canvas.json -> canvas mode)
  *   no target = ./design relative to cwd
@@ -24,6 +25,18 @@
  *                  inventory-extra (on disk, not listed), inventory-demo-missing
  *                  (pin without the demo marker), inventory-invalid (malformed
  *                  inventory.json / comments.json).
+ *
+ * Rule-claimed flags (rules/metrics.mjs, todo 3 — absent when rules/ is not
+ * installed; registered via the rule's `flags` export, never here):
+ *   --metrics         generate <root>/<metrics.baseline> = the per-screen
+ *                  inline-handler census (7 event types + data-action +
+ *                  .m-* classes + totals) with its self-describing `_method`.
+ *                  Never overwrites a divergent baseline.
+ *   --update-metrics  the ONLY declared baseline-update path: regenerate and
+ *                  re-freeze <metrics.baseline> (the diff must land in the
+ *                  commit). The metrics-regression rule itself is NOT
+ *                  flag-gated: it runs on every run whose root carries a
+ *                  metrics baseline and fails on any divergence (screen+event).
  *
  * Modes (pinned):
  *   canvas  = screen checks (bans + structural + unknown-transition) on the
@@ -89,7 +102,7 @@ const DATA_ATTR_RE =
 // CLI contract
 // ---------------------------------------------------------------------------
 const usage =
-  'usage: node design/validate.mjs [target] [--allow-stale] [--mark-stale] [--example-inventory] [--config <path>]'
+  'usage: node design/validate.mjs [target] [--allow-stale] [--mark-stale] [--example-inventory] [--config <path>] [--metrics] [--update-metrics]'
 const argv = process.argv.slice(2)
 const flags = []
 const positional = []
@@ -1340,7 +1353,8 @@ function lineOf(text, position) {
 //   id    - non-empty string; used for error attribution (must be unique)
 //   run   - (ctx) => {} sync or async; reports via ctx.fail(code, message)
 //   flags - OPTIONAL list of `--flag` strings the rule claims; claimed flags
-//           bypass the unknown-flag rejection above (e.g. future --metrics)
+//           bypass the unknown-flag rejection above (e.g. --metrics and
+//           --update-metrics, claimed by rules/metrics.mjs)
 // ctx = { rootDir, rootArg, mode: 'canvas'|'project', config, argv, flags,
 //         fail, relLabel } where config is the parsed validate.config.json.
 // A module that fails to import or lacks { id, run } is toolchain integrity

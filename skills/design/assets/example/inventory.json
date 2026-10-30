@@ -14,6 +14,7 @@
     "login/03-modal.html",
     "login/canvas.json",
     "login/data.json",
+    "metrics.json",
     "snapshots/login/v1/manifest.json",
     "snapshots/login/v1/render/01-login.html",
     "snapshots/login/v1/render/02-cadastro.html",

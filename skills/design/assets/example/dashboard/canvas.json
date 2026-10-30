@@ -1,6 +1,6 @@
 {
   "title": "Dashboard",
   "screens": [
-    { "id": "overview", "name": "Visão geral", "file": "01-overview.html", "device": "tablet", "transition": "fade" }
+    { "id": "overview", "name": "Visão geral", "file": "01-overview.html", "device": "tablet", "width": 768, "height": 1024, "transition": "fade" }
   ]
 }

@@ -1,0 +1,6 @@
+{
+  "title": "canvas-meta fixture: device desktop com largura de mobile",
+  "screens": [
+    { "id": "base", "name": "Base", "file": "01-s.html", "device": "desktop", "width": 390, "height": 844 }
+  ]
+}
