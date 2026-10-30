@@ -1,13 +1,22 @@
 /**
- * Behavior checks for design/mock.js navigation contracts (vm harness —
- * the same shape as the docs regression checklist "mock-api" item).
+ * Behavior checks for design/mock.js runtime contracts (vm harness — the same
+ * shape as the docs regression checklist "mock-api" item). Named suites:
  *
- * Contract under test:
- *   - a plain canvas-relative link (<a href="05-modal.html">) OPENS AN OVERLAY
- *     (modal trigger; JS-off fallback keeps the untouched href);
- *   - a link carrying an action attribute (data-go="02.html") NAVIGATES and
- *     never overlays — that is the sidebar/menu pattern;
- *   - Mock.go preserves ?scenario= and handles cross-canvas paths.
+ *   - navigation/overlay contracts: a plain canvas-relative link
+ *     (<a href="05-modal.html">) OPENS AN OVERLAY (modal trigger; JS-off
+ *     fallback keeps the untouched href); a link carrying an action attribute
+ *     (data-go="02.html") NAVIGATES and never overlays (sidebar/menu
+ *     contract); Mock.go preserves ?scenario= and handles cross-canvas paths;
+ *   - a11y contracts: overlay focus trap + [data-autofocus]/heading fallback
+ *     initial focus, ESC/data-close restore focus to the opener, #mock-live
+ *     polite announce, menu arrow keys;
+ *   - data-action dispatch contracts: Mock.registerActions happy path, unknown
+ *     action names degrade (guided console, zero throw), the explicit 4-verb
+ *     regression (data-toast/data-close/data-go/data-overlay all dispatch at
+ *     the single router) and the transitional onclick precedence guard;
+ *   - action-module contracts: Mock.loadActions injects actions/<id>.js
+ *     (onload-awaiter, never fetch+eval) and completes BEFORE the overlay body
+ *     is populated, idempotent per id, missing module guides and never throws.
  *
  * Run: node scripts/mock-check.mjs
  */
@@ -79,6 +88,7 @@ function boot() {
     href: 'http://localhost:8765/login/01-login.html?scenario=vazio',
   }
   const store = new Map()
+  const warns = [] // captured console.warn (guided messages)
   const sandbox = {
     window,
     document,
@@ -93,7 +103,7 @@ function boot() {
     },
     setTimeout,
     clearTimeout,
-    console,
+    console: { log() {}, error() {}, warn: (message) => warns.push(String(message)) },
   }
   vm.runInNewContext(SRC, sandbox, { filename: 'mock.js' })
   const calls = { overlay: [] }
@@ -111,10 +121,12 @@ function boot() {
     }
     for (const fn of listeners.click ?? []) fn(event)
   }
-  return { sandbox, calls, click, location }
+  return { sandbox, calls, click, location, warns }
 }
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+console.log('suite  navigation/overlay contracts')
 
 /* 1. plain screen link = overlay trigger (documented modal contract) */
 {
@@ -374,6 +386,8 @@ function bootA11y() {
   return { dom, served, fire, keyEvent, clickEvent, Mock: window.Mock }
 }
 
+console.log('suite  a11y contracts')
+
 /* 5. a11y: overlay opens with focus on [data-autofocus]; Tab never escapes */
 {
   const { dom, served, fire, keyEvent, Mock } = bootA11y()
@@ -476,10 +490,15 @@ function bootA11y() {
 }
 
 /* ---------------------------------------------------------------------------
- * data-action contracts (todo 7): Mock.registerActions dispatch and the
- * transitional onclick precedence guard. The verb contracts (data-go still
- * navigates, data-go never overlays) stay under test 2/3 above.
+ * data-action dispatch contracts (todos 7/10): Mock.registerActions happy
+ * path, unknown action names degrading (guided console, zero throw), the
+ * explicit 4-verb regression (data-toast/data-close/data-go/data-overlay all
+ * dispatch at the single router) and the transitional onclick precedence
+ * guard. The verb SEMANTICS (data-go navigates and never overlays, data-close
+ * restores focus) stay under tests 2/3/7 above.
  * ------------------------------------------------------------------------- */
+
+console.log('suite  data-action dispatch contracts')
 
 /* 10. data-action dispatch: registerActions + click runs handler(event, el) */
 {
@@ -508,6 +527,47 @@ function bootA11y() {
   click(target)
   assert.deepEqual(seen, [], 'an element with onclick must run ONLY its inline handler (guard retained)')
   console.log('ok  onclick + data-action -> only the inline handler runs (transitional guard)')
+}
+
+/* 12. 4-verb regression: every embedded verb still dispatches at the single
+ *     router — data-toast->Mock.toast, data-close->Mock.close,
+ *     data-go->Mock.go, data-overlay->Mock.overlay (the real navigation,
+ *     close and overlay semantics stay under tests 2/3/7) */
+{
+  const { sandbox, click } = boot()
+  const seen = { toast: [], close: 0, go: [], overlay: [] }
+  const Mock = sandbox.window.Mock
+  Mock.toast = (message) => seen.toast.push(String(message))
+  Mock.close = () => { seen.close += 1 }
+  Mock.go = (file) => seen.go.push(String(file))
+  Mock.overlay = (url) => seen.overlay.push(String(url))
+  click(el({ tagName: 'button', 'data-toast': 'Salvo' }))
+  click(el({ tagName: 'button', 'data-close': '' }))
+  click(el({ tagName: 'button', 'data-go': '02-cadastro.html' }))
+  click(el({ tagName: 'button', 'data-overlay': '05-modal.html' }))
+  assert.deepEqual(seen.toast, ['Salvo'], 'data-toast must dispatch to Mock.toast')
+  assert.equal(seen.close, 1, 'data-close must dispatch to Mock.close')
+  assert.deepEqual(seen.go, ['02-cadastro.html'], 'data-go must dispatch to Mock.go')
+  assert.deepEqual(seen.overlay, ['05-modal.html'], 'data-overlay must dispatch to Mock.overlay')
+  console.log('ok  4-verb regression -> toast/close/go/overlay all dispatch (action vocabulary)')
+}
+
+/* 13. unknown action name (unknown action, unknown namespace, no dot):
+ *     guided console message, zero throw — a missing handler must never
+ *     break the preview */
+{
+  const { sandbox, click, warns } = boot()
+  sandbox.window.Mock.registerActions('tela', { salvar: () => {} })
+  for (const name of ['tela.naoexiste', 'outra.coisa', 'semponto']) {
+    warns.length = 0
+    const target = el({ tagName: 'button', 'data-action': name })
+    assert.doesNotThrow(() => click(target), 'unknown data-action "' + name + '" must never throw')
+    assert.ok(
+      warns.some((message) => message.includes('data-action "' + name + '"') && message.includes('Mock.registerActions')),
+      'unknown data-action "' + name + '" must guide on the console (no handler registered)',
+    )
+  }
+  console.log('ok  unknown action name -> guided console message, zero throw (degrade)')
 }
 
 /* ---------------------------------------------------------------------------
@@ -628,7 +688,9 @@ function bootActionModule(options = {}) {
   return { dom, log, srcs, warns, fire, clickEvent, Mock: window.Mock, toastCalls: () => toastCalls, base }
 }
 
-/* 12. standalone screen (viewer path): boot loads actions/<id>.js and the
+console.log('suite  action-module contracts')
+
+/* 14. standalone screen (viewer path): boot loads actions/<id>.js and the
  *     data-action click runs the module handler exactly once */
 {
   const h = bootActionModule({ withCurrentScript: false, body: SCREEN_HTML })
@@ -640,7 +702,7 @@ function bootActionModule(options = {}) {
   console.log('ok  standalone screen -> actions/<id>.js loaded + handler runs (action module)')
 }
 
-/* 13. overlay: module anchored at the design root and completed BEFORE body
+/* 15. overlay: module anchored at the design root and completed BEFORE body
  *     inject (the load-order stub log) — then the layer click runs the handler */
 {
   const h = bootActionModule({ overlayHtml: SCREEN_HTML })
@@ -657,7 +719,7 @@ function bootActionModule(options = {}) {
   console.log('ok  overlay -> module done before body inject + handler runs (load order)')
 }
 
-/* 14. idempotence: overlay reopened 2x -> module loaded once, zero duplicate
+/* 16. idempotence: overlay reopened 2x -> module loaded once, zero duplicate
  *     handlers (one invocation per click, cache by id) */
 {
   const h = bootActionModule({ overlayHtml: SCREEN_HTML })
@@ -675,7 +737,7 @@ function bootActionModule(options = {}) {
   console.log('ok  overlay 2x -> module loaded once, handlers unduplicated (idempotence)')
 }
 
-/* 15. missing module for a screen that uses data-action: guided console
+/* 17. missing module for a screen that uses data-action: guided console
  *     message, zero throw — the overlay still opens and the click degrades to
  *     runAction's warn */
 {
@@ -697,4 +759,4 @@ function bootActionModule(options = {}) {
   console.log('ok  missing module -> guided console message, zero throw (degraded data-action)')
 }
 
-console.log('mock-check OK — navigation/overlay contracts hold')
+console.log('mock-check OK — 4 suites hold: navigation/overlay, a11y, data-action dispatch, action-module')
