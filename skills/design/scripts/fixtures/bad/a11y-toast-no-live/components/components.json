@@ -1,0 +1,12 @@
+{
+  "toast": {
+    "id": "toast",
+    "file": "toast.html",
+    "variants": {
+      "size": ["sm", "md"],
+      "tone": ["success", "error", "info"],
+      "state": ["default"]
+    },
+    "slots": ["icon", "message", "action"]
+  }
+}

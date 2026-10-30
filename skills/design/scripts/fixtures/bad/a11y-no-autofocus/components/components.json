@@ -1,0 +1,12 @@
+{
+  "modal": {
+    "id": "modal",
+    "file": "modal.html",
+    "variants": {
+      "size": ["sm", "md", "lg"],
+      "tone": ["default", "danger"],
+      "state": ["default"]
+    },
+    "slots": ["header", "body", "footer"]
+  }
+}

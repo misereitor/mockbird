@@ -1,0 +1,6 @@
+{
+  "title": "A11y no autofocus",
+  "screens": [
+    { "id": "tela", "name": "Tela", "file": "01-s.html" }
+  ]
+}

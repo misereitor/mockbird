@@ -349,6 +349,7 @@
         document.body.appendChild(el)
       }
       el.textContent = message
+      announce(message)
       el.classList.add('show')
       clearTimeout(el._timer)
       el._timer = setTimeout(() => el.classList.remove('show'), ms)
@@ -419,7 +420,7 @@
       })
       document.body.appendChild(layer)
       stack.push(record)
-      layer.focus()
+      initialFocus(layer)
       return layer
     },
 
@@ -430,9 +431,92 @@
     },
   }
 
+  /*
+   * A11y (todo 9): initial focus, live announcements and menu keyboard.
+   * [data-autofocus] is the declared initial focus target of overlay screens
+   * (the a11y rule enforces it on overlay templates), the first heading is the
+   * fallback; either takes tabindex="-1" when not focusable already, so the
+   * Tab order is untouched. Toasts mirror their message into one polite
+   * #mock-live region per document (created once, on demand). Menus
+   * ([role="menu"], [data-menu] or a bare menu-row list) move focus with the
+   * arrow keys, activate the focused row with Enter and close with Escape:
+   * inside an overlay the layer closes (the global ESC below), standalone the
+   * menu collapses back to its [aria-controls] opener with focus restored.
+   */
+  function announce(message) {
+    let live = document.getElementById('mock-live')
+    if (!live) {
+      live = document.createElement('div')
+      live.id = 'mock-live'
+      live.setAttribute('aria-live', 'polite')
+      document.body.appendChild(live)
+    }
+    live.textContent = String(message)
+  }
+
+  function initialFocus(layer) {
+    const target =
+      layer.querySelector('[data-autofocus]') ||
+      layer.querySelector('h1, h2, h3, h4, h5, h6') ||
+      layer
+    if (target !== layer && !target.matches(FOCUSABLE)) target.setAttribute('tabindex', '-1')
+    target.focus()
+  }
+
+  function menuRoot(target) {
+    const menu = target && target.closest ? target.closest('[role="menu"], [data-menu]') : null
+    if (menu) return menu
+    const row = target && target.closest ? target.closest('[role="menuitem"], [data-component="menu-row"]') : null
+    return row ? row.parentElement : null
+  }
+
+  function menuRows(root) {
+    if (root.matches && root.matches('[role="menu"], [data-menu]')) return focusable(root)
+    return Array.from(root.querySelectorAll('[role="menuitem"], [data-component="menu-row"]'))
+  }
+
+  function rowIndex(rows, active) {
+    return rows.findIndex((row) => row === active || (row.contains && row.contains(active)))
+  }
+
+  function handleMenuKey(event, menu) {
+    const rows = menuRows(menu)
+    const active = document.activeElement
+    const index = rowIndex(rows, active)
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight' || event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+      if (rows.length === 0) return false
+      event.preventDefault()
+      const delta = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : -1
+      const next = index === -1 ? 0 : (index + delta + rows.length) % rows.length
+      rows[next].focus()
+      return true
+    }
+    if (event.key === 'Enter') {
+      if (index === -1) return false
+      event.preventDefault()
+      if (active && typeof active.click === 'function') active.click()
+      return true
+    }
+    if (event.key === 'Escape') {
+      // in-overlay menus close with their layer (the global ESC below);
+      // standalone popups collapse back to their opener
+      if (stack.some((record) => record.layer.contains(menu))) return false
+      const opener = menu.id ? document.querySelector('[aria-controls="' + menu.id + '"]') : null
+      if (!opener) return false
+      event.preventDefault()
+      menu.hidden = true
+      opener.setAttribute('aria-expanded', 'false')
+      opener.focus()
+      return true
+    }
+    return false
+  }
+
   // ESC always dismisses the topmost layer; Tab is kept inside it (wraps over
   // the first/last focusable) so document.activeElement cannot leave the layer.
   function onKeydown(event) {
+    const menu = menuRoot(event.target)
+    if (menu && handleMenuKey(event, menu)) return
     const top = stack[stack.length - 1]
     if (!top) return
     if (event.key === 'Escape') {
