@@ -1,0 +1,13 @@
+{
+  "title": "Consumer modal device",
+  "screens": [
+    {
+      "id": "tablet",
+      "name": "Modal device variants",
+      "file": "01-s.html",
+      "device": "tablet",
+      "width": 768,
+      "height": 1024
+    }
+  ]
+}

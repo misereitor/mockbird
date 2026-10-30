@@ -131,7 +131,7 @@ export const DEFAULT_REGISTRY = Object.freeze({
       size: Object.freeze(["sm", "md", "lg"]),
       tone: Object.freeze(["default", "danger"]),
       state: Object.freeze(["default"]),
-      device: Object.freeze([]),
+      device: Object.freeze(["mobile", "desktop"]),
     }),
     slots: Object.freeze(["header", "body", "footer"]),
     realComponent: "Modal",

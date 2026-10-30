@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consumer modal device</title>
+</head>
+<body>
+  <main class="p-4">
+    <!-- component:modal size=md tone=default state=default --><div data-component="modal" data-size="md" data-tone="default" data-state="default" data-device="mobile" class="rounded-md font-body p-2 text-body bg-surface text-text" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+  <h2 id="modal-titulo" class="m-0 modal-titulo text-heading font-bold"><!-- slot:header -->Confirmação mobile<!-- /slot:header --></h2>
+  <div class="modal-corpo mt-2"><!-- slot:body -->Variante device[mobile].<!-- /slot:body --></div>
+  <div class="modal-rodape mt-2"><!-- slot:footer --><button type="button" class="modal-fechar" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>
+</div><!-- /component:modal -->
+    <!-- component:modal size=md tone=default state=default --><div data-component="modal" data-size="md" data-tone="default" data-state="default" data-device="desktop" class="rounded-md font-body p-2 text-body bg-surface text-text" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+  <h2 id="modal-titulo" class="m-0 modal-titulo text-heading font-bold"><!-- slot:header -->Confirmação desktop<!-- /slot:header --></h2>
+  <div class="modal-corpo mt-2"><!-- slot:body -->Variante device[desktop].<!-- /slot:body --></div>
+  <div class="modal-rodape mt-2"><!-- slot:footer --><button type="button" class="modal-fechar" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>
+</div><!-- /component:modal -->
+  </main>
+</body>
+</html>

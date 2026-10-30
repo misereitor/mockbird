@@ -32,7 +32,7 @@
       "size": ["sm", "md", "lg"],
       "tone": ["default", "danger"],
       "state": ["default"],
-      "device": []
+      "device": ["mobile", "desktop"]
     },
     "slots": ["header", "body", "footer"],
     "realComponent": "Modal",

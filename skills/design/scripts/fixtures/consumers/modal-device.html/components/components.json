@@ -1,0 +1,33 @@
+{
+  "modal": {
+    "name": "modal",
+    "template": "modal.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md",
+        "lg"
+      ],
+      "tone": [
+        "default",
+        "danger"
+      ],
+      "state": [
+        "default"
+      ],
+      "device": [
+        "mobile",
+        "desktop"
+      ]
+    },
+    "slots": [
+      "header",
+      "body",
+      "footer"
+    ],
+    "realComponent": "Modal",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

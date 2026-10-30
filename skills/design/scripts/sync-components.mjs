@@ -15,7 +15,10 @@
  *                        `variantClasses(markerArgs)` — marker-args-win.
  *   - Root data-attrs  = `data-component` from the partial + `data-size/tone/state`
  *                        re-emitted FROM the marker args (marker wins over anything
- *                        present).
+ *                        present). Entry variant keys OUTSIDE the marker trio
+ *                        (e.g. `device`) are the per-device override (todo 16):
+ *                        the INSTANCE root's value wins over the partial's own
+ *                        default, re-emitted exactly once.
  *   - Preserved byte-identical across rewrites: slot contents
  *     (`<!-- slot:name -->USER CONTENT<!-- /slot:name -->` — the inner bytes) and
  *     user extra `data-*` attributes on the root beyond the schema attrs
@@ -182,7 +185,7 @@ export function rootVariantData(inner) {
  * `data-component` is kept from the partial; user extra `data-*` attrs are
  * appended byte-identical.
  */
-function rebuildRootTag(tag, markerArgs, id, extrasRaw) {
+function rebuildRootTag(tag, markerArgs, id, extrasRaw, overrides) {
   const attrs = parseAttrList(tag.attrsRaw);
   const combo = variantClasses(markerArgs);
   const edits = []; // { start, end, text } in tag.raw coordinates
@@ -207,6 +210,11 @@ function rebuildRootTag(tag, markerArgs, id, extrasRaw) {
       handled.add(lname);
     } else if (lname === "data-component") {
       handled.add("data-component"); // kept byte-identical from the partial
+    } else if (hasOwn(overrides, lname)) {
+      // per-device override (todo 16): the instance root's value wins over the
+      // partial's own default; re-emitted here so it is never duplicated.
+      edits.push({ start: s, end: e, text: `${lname}="${overrides[lname]}"` });
+      handled.add(lname);
     }
     // every other attribute is untouched partial markup
   }
@@ -217,6 +225,9 @@ function rebuildRootTag(tag, markerArgs, id, extrasRaw) {
   for (const key of VARIANT_KEYS) {
     const lk = `data-${key}`;
     if (!handled.has(lk)) insertions.push(`${lk}="${markerArgs[key]}"`);
+  }
+  for (const [lk, value] of Object.entries(overrides)) {
+    if (!handled.has(lk)) insertions.push(`${lk}="${value}"`);
   }
   for (const raw of extrasRaw) insertions.push(raw);
 
@@ -254,18 +265,29 @@ function materializeInner(region, partialText, id, entry) {
   const schemaAttrs = new Set(["data-component"]);
   const variantKeys = isPlainObject(entry?.variants) ? Object.keys(entry.variants) : VARIANT_KEYS;
   for (const key of [...VARIANT_KEYS, ...variantKeys]) schemaAttrs.add(`data-${key}`);
+  // Variant keys the marker grammar cannot express (its trio is size/tone/
+  // state): the INSTANCE root's value is the per-device override (device lives
+  // in template/registry — todo 16), re-emitted by rebuildRootTag below.
+  const overrideKeys = new Set(
+    variantKeys.filter((key) => !VARIANT_KEYS.includes(key)).map((key) => `data-${key}`)
+  );
+  const overrides = {};
   const extrasRaw = [];
   const currentTag = findRootTag(region.inner);
   if (currentTag) {
     for (const attr of parseAttrList(currentTag.attrsRaw)) {
       const lname = attr.name.toLowerCase();
       if (!lname.startsWith("data-")) continue;
+      if (overrideKeys.has(lname)) {
+        overrides[lname] = attr.value ?? "";
+        continue;
+      }
       if (schemaAttrs.has(lname)) continue;
       extrasRaw.push(attr.raw);
     }
   }
 
-  const newTagRaw = rebuildRootTag(tag, region.args, id, extrasRaw);
+  const newTagRaw = rebuildRootTag(tag, region.args, id, extrasRaw, overrides);
   const rest = substituteSlots(partialText.slice(tag.index + tag.raw.length), region.slots);
   return partialText.slice(0, tag.index) + newTagRaw + rest;
 }

@@ -5,9 +5,14 @@
  * freezes the pixels as a snapshot baseline; later runs must match the
  * baseline so a migration that moves pixels is caught on the spot.
  *
- * Usage: node design/scripts/smoke.mjs [--config <path>] [--design <path>]
- *   --config  explicit validate.config.json path
- *   --design  design root whose screens are smoke-tested (default ./design)
+ * Usage: node design/scripts/smoke.mjs [--config <path>] [--design <path>] [--print-viewport]
+ *   --config         explicit validate.config.json path
+ *   --design         design root whose screens are smoke-tested (default ./design)
+ *   --print-viewport print per-screen viewport JSON (screen id -> {width,height})
+ *                    derived from each canvas.json via lib/viewport.mjs
+ *                    (deriveViewport — the SINGLE viewport truth, todo 16) and
+ *                    exit; no browser, no snapshots. Viewports are NEVER
+ *                    hardcoded here (todo 17 emulates devices with these).
  *
  * Screens come from <canvas>/canvas.json manifests (the metrics census
  * convention): canvases are the top-level dirs of the design root minus
@@ -67,27 +72,20 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { inflateSync } from 'node:zlib'
-
-// ---------- playwright-core (dynamic require — viewer-accept.mjs pattern) ----------
-
-const requireFrom = createRequire(join(process.cwd(), 'noop.js'))
-let chromium
-try {
-  ;({ chromium } = requireFrom('playwright-core'))
-} catch {
-  console.error('playwright-core nao encontrado — rode "npm i playwright-core" nesta pasta e tente de novo.')
-  process.exit(5)
-}
+import { deriveViewport } from './lib/viewport.mjs'
 
 // ---------- args ----------
 
-const usage = 'usage: node design/scripts/smoke.mjs [--config <path>] [--design <path>]'
+const usage = 'usage: node design/scripts/smoke.mjs [--config <path>] [--design <path>] [--print-viewport]'
 const argv = process.argv.slice(2)
 let configArg = null
 let designArg = './design'
+let printViewport = false
 for (let i = 0; i < argv.length; i += 1) {
   const token = argv[i]
-  if (token === '--config' || token === '--design') {
+  if (token === '--print-viewport') {
+    printViewport = true
+  } else if (token === '--config' || token === '--design') {
     const value = argv[i + 1]
     if (value === undefined || value.startsWith('--')) {
       console.error(`${token} requires a path — ${usage}`)
@@ -99,6 +97,20 @@ for (let i = 0; i < argv.length; i += 1) {
   } else {
     console.error(`unknown argument: ${token} — ${usage}`)
     process.exit(2)
+  }
+}
+
+// ---------- playwright-core (dynamic require — viewer-accept.mjs pattern) ----------
+// --print-viewport derives JSON from canvas.json only: no browser needed there.
+
+const requireFrom = createRequire(join(process.cwd(), 'noop.js'))
+let chromium
+if (!printViewport) {
+  try {
+    ;({ chromium } = requireFrom('playwright-core'))
+  } catch {
+    console.error('playwright-core nao encontrado — rode "npm i playwright-core" nesta pasta e tente de novo.')
+    process.exit(5)
   }
 }
 
@@ -156,6 +168,7 @@ function loadConfig() {
   }
   return {
     configPath,
+    raw: parsed,
     exemptDirs: new Set(exemptDirsValue),
     timeoutMs,
     snapshotThreshold,
@@ -205,6 +218,7 @@ function discoverScreens(rootDir, exemptDirs) {
         file,
         label: `${canvas}/${file}`,
         snapshot: `${canvas}-${stem}.png`,
+        meta: screen, // raw canvas.json entry (deriveViewport input for --print-viewport)
       })
     }
   }
@@ -318,6 +332,41 @@ if (discoveryProblems.length > 0) {
 if (screens.length === 0) {
   console.error(`smoke: FAIL no screens found under ${designArg} (canvas.json manifests)`)
   process.exit(1)
+}
+
+if (printViewport) {
+  const breakpoints = config.raw?.canvasMeta?.breakpoints
+  if (
+    breakpoints === null ||
+    typeof breakpoints !== 'object' ||
+    Array.isArray(breakpoints) ||
+    !Number.isFinite(breakpoints.mobileMax) ||
+    !Number.isFinite(breakpoints.tabletMax) ||
+    !(breakpoints.mobileMax < breakpoints.tabletMax)
+  ) {
+    console.error(`${config.configPath}: ${CONFIG_NAME}: "canvasMeta.breakpoints" must be { "mobileMax": <number>, "tabletMax": <number> } with mobileMax < tabletMax`)
+    process.exit(2)
+  }
+  const perScreen = {}
+  let printFailed = 0
+  for (const screen of screens) {
+    const key =
+      typeof screen.meta?.id === 'string' && screen.meta.id.length > 0 ? screen.meta.id : screen.label
+    if (Object.prototype.hasOwnProperty.call(perScreen, key)) {
+      console.error(`smoke: FAIL ${screen.label} — duplicate screen id "${key}" (ids must be unique per design root for --print-viewport)`)
+      printFailed += 1
+      continue
+    }
+    try {
+      perScreen[key] = deriveViewport(screen.meta, breakpoints)
+    } catch (error) {
+      console.error(`smoke: FAIL ${screen.label} — ${String(error?.message ?? error)}`)
+      printFailed += 1
+    }
+  }
+  if (printFailed > 0) process.exit(1)
+  console.log(JSON.stringify(perScreen, null, 2))
+  process.exit(0)
 }
 
 const snapshotsDir = join(designDir, 'snapshots')
