@@ -22,6 +22,12 @@
  * The file is NEVER versioned in `assets/example/` - regenerate it wherever
  * the project needs the interchange copy.
  *
+ * Contract groups (todo 19): the groups motion/density/breakpoints/layers are
+ * DECLARED in lib/token-groups.mjs and always emitted here into every theme
+ * section with their exact values (pure DTCG: $type + $value), whatever
+ * tokens.json carries. gen-tokens.mjs writes the same declaration into
+ * tokens.json, so both artifacts agree on the contract groups by construction.
+ *
  * Usage: node export-tokens.mjs [design-root]
  *   design-root   default `./design` relative to the current working directory
  *   writes <design-root>/tokens.w3c.json
@@ -34,6 +40,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { withContractGroups } from "./lib/token-groups.mjs";
 
 const usage = "usage: export-tokens.mjs [design-root]";
 
@@ -111,7 +118,9 @@ function main(argv) {
   }
 
   // Root is just the top group: $extensions drops out here like everywhere else.
-  const result = exportGroup(tokens, []);
+  // The contract groups land in every theme section in declared order
+  // (canonical placement — deterministic and idempotent like the export).
+  const result = withContractGroups(exportGroup(tokens, []));
 
   const outPath = join(root, "tokens.w3c.json");
   writeFileSync(outPath, `${JSON.stringify(result, null, 2)}\n`, "utf8");

@@ -89,6 +89,10 @@ If `design/` does not exist yet, create it and copy from this skill's folder
 - `scripts/sync-components.mjs` → `design/scripts/sync-components.mjs`
 - `scripts/marker-parser.mjs` → `design/scripts/marker-parser.mjs` (the shared
   parser module sync imports, required at runtime)
+- `scripts/lib/token-groups.mjs` → `design/scripts/lib/token-groups.mjs` (the
+  contract token groups — motion/density/breakpoints/layers — that
+  gen-tokens.mjs writes into tokens.json and export-tokens.mjs emits into
+  tokens.w3c.json; imported by both at runtime)
 - `scripts/export-tokens.mjs` → `design/scripts/export-tokens.mjs` (the W3C/DTCG
   interchange export: tokens.json → tokens.w3c.json; derived artifact, never
   edited by hand)
