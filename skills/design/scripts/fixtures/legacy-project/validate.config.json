@@ -1,0 +1,41 @@
+{
+  "exemptDirs": ["vendor", "scripts", "snapshots", ".history"],
+  "exemptFiles": ["design-system.css", "utilities.css", "mock.css", "viewer.html", "docs.html", "mock.js", "tokens.w3c.json"],
+  "exemptFilesSync": ["viewer.html", "docs.html", "mock.js"],
+  "componentVariantKeys": ["size", "tone", "state"],
+  "toolchainScripts": ["validate.mjs", "scripts/sync-components.mjs"],
+  "actions": {
+    "namespacePattern": "^[a-z0-9_-]+\\.[a-z0-9_-]+$",
+    "allowLegacy": ["legado.acao"]
+  },
+  "handlers": {
+    "allowLegacy": []
+  },
+  "encoding": {
+    "textExtensions": ["html", "css", "js", "mjs", "json", "md"],
+    "allowlist": [
+      {
+        "path": "citacao.md",
+        "reason": "citação intencional do caractere U+FFFD em doc (fixture ok/encoding-citation-allowlist); path relativo à raiz validada"
+      }
+    ]
+  },
+  "metrics": {
+    "baseline": "metrics-user.json"
+  },
+  "canvasMeta": {
+    "breakpoints": {
+      "mobileMax": 640,
+      "tabletMax": 900
+    }
+  },
+  "classes": {
+    "allow": []
+  },
+  "smoke": {
+    "timeoutMs": 15000,
+    "viewports": [[390, 844], [375, 667]],
+    "snapshotThreshold": 0.02
+  },
+  "userNote": "chave do usuário — nunca remover"
+}

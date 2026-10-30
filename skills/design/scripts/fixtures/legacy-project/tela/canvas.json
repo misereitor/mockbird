@@ -1,0 +1,7 @@
+{
+  "title": "Tela legada",
+  "screens": [
+    { "id": "tela", "name": "Tela", "file": "01-tela.html", "device": "mobile" },
+    { "id": "confirma", "name": "Confirma", "file": "02-confirma.html", "device": "mobile" }
+  ]
+}

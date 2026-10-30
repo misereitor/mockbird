@@ -1,0 +1,9 @@
+/* mock.css - cópia antiga do projeto (mock runtime classes) */
+.mock-overlay { display: none; }
+.mock-overlay.is-open { display: block; }
+.mock-toast { opacity: 0; transition: opacity 160ms ease; }
+.mock-toast.is-open { opacity: 1; }
+
+/* patch do usuário: overlay do projeto (arquivo patchado de propósito -
+   setup-design.mjs --update deve MANTER este arquivo e escrever mock.css.new) */
+.projeto-overlay-sombra { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35); }

@@ -1,0 +1,6 @@
+{
+  "pedidos": [
+    { "id": 1, "total": "R$ 10,00", "status": "em separação" },
+    { "id": 2, "total": "R$ 25,50", "status": "entregue" }
+  ]
+}
