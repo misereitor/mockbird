@@ -273,6 +273,64 @@
       : { cannotOpen: (url) => 'Could not open ' + url }
   }
 
+  /*
+   * Per-screen action modules (todo 8): <design-root>/actions/<id>.js is a
+   * plain script that calls Mock.registerActions('<id>', { … }) — its FIRST
+   * argument is the file stem (the action-module validator rule checks the
+   * literal). The module URL anchors at mock.js's own folder (the design root:
+   * screens include this file as "../mock.js"), so a screen inside any canvas
+   * folder resolves <design-root>/actions/<id>.js; without a resolvable base
+   * the literal "actions/<id>.js" is kept page-relative. Loading injects a
+   * <script src> into <head> awaited through onload (NEVER fetch+eval) and is
+   * idempotent per id (the cache holds the load promise): reopening an overlay
+   * loads the module once and registerActions' merge keeps handlers
+   * unduplicated. A missing module resolves false and guides on the console —
+   * zero throw; only its data-action clicks degrade to runAction's warn.
+   */
+  const actionModuleLoads = new Map()
+  const MOCK_BASE = (() => {
+    try {
+      const self = document.currentScript
+      return self && typeof self.src === 'string' && self.src ? new URL('.', self.src).href : null
+    } catch {
+      return null
+    }
+  })()
+
+  /** Module id of a screen reference: "05-modal.html" -> "05-modal" (the file
+   *  stem must be a registerActions namespace — null when it cannot be one). */
+  function actionIdFrom(url) {
+    const file = String(url ?? '').split(/[?#]/)[0].split(/[\\/]/).pop()
+    const stem = file.replace(/\.html?$/i, '')
+    return /^[a-z0-9_-]+$/.test(stem) ? stem : null
+  }
+
+  function injectActionModule(id) {
+    return new Promise((resolve) => {
+      const script = document.createElement('script')
+      script.src = MOCK_BASE ? new URL('actions/' + id + '.js', MOCK_BASE).href : 'actions/' + id + '.js'
+      script.onload = () => resolve(true)
+      script.onerror = () => {
+        console.warn(
+          'mock: actions/' + id + '.js did not load — this screen uses data-action but its action module is ' +
+            'missing (add actions/' + id + '.js calling Mock.registerActions("' + id + '", { … }))',
+        )
+        resolve(false)
+      }
+      ;(document.head || document.documentElement).appendChild(script)
+    })
+  }
+
+  /** Standalone screens (the viewer path): a screen carrying [data-action]
+   *  loads its module on boot; screens without data-action never request one
+   *  (no 404 noise). Overlay layers load the same module in Mock.overlay. */
+  function bootActions() {
+    const id = actionIdFrom(pageParts().file)
+    if (id === null) return
+    if (!document.querySelector('[data-action]')) return
+    window.Mock.loadActions(id)
+  }
+
   window.Mock = {
     /** Fictitious data from this canvas's data.json: await Mock.data('users') */
     async data(key) {
@@ -384,6 +442,26 @@
     },
 
     /**
+     * Load the per-screen action module actions/<id>.js (todo 8) and resolve
+     * once it has evaluated (script onload — never fetch+eval). Idempotent per
+     * id (the second call returns the first load promise, so a reopened
+     * overlay never injects the module twice); resolves false when the module
+     * cannot load — guided console message, zero throw. URL contract in the
+     * action-module block above.
+     */
+    loadActions(id) {
+      if (typeof id !== 'string' || !/^[a-z0-9_-]+$/.test(id)) {
+        console.warn('Mock.loadActions: id must match ^[a-z0-9_-]+$ — got ' + JSON.stringify(String(id)))
+        return Promise.resolve(false)
+      }
+      const cached = actionModuleLoads.get(id)
+      if (cached) return cached
+      const loading = injectActionModule(id)
+      actionModuleLoads.set(id, loading)
+      return loading
+    },
+
+    /**
      * Open a canvas screen as a modal layer: fetches the screen file (url is
      * relative to the current canvas and must be a full canvas screen), then
      * renders its <body> content inside a .mock-overlay layer with its
@@ -413,6 +491,12 @@
         window.Mock.toast(mockText().cannotOpen(url))
         return null
       }
+      // todo 8: the layer's action module (actions/<id>.js — id from the screen
+      // url) runs BEFORE the body is populated. The fetched <body> <script>
+      // inside the innerHTML below never executes (§3.2 — it stays dead); the
+      // module is the live action surface of the layer.
+      const actionId = actionIdFrom(url)
+      if (actionId !== null && /\bdata-action\s*=/.test(html)) await window.Mock.loadActions(actionId)
       const screen = new DOMParser().parseFromString(html, 'text/html')
       const layer = document.createElement('div')
       layer.className = 'mock-overlay'
@@ -589,6 +673,11 @@
       applyEnter()
     })
   }
+  // Action module (todo 8): run at once when the body is already there and
+  // again at DOMContentLoaded — a mid-body include sees a half-parsed document
+  // at eval time and must still find [data-action] (loadActions is idempotent).
+  if (document.body) bootActions()
+  document.addEventListener('DOMContentLoaded', bootActions)
   try {
     window.addEventListener('pagehide', saveScroll)
   } catch { /* preview degrades without pagehide */ }

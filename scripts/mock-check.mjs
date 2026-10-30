@@ -510,4 +510,191 @@ function bootA11y() {
   console.log('ok  onclick + data-action -> only the inline handler runs (transitional guard)')
 }
 
+/* ---------------------------------------------------------------------------
+ * Per-screen action module contracts (todo 8): Mock.loadActions injects
+ * <script src="actions/<id>.js"> (onload-awaiter, never fetch+eval), idempotent
+ * per id, and runs BEFORE the overlay body is populated (the fetched <body>
+ * <script> inside innerHTML stays dead). The module source and screen html
+ * come from the validator fixture
+ * skills/design/scripts/fixtures/ok/action-module/ — the fixture's vm proof.
+ * Script injection is stubbed at document.head.appendChild: the stub "loads"
+ * the served module asynchronously (setTimeout) and logs load/done/error per
+ * src plus body:inject at the overlay's innerHTML point, so "module done
+ * BEFORE body inject" and "loaded once" are falsifiable.
+ * ------------------------------------------------------------------------- */
+const FIXTURE_DIR = join(ROOT, 'skills/design/scripts/fixtures/ok/action-module')
+const MODULE_SRC = readFileSync(join(FIXTURE_DIR, 'actions/tela.js'), 'utf8')
+const SCREEN_HTML = readFileSync(join(FIXTURE_DIR, 'tela.html'), 'utf8')
+
+function bootActionModule(options = {}) {
+  const modules = options.modules ?? { 'actions/tela.js': MODULE_SRC }
+  const dom = makeDom()
+  const log = [] // stub log: 'load:<src>', 'done:<src>', 'error:<src>', 'body:inject'
+  const srcs = [] // raw script srcs as injected (path contract)
+  const warns = [] // captured console.warn (guided messages)
+  let ctx = null
+  let toastCalls = 0
+  const base = 'http://localhost:8765/design/'
+
+  if (options.body) dom.doc.body.innerHTML = options.body
+
+  // the ONLY loading surface Mock.loadActions uses: <script> into <head>
+  const head = dom.make('head')
+  head.appendChild = (child) => {
+    if (child.tagName !== 'SCRIPT') return child
+    const src = String(child.src)
+    srcs.push(src)
+    const name = src.startsWith(base) ? src.slice(base.length) : src
+    log.push('load:' + name)
+    setTimeout(() => {
+      const code = modules[name]
+      if (code === undefined) {
+        log.push('error:' + name)
+        if (child.onerror) child.onerror()
+        return
+      }
+      vm.runInContext(code, ctx)
+      log.push('done:' + name)
+      if (child.onload) child.onload()
+    }, 0)
+    return child
+  }
+  dom.doc.head = head
+  if (options.withCurrentScript !== false) dom.doc.currentScript = { src: base + 'mock.js' }
+
+  const window = { addEventListener() {}, removeEventListener() {} }
+  window.window = window
+  const store = new Map()
+  const sandbox = {
+    window,
+    document: dom.doc,
+    location: { pathname: '/design/tela.html', search: '', href: base + 'tela.html' },
+    navigator: { language: 'en' },
+    URL,
+    URLSearchParams,
+    sessionStorage: {
+      getItem: (key) => (store.has(key) ? store.get(key) : null),
+      setItem: (key, value) => store.set(key, String(value)),
+      removeItem: (key) => store.delete(key),
+    },
+    setTimeout,
+    clearTimeout,
+    console: { log() {}, error() {}, warn: (message) => warns.push(String(message)) },
+    fetch: async () => ({ ok: true, status: 200, text: async () => options.overlayHtml ?? '' }),
+    DOMParser: class {
+      parseFromString(html) {
+        return { body: { innerHTML: String(html) }, querySelectorAll: () => [] }
+      }
+    },
+  }
+  ctx = vm.createContext(sandbox)
+  vm.runInContext(SRC, ctx, { filename: 'mock.js' })
+  sandbox.Mock = window.Mock // browsers make window the global: bare Mock resolves
+  const origToast = window.Mock.toast
+  window.Mock.toast = (...args) => {
+    toastCalls++
+    return origToast(...args)
+  }
+
+  // body-inject probe: the overlay populates its content via innerHTML
+  const origCreate = dom.doc.createElement
+  dom.doc.createElement = (tag) => {
+    const node = origCreate(tag)
+    const desc = Object.getOwnPropertyDescriptor(node, 'innerHTML')
+    if (desc && desc.set) {
+      Object.defineProperty(node, 'innerHTML', {
+        get: desc.get,
+        set(value) {
+          log.push('body:inject')
+          desc.set.call(node, value)
+        },
+      })
+    }
+    return node
+  }
+
+  const fire = (type, event) => {
+    for (const fn of dom.listeners[type] ?? []) fn(event)
+  }
+  const clickEvent = (target) => ({
+    target,
+    button: 0,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    altKey: false,
+    preventDefault() {},
+  })
+  return { dom, log, srcs, warns, fire, clickEvent, Mock: window.Mock, toastCalls: () => toastCalls, base }
+}
+
+/* 12. standalone screen (viewer path): boot loads actions/<id>.js and the
+ *     data-action click runs the module handler exactly once */
+{
+  const h = bootActionModule({ withCurrentScript: false, body: SCREEN_HTML })
+  await settle()
+  assert.deepEqual(h.srcs, ['actions/tela.js'], 'the injected src must be the literal actions/<id>.js without a resolvable base')
+  assert.deepEqual(h.log, ['load:actions/tela.js', 'done:actions/tela.js'], 'standalone boot must load the module once')
+  h.fire('click', h.clickEvent(h.dom.doc.body.querySelector('[data-action]')))
+  assert.equal(h.toastCalls(), 1, 'the standalone click must run the module handler exactly once')
+  console.log('ok  standalone screen -> actions/<id>.js loaded + handler runs (action module)')
+}
+
+/* 13. overlay: module anchored at the design root and completed BEFORE body
+ *     inject (the load-order stub log) — then the layer click runs the handler */
+{
+  const h = bootActionModule({ overlayHtml: SCREEN_HTML })
+  const layer = await h.Mock.overlay('tela.html')
+  assert.ok(layer, 'the overlay must open')
+  assert.deepEqual(h.srcs, [h.base + 'actions/tela.js'], 'the module URL must anchor at the design root (mock.js folder)')
+  assert.deepEqual(
+    h.log,
+    ['load:actions/tela.js', 'done:actions/tela.js', 'body:inject'],
+    'loadActions must COMPLETE before the overlay body is populated (fetched <body> <script> stays dead)',
+  )
+  h.fire('click', h.clickEvent(layer.querySelector('[data-action]')))
+  assert.equal(h.toastCalls(), 1, 'the overlay click must run the module handler exactly once')
+  console.log('ok  overlay -> module done before body inject + handler runs (load order)')
+}
+
+/* 14. idempotence: overlay reopened 2x -> module loaded once, zero duplicate
+ *     handlers (one invocation per click, cache by id) */
+{
+  const h = bootActionModule({ overlayHtml: SCREEN_HTML })
+  const first = await h.Mock.overlay('tela.html')
+  const second = await h.Mock.overlay('tela.html')
+  assert.equal(h.log.filter((entry) => entry.startsWith('load:')).length, 1, 'reopening the overlay must load the module only once (cache by id)')
+  assert.deepEqual(
+    h.log,
+    ['load:actions/tela.js', 'done:actions/tela.js', 'body:inject', 'body:inject'],
+    'the second open must reuse the module (no second load) and populate its own body',
+  )
+  h.fire('click', h.clickEvent(second.querySelector('[data-action]')))
+  h.fire('click', h.clickEvent(first.querySelector('[data-action]')))
+  assert.equal(h.toastCalls(), 2, 'each click must run the handler exactly once — zero duplicate handlers')
+  console.log('ok  overlay 2x -> module loaded once, handlers unduplicated (idempotence)')
+}
+
+/* 15. missing module for a screen that uses data-action: guided console
+ *     message, zero throw — the overlay still opens and the click degrades to
+ *     runAction's warn */
+{
+  const h = bootActionModule({ overlayHtml: SCREEN_HTML, modules: {} })
+  const layer = await h.Mock.overlay('tela.html')
+  assert.ok(layer, 'the overlay must still open when the module is missing')
+  assert.deepEqual(
+    h.log,
+    ['load:actions/tela.js', 'error:actions/tela.js', 'body:inject'],
+    'a missing module must not block the body populate',
+  )
+  assert.ok(
+    h.warns.some((message) => message.includes('actions/tela.js') && message.includes('Mock.registerActions')),
+    'a missing module must guide on the console (actions/<id>.js + Mock.registerActions)',
+  )
+  const button = layer.querySelector('[data-action]')
+  assert.doesNotThrow(() => h.fire('click', h.clickEvent(button)), 'data-action without a module must never throw')
+  assert.ok(h.warns.some((message) => message.includes('no handler registered')), 'the click must guide on the console too')
+  console.log('ok  missing module -> guided console message, zero throw (degraded data-action)')
+}
+
 console.log('mock-check OK — navigation/overlay contracts hold')
