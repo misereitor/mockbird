@@ -5,7 +5,9 @@
       "id": "login",
       "name": "Login",
       "file": "01-s.html",
-      "device": "mobile"
+      "device": "mobile",
+      "width": 390,
+      "height": 844
     }
   ]
 }

@@ -5,13 +5,17 @@
       "id": "login",
       "name": "Login",
       "file": "01-clean.html",
-      "device": "mobile"
+      "device": "mobile",
+      "width": 390,
+      "height": 844
     },
     {
       "id": "label-in-script",
       "name": "Label in script",
       "file": "label-in-script.html",
-      "device": "mobile"
+      "device": "mobile",
+      "width": 390,
+      "height": 844
     }
   ]
 }

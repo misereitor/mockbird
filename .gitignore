@@ -1,3 +1,5 @@
 .omo/
 plugin/node_modules/
 node_modules/
+# derived interchange export (export-tokens.mjs contract: never versioned here)
+skills/design/assets/example/tokens.w3c.json

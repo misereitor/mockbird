@@ -8,7 +8,9 @@
  *                   replacement produced by an ill-formed UTF-8 byte sequence
  *                   — the message always cites the ACTUAL raw bytes found)
  *   encoding-double double-encoding signature: U+00C3 (Ã) or U+00C2 (Â)
- *                   immediately followed by a codepoint in U+0080–U+00FF
+ *                   immediately followed by a non-ASCII codepoint (U+0080+;
+ *                   the CP1252 followers of 0x80–0x9F reach U+0100+ — e.g.
+ *                   "Ã‡" = U+00C3 U+2021, the mojibake of "Ç")
  *                   ("Ã©" = U+00C3 U+00A9 is the mojibake of "é" = U+00E9)
  *   encoding-c1     lone C1 control: codepoint U+0080–U+009F NOT consumed by a
  *                   pair above. Range note (deliberate): the literal reading
@@ -42,7 +44,7 @@ export const id = 'encoding'
 
 const FFFD = 0xfffd
 const PAIR_LEADS = new Set([0xc2, 0xc3]) // Â U+00C2 / Ã U+00C3
-const PAIR_HI = 0xff // pair follower range U+0080–U+00FF (plan todo 2)
+const PAIR_HI = 0x10ffff // pair follower range U+0080+ (CP1252 followers reach U+0100+ — `Ã‡` U+00C3 U+2021; todo 2 gap closed by the todo 28 PAIR_HI extension)
 const C1_HI = 0x9f // lone C1 range U+0080–U+009F (see docblock)
 const MAX_FINDINGS = 10 // per file; the rest collapse into one summary line
 

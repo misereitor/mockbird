@@ -52,7 +52,10 @@
  *      config.smoke.snapshotThreshold (declared in config — NEVER implicit;
  *      threshold.json + a deterministic manifest.json listing every
  *      screen x viewport with its assert results are written when the whole
- *      run is green).
+ *      run is green). The manifest write is NON-REGRESSIVE (todo 28): entries
+ *      are merged by (canvas, file, viewport) into any existing manifest, so
+ *      a plain run (derived viewport only) updates its own entries and never
+ *      rewrites the committed --all-devices manifest down to a subset.
  *
  * Baseline semantics: a missing baseline PNG is WRITTEN (first run); an
  * existing one is COMPARED and NEVER overwritten — the baseline is a freeze.
@@ -696,11 +699,50 @@ function sortKeys(value) {
   return value
 }
 
+/** Non-regressive merge (todo 28): this run's entries land at their
+ *  (canvas, file, viewport) slot — existing position preserved, unknown keys
+ *  appended in run order — so a subset run can never drop entries recorded by
+ *  a wider run (--all-devices). An absent/unreadable prior manifest falls back
+ *  to this run's entries alone (first-run behavior, unchanged). */
+function mergeManifestScreens(manifestPath, screens) {
+  const keyOf = (entry) => `${entry.canvas}\u0000${entry.file}\u0000${entry.viewport.join('x')}`
+  let prior = []
+  try {
+    const parsed = JSON.parse(readFileSync(manifestPath, 'utf8'))
+    if (parsed !== null && typeof parsed === 'object' && Array.isArray(parsed.screens)) prior = parsed.screens
+  } catch {
+    // no prior manifest (or unreadable): nothing to preserve
+  }
+  const merged = prior.map((entry) => (entry !== null && typeof entry === 'object' ? entry : null))
+  const slots = new Map()
+  merged.forEach((entry, index) => {
+    if (
+      entry !== null &&
+      typeof entry.canvas === 'string' &&
+      typeof entry.file === 'string' &&
+      Array.isArray(entry.viewport)
+    ) {
+      slots.set(keyOf(entry), index)
+    }
+  })
+  for (const entry of screens) {
+    const key = keyOf(entry)
+    const index = slots.get(key)
+    if (index === undefined) {
+      slots.set(key, merged.length)
+      merged.push(entry)
+    } else {
+      merged[index] = entry
+    }
+  }
+  return merged
+}
+
 const manifest = {
   smoke: 'v2',
   timeoutMs: config.timeoutMs,
   snapshotThreshold: config.snapshotThreshold,
-  screens: manifestScreens,
+  screens: mergeManifestScreens(join(snapshotsDir, 'manifest.json'), manifestScreens),
 }
 mkdirSync(snapshotsDir, { recursive: true })
 writeFileSync(join(snapshotsDir, 'threshold.json'), `${JSON.stringify({ maxDiffPixelRatio: config.snapshotThreshold }, null, 2)}\n`)
