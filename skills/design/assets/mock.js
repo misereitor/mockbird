@@ -80,10 +80,11 @@
   function screenLink(target) {
     const link = target && target.closest ? target.closest('a[href]') : null
     if (!link) return null
-    // action attributes (data-go/data-overlay/data-toast/data-close) belong to
-    // the delegation router below - a nav link with data-go navigates and must
-    // never be hijacked into an overlay (sidebar/menu contract)
-    if (['data-go', 'data-overlay', 'data-toast', 'data-close'].some((attr) => link.hasAttribute(attr))) return null
+    // action attributes (data-go/data-overlay/data-toast/data-close/data-action)
+    // belong to the delegation router below - a nav link with data-go navigates
+    // and must never be hijacked into an overlay (sidebar/menu contract); a
+    // link with data-action runs ONLY its registered handler, same rule
+    if (['data-go', 'data-overlay', 'data-toast', 'data-close', 'data-action'].some((attr) => link.hasAttribute(attr))) return null
     if (link.hasAttribute('download')) return null
     const frame = link.getAttribute('target')
     if (frame && frame !== '_self') return null
@@ -356,6 +357,33 @@
     },
 
     /**
+     * Action registry (todo 7): Mock.registerActions('tela', {
+     *   salvar(event, el) { … },
+     * }) registers one screen module's handlers. Clicks on
+     * [data-action="tela.salvar"] run map.salvar(event, el) through the single
+     * delegation router at the bottom of this file (the same dispatch point as
+     * data-toast/data-close/data-go/data-overlay — there is no third action
+     * mechanism). Names are "<namespace>.<action>" (naming is enforced by the
+     * action-contract validator rule). Re-registering a namespace merges over
+     * it name by name, so reloading a module never duplicates handlers.
+     */
+    registerActions(namespace, map) {
+      if (typeof namespace !== 'string' || !/^[a-z0-9_-]+$/.test(namespace) || typeof map !== 'object' || map === null) {
+        console.warn('Mock.registerActions: namespace must match ^[a-z0-9_-]+$ and map must be an object')
+        return
+      }
+      const merged = { ...(actionMaps.get(namespace) ?? {}) }
+      for (const [name, handler] of Object.entries(map)) {
+        if (typeof handler !== 'function') {
+          console.warn('Mock.registerActions: ' + namespace + '.' + name + ' is not a function — ignored')
+          continue
+        }
+        merged[name] = handler
+      }
+      actionMaps.set(namespace, merged)
+    },
+
+    /**
      * Open a canvas screen as a modal layer: fetches the screen file (url is
      * relative to the current canvas and must be a full canvas screen), then
      * renders its <body> content inside a .mock-overlay layer with its
@@ -566,13 +594,43 @@
   } catch { /* preview degrades without pagehide */ }
 })()
 
-// data-* action delegation (works standalone AND inside overlay layers):
-// [data-toast] shows a toast, [data-close] closes the top overlay,
-// [data-go] navigates, [data-overlay] opens an overlay.
+// data-action registry (todo 7): filled by Mock.registerActions('tela', {...})
+// above, read by the single delegation router below. Declared at file scope so
+// the Mock API and the router share one map (accessed only after the script has
+// evaluated - never during boot).
+const actionMaps = new Map()
+
+/** data-action dispatch: "tela.acao" runs the handler registered by
+ *  Mock.registerActions('tela', { acao(event, el) { … } }). An unknown name
+ *  guides on the console and never throws - a missing action module must not
+ *  break the preview. The handler owns event.preventDefault() if it needs it. */
+function runAction(name, event, el) {
+  const dot = typeof name === 'string' ? name.indexOf('.') : -1
+  const map = dot > 0 ? actionMaps.get(name.slice(0, dot)) : undefined
+  const handler = map ? map[name.slice(dot + 1)] : undefined
+  if (typeof handler !== 'function') {
+    console.warn('mock: no handler registered for data-action "' + String(name) + '" (Mock.registerActions?)')
+    return
+  }
+  handler(event, el)
+}
+
+// data-* action delegation (works standalone AND inside overlay layers) — the
+// ONE dispatch point for the whole action vocabulary (R4 §13.2): the embedded
+// verbs [data-toast] shows a toast, [data-close] closes the top overlay,
+// [data-go] navigates, [data-overlay] opens an overlay, plus the namespaced
+// [data-action="tela.acao"] dispatched to Mock.registerActions' map as
+// handler(event, el). A third action mechanism is forbidden - everything goes
+// through here.
 document.addEventListener('click', (event) => {
   const target = event.target && event.target.closest
-    ? event.target.closest('[data-toast],[data-close],[data-go],[data-overlay]')
+    ? event.target.closest('[data-toast],[data-close],[data-go],[data-overlay],[data-action]')
     : null
+  // onclick precedence guard — TRANSITIONAL, RETAINED ON PURPOSE (R3 §13.2):
+  // an inline handler WINS, so an element carrying onclick runs ONLY its inline
+  // handler and every data-* attribute on it is ignored. Never combine on* with
+  // data-action (the action-contract validator rule fails that element); this
+  // guard is deleted together with the last inline handler.
   if (!target || typeof target.onclick === 'function') return
   if (target.tagName === 'A') {
     const href = target.getAttribute('href') || ''
@@ -588,4 +646,5 @@ document.addEventListener('click', (event) => {
     event.preventDefault()
     window.Mock.overlay(target.getAttribute('data-overlay'))
   }
+  if (target.hasAttribute('data-action')) runAction(target.getAttribute('data-action'), event, target)
 })

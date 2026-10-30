@@ -475,4 +475,39 @@ function bootA11y() {
   console.log('ok  menu -> arrow keys move focus (a11y)')
 }
 
+/* ---------------------------------------------------------------------------
+ * data-action contracts (todo 7): Mock.registerActions dispatch and the
+ * transitional onclick precedence guard. The verb contracts (data-go still
+ * navigates, data-go never overlays) stay under test 2/3 above.
+ * ------------------------------------------------------------------------- */
+
+/* 10. data-action dispatch: registerActions + click runs handler(event, el) */
+{
+  const { sandbox, click } = boot()
+  const seen = []
+  sandbox.window.Mock.registerActions('tela', {
+    salvar: (event, el) => seen.push({ event, el }),
+  })
+  const target = el({ tagName: 'button', 'data-action': 'tela.salvar' })
+  click(target)
+  assert.equal(seen.length, 1, 'the registered data-action handler must run exactly once')
+  assert.equal(seen[0].el, target, 'handler must receive the element as second arg')
+  assert.equal(seen[0].event.target, target, 'handler must receive the click event as first arg')
+  console.log('ok  data-action="tela.salvar" -> handler(event, el) (dispatch)')
+}
+
+/* 11. onclick precedence (transitional guard): inline wins, action silent */
+{
+  const { sandbox, click } = boot()
+  const seen = []
+  sandbox.window.Mock.registerActions('tela', {
+    salvar: () => seen.push('action'),
+  })
+  const target = el({ tagName: 'button', 'data-action': 'tela.salvar' })
+  target.onclick = () => seen.push('inline') // the browser runs this; the router must not
+  click(target)
+  assert.deepEqual(seen, [], 'an element with onclick must run ONLY its inline handler (guard retained)')
+  console.log('ok  onclick + data-action -> only the inline handler runs (transitional guard)')
+}
+
 console.log('mock-check OK — navigation/overlay contracts hold')

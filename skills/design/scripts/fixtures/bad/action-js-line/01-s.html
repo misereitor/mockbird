@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Action js line</title>
+</head>
+<body>
+  <main>
+    <h1>Lista de itens</h1>
+    <button data-action="tela.salvar">Salvar</button>
+    <button onclick="document.querySelectorAll('.item').forEach(function (item) { item.classList.toggle('aberto'); }); atualizaContadorDeItens()">Recolher</button>
+  </main>
+</body>
+</html>
