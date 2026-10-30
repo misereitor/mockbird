@@ -68,10 +68,11 @@
  *
  * The served root is a throwaway COPY of the design root (serve.mjs writes
  * design/.history while it runs; the repo tree must stay clean), served by
- * skills/design/assets/serve.mjs on an ephemeral port (port 0). When the
- * design root does not ship the mock runtime (example/ is a seed),
- * mock.js/mock.css are layered into the copy — the scripts/viewer-accept.mjs
- * precedent.
+ * serve.mjs on an ephemeral port (port 0) — resolved through the two-layout
+ * findSkillAsset fallback (skills/design/assets/serve.mjs in the repo layout,
+ * <design>/serve.mjs in the installed payload). When the design root does not
+ * ship the mock runtime (example/ is a seed), mock.js/mock.css are layered
+ * into the copy — the scripts/viewer-accept.mjs precedent.
  *
  * Requires playwright-core (devDependency) — dynamic require from the CWD,
  * the scripts/viewer-accept.mjs pattern: missing -> exit 5 with the guided
@@ -84,8 +85,8 @@
  *   1 = smoke failure (screen missing on disk, viewport derivation failure,
  *   load error, timeout, console.error/pageerror, viewport mismatch,
  *   horizontal scroll, pixel diff over maxDiffPixelRatio),
- *   2 = bad usage / wrong-shape config key, 3 = missing/broken config
- *   (guided: run setup-design.mjs), 5 = playwright-core absent.
+ *   2 = bad usage / wrong-shape config key, 3 = missing/broken config or
+ *   payload (guided: run setup-design.mjs), 5 = playwright-core absent.
  */
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -102,7 +103,7 @@ import {
 } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
-import { basename, dirname, extname, join, resolve } from 'node:path'
+import { basename, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { inflateSync } from 'node:zlib'
 import { deriveViewport } from './lib/viewport.mjs'
@@ -437,7 +438,24 @@ if (printViewport) {
 }
 
 const snapshotsDir = join(designDir, 'snapshots')
-const SERVE_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'serve.mjs')
+
+/** Two-layout skill-asset lookup (the qa.mjs findValidateScript idiom): the
+ * repo layout (../assets/<name>) FIRST — existing behavior preserved — then
+ * the installed payload (copy-list ships assets/serve.mjs -> serve.mjs and
+ * assets/mock.* -> mock.* at the design root, beside scripts/). */
+function findSkillAsset(name) {
+  for (const rel of [`../assets/${name}`, `../${name}`]) {
+    const full = fileURLToPath(new URL(rel, import.meta.url))
+    if (existsSync(full)) return full
+  }
+  return null
+}
+
+const SERVE_SCRIPT = findSkillAsset('serve.mjs')
+if (SERVE_SCRIPT === null) {
+  console.error('smoke: serve.mjs not found (checked ../assets/serve.mjs and ../serve.mjs) — run setup-design.mjs to seed it')
+  process.exit(3)
+}
 
 // ---------- run matrix ----------
 // Viewports are NEVER hardcoded: deriveViewport (lib/viewport.mjs) supplies
@@ -499,14 +517,15 @@ const workRoot = mkdtempSync(join(tmpdir(), 'design-smoke-'))
 const workDesign = join(workRoot, 'design')
 cpSync(designDir, workDesign, { recursive: true })
 // The example root is a design-system seed, not a full design/ root: its
-// screens link ../mock.js / ../mock.css (the skill runtime, which lives in
-// assets/). Layer the runtime into the served copy when the design root does
-// not ship it — the scripts/viewer-accept.mjs precedent. A design root that
+// screens link ../mock.js / ../mock.css (the skill runtime). Layer the runtime
+// into the served copy when the design root does not ship it — the
+// scripts/viewer-accept.mjs precedent — sourcing it via findSkillAsset (repo
+// assets/ first, installed payload beside scripts/). A design root that
 // already carries its own mock.js is served untouched.
-const ASSETS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets')
 for (const runtime of ['mock.js', 'mock.css']) {
-  if (!existsSync(join(workDesign, runtime)) && existsSync(join(ASSETS_DIR, runtime))) {
-    cpSync(join(ASSETS_DIR, runtime), join(workDesign, runtime))
+  const runtimeSource = findSkillAsset(runtime)
+  if (!existsSync(join(workDesign, runtime)) && runtimeSource !== null) {
+    cpSync(runtimeSource, join(workDesign, runtime))
   }
 }
 
