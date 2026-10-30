@@ -63,14 +63,16 @@ design/
 {
   "title": "Login do app",
   "screens": [
-    { "id": "login", "name": "Login", "file": "01-login.html", "device": "mobile" },
-    { "id": "cadastro", "name": "Cadastro", "file": "02-cadastro.html", "device": "mobile" }
+    { "id": "login", "name": "Login", "file": "01-login.html", "device": "mobile", "width": 390, "height": 844 },
+    { "id": "cadastro", "name": "Cadastro", "file": "02-cadastro.html", "device": "mobile", "width": 390, "height": 844 }
   ]
 }
 ```
 
-- `device`: `mobile` = 390×844, `tablet` = 834×1112, `desktop` = 1440×900;
-  optional `width`/`height` (integers 100–10000) override it.
+- `device`: `mobile`, `tablet` or `desktop`; `width`/`height` (integers
+  100–10000) are required alongside it and must match it — mobile width
+  ≤ 640, tablet 640–900, desktop ≥ 900 (`canvasMeta.breakpoints`); canonical
+  viewports 390×844 / 834×1112 / 1440×900.
 - `group` (optional): label that clusters the screens into titled blocks in
   the viewer strip — complex projects stay readable (e.g. `"group": "Checkout"`).
 - `transition` (optional): `fade`, `slide-left` or `none` (default). It is the
