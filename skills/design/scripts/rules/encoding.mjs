@@ -124,9 +124,19 @@ function scanFile(ctx, full) {
       suppressed += 1
     }
   }
+  // running line index (was lineOf(chars, i) per character → O(n²) rescan;
+  // todo 32): `line` = 1 + count of \n in chars[0..lineUpTo), advanced
+  // monotonically to each loop index — same value as lineOf(chars, i) for
+  // every call site, O(n) total regardless of the pair skip.
+  let line = 1
+  let lineUpTo = 0
   for (let i = 0; i < chars.length; i += 1) {
+    while (lineUpTo < i) {
+      if (chars[lineUpTo].cp === 0x0a) line += 1
+      lineUpTo += 1
+    }
     const here = chars[i]
-    const where = `${label}:${lineOf(chars, i)}`
+    const where = `${label}:${line}`
     if (here.cp === FFFD) {
       const detail = here.bad === undefined
         ? 'U+FFFD (replacement char, literal bytes EF BF BD)'
@@ -208,12 +218,6 @@ function hex(buf, start, span) {
 
 function fmt(cp) {
   return `U+${cp.toString(16).toUpperCase().padStart(4, '0')}`
-}
-
-function lineOf(chars, index) {
-  let line = 1
-  for (let i = 0; i < index; i += 1) if (chars[i].cp === 0x0a) line += 1
-  return line
 }
 
 function isPlainObject(value) {
