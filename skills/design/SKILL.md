@@ -82,8 +82,41 @@ design/
 
 ## One-time setup per project
 
-If `design/` does not exist yet, create it and copy from this skill's folder
-(the folder containing this SKILL.md):
+The complete payload that ships into a project's `design/` is inventoried in
+ONE file — `scripts/copy-list.json` in this skill's folder — consumed by
+`scripts/setup-design.mjs`:
+
+```
+node skills/design/scripts/setup-design.mjs --target <project>/design
+node skills/design/scripts/setup-design.mjs --target <project>/design --update
+```
+
+- **setup** (no flag): copies every file of the copy list into `design/`,
+  seeds `validate.config.json` (its `toolchainScripts` rewritten to the
+  project layout) and creates the empty scaffolding dirs. An existing
+  `validate.config.json` is never overwritten.
+- **`--update`**: re-copies the toolchain (config-driven scripts carry the
+  `mockbird:config-driven:v2` marker and are safe to replace — their config
+  lives in `validate.config.json`; a pre-config legacy script is replaced,
+  which is the fix), merges NEW keys of the shipped config into your config
+  (your values win, your keys are never removed), and never touches screens
+  (`canvas.json` + `*.html`), `data/`, `actions/`, `spec/` or `snapshots/`.
+  A file you patched is kept with the new version at `<nome>.new` (`--force`
+  replaces it too, your previous bytes kept at `<nome>.bak`). `--with-smoke`
+  writes `design/package.json` (the zero-dep exception — see the README).
+  Full policy in `setup-design.mjs --help`. Existing client projects
+  migrating a corpus follow `docs/migration-guide.md` (the client migration
+  guide: update path + corpus steps).
+
+The copy list is the strict JSON contract `{"version": 1, "dirs": [...],
+"files": [{"from": …, "to": …}]}` — `from` relative to this skill's folder,
+`to` relative to the project's `design/`. The loader refuses a listed source
+that does not exist (the rule "só entra no copy list arquivo que já existe"
+is enforced, not advisory) and the manual list below mirrors the JSON 1:1.
+The `actions/` wiring and the whole action vocabulary are the contract in
+"Ações e acessibilidade" at the end of this file.
+
+Manual equivalent — every file `copy-list.json` ships and where it lands:
 
 - `scripts/validate.mjs` → `design/validate.mjs`
 - `assets/viewer.html` → `design/viewer.html`
@@ -93,15 +126,48 @@ If `design/` does not exist yet, create it and copy from this skill's folder
   screens link `../mock.css`)
 - `assets/docs.html` → `design/docs.html` (usage guide, linked from the viewer's 📘 Docs button)
 - `assets/vendor/html-to-image.js` → `design/vendor/html-to-image.js`
-- `scripts/gen-tokens.mjs` → `design/scripts/gen-tokens.mjs`
 - `assets/components/` → `design/components/` (registry + partials seed)
+- `scripts/gen-tokens.mjs` → `design/scripts/gen-tokens.mjs`
 - `scripts/sync-components.mjs` → `design/scripts/sync-components.mjs`
+- `scripts/codegen.mjs` → `design/scripts/codegen.mjs` (React data-*↔props
+  codegen; imported by sync-components.mjs at runtime — stays its sibling)
 - `scripts/marker-parser.mjs` → `design/scripts/marker-parser.mjs` (the shared
   parser module sync imports, required at runtime)
+- `scripts/export-spec.mjs` → `design/scripts/export-spec.mjs` (per-screen
+  `spec/<telaId>.md` + `.json` export; imported by rules/spec-undeclared.mjs
+  as `../export-spec.mjs` — stays next to rules/)
+- `scripts/qa.mjs` → `design/scripts/qa.mjs` (validator QA wrapper: config
+  marker, R1–R4 probes, output stability)
+- `scripts/smoke.mjs` → `design/scripts/smoke.mjs` (real-browser pixel smoke
+  against snapshots/; needs playwright-core — the zero-dep exception)
+- `scripts/setup-design.mjs` → `design/scripts/setup-design.mjs` (this
+  installer/updater)
 - `scripts/lib/token-groups.mjs` → `design/scripts/lib/token-groups.mjs` (the
   contract token groups — motion/density/breakpoints/layers — that
   gen-tokens.mjs writes into tokens.json and export-tokens.mjs emits into
   tokens.w3c.json; imported by both at runtime)
+- `scripts/lib/viewport.mjs` → `design/scripts/lib/viewport.mjs` (device
+  viewport derivation; imported by smoke.mjs at runtime)
+- `scripts/rules/a11y.mjs` → `design/scripts/rules/a11y.mjs` (overlay focus +
+  toast live-region contract)
+- `scripts/rules/action-contract.mjs` → `design/scripts/rules/action-contract.mjs`
+  (action naming, allowlist, on* mixing, JS line length)
+- `scripts/rules/action-module.mjs` → `design/scripts/rules/action-module.mjs`
+  (actions/<telaId>.js module contract)
+- `scripts/rules/canvas-meta.mjs` → `design/scripts/rules/canvas-meta.mjs`
+  (canvas.json device/dimensions coherence)
+- `scripts/rules/contract-doc-sync.mjs` → `design/scripts/rules/contract-doc-sync.mjs`
+  (tokens.contract.md drift vs tokens.json)
+- `scripts/rules/data-ref.mjs` → `design/scripts/rules/data-ref.mjs`
+  (data.json `{"$ref": …}` resolution)
+- `scripts/rules/encoding.mjs` → `design/scripts/rules/encoding.mjs`
+  (mojibake pairs + C1 controls, cited by codepoint)
+- `scripts/rules/instance-divergence.mjs` → `design/scripts/rules/instance-divergence.mjs`
+  (zero divergent `m-*` on component instances)
+- `scripts/rules/metrics.mjs` → `design/scripts/rules/metrics.mjs` (metrics
+  baseline + regression)
+- `scripts/rules/spec-undeclared.mjs` → `design/scripts/rules/spec-undeclared.mjs`
+  (every screen declares ≥ 1 state)
 - `scripts/export-tokens.mjs` → `design/scripts/export-tokens.mjs` (the W3C/DTCG
   interchange export: tokens.json → tokens.w3c.json; derived artifact, never
   edited by hand)
@@ -110,11 +176,17 @@ If `design/` does not exist yet, create it and copy from this skill's folder
   contract)
 - `assets/validate.config.json` → `design/validate.config.json` (the validator's external config — its `toolchainScripts` must match the layout above when copied: `validate.mjs`, `scripts/sync-components.mjs`, `scripts/marker-parser.mjs`, `scripts/gen-tokens.mjs`, `scripts/export-tokens.mjs`, `mock.js`)
 
-Rule for this copy list: only files that already exist enter it ("só entra no
-copy list arquivo que já existe"). Files still to come join only at their
-Contracts wave: `export-tokens.mjs` joined at Contracts wave 6 (todo 30) and is
-listed above — the rule is satisfied (the file exists since todo 26).
-(`mock.css` joined at wave 3 and is listed above.)
+Created empty (the `dirs` of `copy-list.json`): `data/`, `actions/`, `spec/`,
+`snapshots/` — conventions:
+
+- `data/`: shared mock datasets — ONE JSON object per file, bound from
+  `<canvas>/data.json` via `{"$ref": "file.json#key"}` (see Files above).
+- `actions/`: per-screen action modules `actions/<telaId>.js` — see
+  "Ações e acessibilidade".
+- `spec/`: generated per-screen specs (`spec/<telaId>.md` + `.json`) from
+  `scripts/export-spec.mjs`.
+- `snapshots/`: frozen smoke baselines (`<tela>-<w>x<h>.png` + `manifest.json`),
+  regenerated only through `scripts/smoke.mjs --update-snapshots`.
 
 Whenever `tokens.json` changes, regenerate the two generated files from the
 project root:

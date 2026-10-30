@@ -28,6 +28,15 @@ work standalone on real frontend code.
 - **Node.js 18+** (the validator, the `design` skill's viewer and all tooling
   run on stock Node 18 — no other dependencies, everything is offline,
   no CDN).
+- **Zero-dep exception (smoke only):** `playwright-core` is a pinned
+  devDependency of this repo (exactly `1.64.1`) and lives OUTSIDE the shipped
+  payload — nothing copied into a project's `design/` requires it at runtime.
+  A project opts into the real-browser smoke test through
+  `node skills/design/scripts/setup-design.mjs --target design --with-smoke`,
+  which writes `design/package.json` (private, `playwright-core` pinned as the
+  only devDependency). Without it, `design/scripts/smoke.mjs` exits 5 with a
+  guided `npm i playwright-core` message and everything else keeps running on
+  stock Node.
 - An agent with **Agent Skills** support (`SKILL.md` with frontmatter):
   ZCode, OpenCode, Claude Code, Codex, Cursor, Gemini CLI and friends.
 
