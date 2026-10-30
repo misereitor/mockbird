@@ -138,6 +138,10 @@ Manual equivalent — every file `copy-list.json` ships and where it lands:
   as `../export-spec.mjs` — stays next to rules/)
 - `scripts/qa.mjs` → `design/scripts/qa.mjs` (validator QA wrapper: config
   marker, R1–R4 probes, output stability)
+- `scripts/fixtures/ok/config-driven/` → `design/scripts/fixtures/ok/config-driven/`
+  (qa.mjs's R1 selftest probe: the `.history/` snapshot whose remote URL the
+  config must hide (exemptDirs) or expose — qa validates it under config A
+  vs config B)
 - `scripts/smoke.mjs` → `design/scripts/smoke.mjs` (real-browser pixel smoke
   against snapshots/; needs playwright-core — the zero-dep exception)
 - `scripts/setup-design.mjs` → `design/scripts/setup-design.mjs` (this

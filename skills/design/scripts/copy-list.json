@@ -19,6 +19,7 @@
     { "from": "scripts/marker-parser.mjs", "to": "scripts/marker-parser.mjs" },
     { "from": "scripts/export-spec.mjs", "to": "scripts/export-spec.mjs" },
     { "from": "scripts/qa.mjs", "to": "scripts/qa.mjs" },
+    { "from": "scripts/fixtures/ok/config-driven", "to": "scripts/fixtures/ok/config-driven" },
     { "from": "scripts/smoke.mjs", "to": "scripts/smoke.mjs" },
     { "from": "scripts/setup-design.mjs", "to": "scripts/setup-design.mjs" },
     { "from": "scripts/lib/token-groups.mjs", "to": "scripts/lib/token-groups.mjs" },
