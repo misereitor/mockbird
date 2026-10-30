@@ -1,0 +1,29 @@
+{
+  "media-card": {
+    "name": "media-card",
+    "template": "media-card.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md"
+      ],
+      "tone": [
+        "default"
+      ],
+      "state": [
+        "default"
+      ],
+      "device": []
+    },
+    "slots": [
+      "media",
+      "title",
+      "body",
+      "actions"
+    ],
+    "realComponent": "MediaCard",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

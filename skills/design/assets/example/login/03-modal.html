@@ -19,18 +19,18 @@
   </style>
   <main class="excluir-tela min-h-screen p-4">
     <div class="excluir-dialogo">
-      <!-- component:card size=md tone=primary state=default --><div data-component="card" data-size="md" data-tone="primary" data-state="default" class="rounded-md font-body p-2 text-body bg-accent text-bg">
-  <!-- slot:title --><h1 class="m-0 text-heading font-bold">Excluir conta?</h1><!-- /slot:title -->
-  <!-- slot:body --><p class="m-0 leading-body">A conta de demonstração e os dados criados no fluxo serão apagados deste dispositivo. Essa ação não pode ser desfeita.</p><!-- /slot:body -->
-</div><!-- /component:card -->
-      <div class="excluir-acoes">
+      <!-- component:modal size=md tone=danger state=default --><div data-component="modal" data-size="md" data-tone="danger" data-state="default" class="rounded-md font-body p-2 text-body bg-text text-bg" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+  <h2 id="modal-titulo" class="m-0 modal-titulo text-heading font-bold"><!-- slot:header -->Excluir conta?<!-- /slot:header --></h2>
+  <div class="modal-corpo mt-2"><!-- slot:body --><p class="m-0 leading-body">A conta de demonstração e os dados criados no fluxo serão apagados deste dispositivo. Essa ação não pode ser desfeita.</p><!-- /slot:body --></div>
+  <div class="modal-rodape mt-2"><!-- slot:footer --><div class="excluir-acoes">
         <div class="excluir-acao" onclick="Mock.state.clear(); Mock.toast('Conta excluída'); Mock.go('../dashboard/01-overview.html')">
-          <!-- component:button size=md tone=primary state=default --><button type="button" data-component="button" data-size="md" data-tone="primary" data-state="default" class="rounded-md font-body p-2 text-body bg-accent text-bg"><!-- slot:label -->Excluir conta<!-- /slot:label --></button><!-- /component:button -->
+          <button type="button" data-component="button" data-size="md" data-tone="primary" data-state="default" data-autofocus class="rounded-md font-body p-2 text-body bg-accent text-bg">Excluir conta</button>
         </div>
         <div class="excluir-acao" onclick="document.querySelector('.mock-overlay') ? Mock.close() : Mock.go('01-login.html')">
-          <!-- component:button size=md tone=ghost state=default --><button type="button" data-component="button" data-size="md" data-tone="ghost" data-state="default" class="rounded-md font-body p-2 text-body text-accent border-accent"><!-- slot:label -->Voltar<!-- /slot:label --></button><!-- /component:button -->
+          <button type="button" data-component="button" data-size="md" data-tone="ghost" data-state="default" class="rounded-md font-body p-2 text-body text-accent border-accent">Voltar</button>
         </div>
-      </div>
+      </div><!-- /slot:footer --></div>
+</div><!-- /component:modal -->
     </div>
   </main>
   <script src="../mock.js"></script>

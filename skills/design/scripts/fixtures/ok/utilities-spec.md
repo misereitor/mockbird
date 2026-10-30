@@ -149,12 +149,33 @@ utility combos or the state hooks above. Pure documentation: the vocabulary emit
 | `data-size` | `sm` | `p-1 text-body` |
 | `data-size` | `md` | `p-2 text-body` |
 | `data-size` | `lg` | `p-3 text-heading` |
+| `data-tone` | `default` | `bg-surface text-text` |
 | `data-tone` | `primary` | `bg-accent text-bg` |
+| `data-tone` | `secondary` | `bg-surface text-text border-border` |
 | `data-tone` | `ghost` | `text-accent border-accent` |
+| `data-tone` | `danger` | `bg-text text-bg` |
+| `data-tone` | `elevated` | `bg-accent text-bg` |
+| `data-tone` | `error` | `bg-text text-bg` |
+| `data-tone` | `success` | `bg-accent text-bg` |
+| `data-tone` | `in` | `bg-surface text-text` |
+| `data-tone` | `out` | `bg-accent text-bg` |
 | `data-state` | `default` | (none — baseline) |
 | `data-state` | `hover` | `[data-state="hover"]` helper |
 | `data-state` | `active` | `[data-state="active"]` helper |
 | `data-state` | `disabled` | `[data-state="disabled"]` helper |
+| `data-state` | `interactive` | (none — `[data-state="interactive"]` hook) |
+| `data-state` | `filled` | (none — `[data-state="filled"]` hook) |
+| `data-state` | `focus` | (none — `[data-state="focus"]` hook) |
+
+Tone values map to token-only combos from the closed matrix: fill/positive
+signals use the accent token (`primary`/`elevated`/`success`/`out`), neutral
+surfaces use the surface token (`default`/`in`), outline shapes pair a border
+token with a text token (`ghost`/`secondary`), and negative signals invert
+text/bg (`danger`/`error` — the matrix exposes no danger color class; a
+`bg-danger`/`text-danger` class would be a matrix extension, out of the
+registry's scope). `elevated` keeps the historical accent-panel combo
+byte-identical so the card drift migration (todo 13) moves zero rendered
+classes.
 
 ## BANNED (never in the vocabulary, never in screens)
 

@@ -1,0 +1,29 @@
+{
+  "card": {
+    "name": "card",
+    "template": "card.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md"
+      ],
+      "tone": [
+        "default",
+        "elevated"
+      ],
+      "state": [
+        "default",
+        "interactive"
+      ],
+      "device": []
+    },
+    "slots": [
+      "title",
+      "body"
+    ],
+    "realComponent": "Card",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

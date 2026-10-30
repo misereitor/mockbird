@@ -4,7 +4,7 @@
     "template": "button.html",
     "variants": {
       "size": ["sm", "md", "lg"],
-      "tone": ["primary", "ghost"],
+      "tone": ["primary", "secondary", "ghost", "danger"],
       "state": ["default", "hover", "active", "disabled"],
       "device": []
     },
@@ -16,13 +16,91 @@
     "name": "card",
     "template": "card.html",
     "variants": {
-      "size": ["sm", "md", "lg"],
-      "tone": ["primary", "ghost"],
-      "state": ["default", "hover", "active", "disabled"],
+      "size": ["sm", "md"],
+      "tone": ["default", "elevated"],
+      "state": ["default", "interactive"],
       "device": []
     },
     "slots": ["title", "body"],
     "realComponent": "Card",
+    "dataProps": { "data-action": "action" }
+  },
+  "modal": {
+    "name": "modal",
+    "template": "modal.html",
+    "variants": {
+      "size": ["sm", "md", "lg"],
+      "tone": ["default", "danger"],
+      "state": ["default"],
+      "device": []
+    },
+    "slots": ["header", "body", "footer"],
+    "realComponent": "Modal",
+    "dataProps": { "data-action": "action" }
+  },
+  "drawer": {
+    "name": "drawer",
+    "template": "drawer.html",
+    "variants": {
+      "size": ["sm", "md", "lg"],
+      "tone": ["default"],
+      "state": ["default"],
+      "device": []
+    },
+    "slots": ["header", "body", "footer"],
+    "realComponent": "Drawer",
+    "dataProps": { "data-action": "action" }
+  },
+  "field": {
+    "name": "field",
+    "template": "field.html",
+    "variants": {
+      "size": ["sm", "md"],
+      "tone": ["default", "error", "success"],
+      "state": ["default", "filled", "focus", "disabled"],
+      "device": []
+    },
+    "slots": ["label", "input", "hint"],
+    "realComponent": "Field",
+    "dataProps": { "data-action": "action" }
+  },
+  "bubble": {
+    "name": "bubble",
+    "template": "bubble.html",
+    "variants": {
+      "size": ["sm", "md"],
+      "tone": ["in", "out"],
+      "state": ["default"],
+      "device": []
+    },
+    "slots": ["content", "meta"],
+    "realComponent": "Bubble",
+    "dataProps": { "data-action": "action" }
+  },
+  "menu-row": {
+    "name": "menu-row",
+    "template": "menu-row.html",
+    "variants": {
+      "size": ["sm", "md"],
+      "tone": ["default", "danger"],
+      "state": ["default", "active", "disabled"],
+      "device": []
+    },
+    "slots": ["icon", "label", "shortcut"],
+    "realComponent": "MenuRow",
+    "dataProps": { "data-action": "action" }
+  },
+  "media-card": {
+    "name": "media-card",
+    "template": "media-card.html",
+    "variants": {
+      "size": ["sm", "md"],
+      "tone": ["default"],
+      "state": ["default"],
+      "device": []
+    },
+    "slots": ["media", "title", "body", "actions"],
+    "realComponent": "MediaCard",
     "dataProps": { "data-action": "action" }
   }
 }

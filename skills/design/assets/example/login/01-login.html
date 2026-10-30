@@ -20,12 +20,22 @@
 <body class="m-0 bg-bg text-text font-body text-body">
   <main class="min-h-screen p-4">
     <form class="w-full gap-4">
-      <!-- component:card size=md tone=primary state=default --><div data-component="card" data-size="md" data-tone="primary" data-state="default" class="rounded-md font-body p-2 text-body bg-accent text-bg">
+      <!-- component:card size=md tone=elevated state=default --><div data-component="card" data-size="md" data-tone="elevated" data-state="default" class="rounded-md font-body p-2 text-body bg-accent text-bg">
   <!-- slot:title --><h1 class="m-0 text-heading font-bold">Entrar</h1><!-- /slot:title -->
-  <!-- slot:body --><p class="m-0 leading-body">Acesse sua conta para continuar.</p>
-  <label class="gap-2 mt-3">E-mail<input class="w-full p-2 rounded-md border-border bg-surface text-text font-body text-body" type="email" placeholder="voce@empresa.com.br" autocomplete="email"></label>
-  <label class="gap-2 mt-3">Senha<input class="w-full p-2 rounded-md border-border bg-surface text-text font-body text-body" type="password" placeholder="Sua senha" autocomplete="current-password"></label><!-- /slot:body -->
+  <!-- slot:body --><p class="m-0 leading-body">Acesse sua conta para continuar.</p><!-- /slot:body -->
 </div><!-- /component:card -->
+      <!-- component:field size=md tone=default state=default --><div data-component="field" data-size="md" data-tone="default" data-state="default" class="rounded-md font-body p-2 text-body bg-surface text-text">
+  <label class="gap-2"><!-- slot:label -->E-mail<!-- /slot:label -->
+    <!-- slot:input --><input class="w-full p-2 rounded-md border-border bg-surface text-text font-body text-body" type="email" placeholder="voce@empresa.com.br" autocomplete="email"><!-- /slot:input -->
+  </label>
+  <div class="field-ajuda mt-2"><!-- slot:hint --><!-- /slot:hint --></div>
+</div><!-- /component:field -->
+      <!-- component:field size=md tone=default state=default --><div data-component="field" data-size="md" data-tone="default" data-state="default" class="rounded-md font-body p-2 text-body bg-surface text-text">
+  <label class="gap-2"><!-- slot:label -->Senha<!-- /slot:label -->
+    <!-- slot:input --><input class="w-full p-2 rounded-md border-border bg-surface text-text font-body text-body" type="password" placeholder="Sua senha" autocomplete="current-password"><!-- /slot:input -->
+  </label>
+  <div class="field-ajuda mt-2"><!-- slot:hint --><!-- /slot:hint --></div>
+</div><!-- /component:field -->
       <!-- component:button size=md tone=primary state=default --><button type="button" data-component="button" data-size="md" data-tone="primary" data-state="default" class="rounded-md font-body p-2 text-body bg-accent text-bg"><!-- slot:label -->Entrar<!-- /slot:label --></button><!-- /component:button -->
       <!-- component:button size=md tone=ghost state=default --><button type="button" data-component="button" data-size="md" data-tone="ghost" data-state="default" class="rounded-md font-body p-2 text-body text-accent border-accent"><!-- slot:label -->Esqueci minha senha<!-- /slot:label --></button><!-- /component:button -->
       <p class="m-0 text-muted text-body">Não usa mais o Estoque? <a href="03-modal.html">Excluir conta</a></p>

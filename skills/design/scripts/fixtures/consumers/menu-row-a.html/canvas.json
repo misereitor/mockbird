@@ -1,0 +1,10 @@
+{
+  "title": "Consumer menu-row a",
+  "screens": [
+    {
+      "id": "tela",
+      "name": "Tela",
+      "file": "01-s.html"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "bubble": {
+    "name": "bubble",
+    "template": "bubble.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md"
+      ],
+      "tone": [
+        "in",
+        "out"
+      ],
+      "state": [
+        "default"
+      ],
+      "device": []
+    },
+    "slots": [
+      "content",
+      "meta"
+    ],
+    "realComponent": "Bubble",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

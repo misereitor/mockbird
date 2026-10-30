@@ -1,0 +1,31 @@
+{
+  "menu-row": {
+    "name": "menu-row",
+    "template": "menu-row.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md"
+      ],
+      "tone": [
+        "default",
+        "danger"
+      ],
+      "state": [
+        "default",
+        "active",
+        "disabled"
+      ],
+      "device": []
+    },
+    "slots": [
+      "icon",
+      "label",
+      "shortcut"
+    ],
+    "realComponent": "MenuRow",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

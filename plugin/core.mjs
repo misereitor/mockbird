@@ -61,6 +61,12 @@ export const MIRROR = [
 export const SEED = [
   ["components/button.html", join(DESIGN_ASSETS, "components", "button.html")],
   ["components/card.html", join(DESIGN_ASSETS, "components", "card.html")],
+  ["components/modal.html", join(DESIGN_ASSETS, "components", "modal.html")],
+  ["components/drawer.html", join(DESIGN_ASSETS, "components", "drawer.html")],
+  ["components/field.html", join(DESIGN_ASSETS, "components", "field.html")],
+  ["components/bubble.html", join(DESIGN_ASSETS, "components", "bubble.html")],
+  ["components/menu-row.html", join(DESIGN_ASSETS, "components", "menu-row.html")],
+  ["components/media-card.html", join(DESIGN_ASSETS, "components", "media-card.html")],
   ["components/components.json", join(DESIGN_ASSETS, "components", "components.json")],
 ]
 

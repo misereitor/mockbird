@@ -1,0 +1,33 @@
+{
+  "field": {
+    "name": "field",
+    "template": "field.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md"
+      ],
+      "tone": [
+        "default",
+        "error",
+        "success"
+      ],
+      "state": [
+        "default",
+        "filled",
+        "focus",
+        "disabled"
+      ],
+      "device": []
+    },
+    "slots": [
+      "label",
+      "input",
+      "hint"
+    ],
+    "realComponent": "Field",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "drawer": {
+    "name": "drawer",
+    "template": "drawer.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md",
+        "lg"
+      ],
+      "tone": [
+        "default"
+      ],
+      "state": [
+        "default"
+      ],
+      "device": []
+    },
+    "slots": [
+      "header",
+      "body",
+      "footer"
+    ],
+    "realComponent": "Drawer",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

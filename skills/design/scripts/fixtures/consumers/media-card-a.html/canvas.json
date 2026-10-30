@@ -1,0 +1,10 @@
+{
+  "title": "Consumer media-card a",
+  "screens": [
+    {
+      "id": "tela",
+      "name": "Tela",
+      "file": "01-s.html"
+    }
+  ]
+}

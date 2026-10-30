@@ -10,7 +10,9 @@
     header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
     header h1 { margin: 0; font-size: var(--font-size-lg); }
     header p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
-    .sair { height: 36px; padding: 0 var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; }
+    .menu-acoes { display: flex; flex-direction: column; min-width: 200px; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+    [role="menuitem"] { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+    .menu-atalho { margin-left: auto; opacity: 0.75; }
     main { flex: 1; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); max-width: 720px; width: 100%; margin: 0 auto; }
     .card { border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); padding: var(--space-4) var(--space-6); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
     .card strong { display: block; }
@@ -19,9 +21,8 @@
     .badge.baixo { background: var(--color-danger); color: var(--color-primary-contrast); }
     form { display: flex; gap: var(--space-2); flex-wrap: wrap; }
     input { flex: 1; min-width: 120px; height: 44px; padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; }
-    input:focus-visible, .sair:focus-visible, button:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+    input:focus-visible, button:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
     button[type=submit] { height: 44px; padding: 0 var(--space-6); border: 0; border-radius: var(--radius-md); background: var(--color-primary); color: var(--color-primary-contrast); font: inherit; font-weight: 600; }
-    .atualizar { height: 44px; padding: 0 var(--space-6); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; }
     button:active { transform: scale(0.97); }
     .vazio { color: var(--color-text-muted); text-align: center; padding: var(--space-8) 0; }
   </style>
@@ -32,7 +33,18 @@
       <h1>Estoque</h1>
       <p id="quem"></p>
     </div>
-    <button class="sair" type="button" id="sair">Sair</button>
+    <div class="menu-acoes" role="menu" aria-label="Ações da conta">
+      <!-- component:menu-row size=md tone=default state=default --><div data-component="menu-row" data-size="md" data-tone="default" data-state="default" class="rounded-md font-body p-2 text-body bg-surface text-text" role="menuitem">
+  <span class="menu-icone"><!-- slot:icon -->↻<!-- /slot:icon --></span>
+  <!-- slot:label -->Atualizar lista<!-- /slot:label -->
+  <span class="menu-atalho"><!-- slot:shortcut --><!-- /slot:shortcut --></span>
+</div><!-- /component:menu-row -->
+      <!-- component:menu-row size=md tone=danger state=default --><div data-component="menu-row" data-size="md" data-tone="danger" data-state="default" class="rounded-md font-body p-2 text-body bg-text text-bg" role="menuitem">
+  <span class="menu-icone"><!-- slot:icon -->→<!-- /slot:icon --></span>
+  <!-- slot:label -->Sair<!-- /slot:label -->
+  <span class="menu-atalho"><!-- slot:shortcut --><!-- /slot:shortcut --></span>
+</div><!-- /component:menu-row -->
+    </div>
   </header>
   <main>
     <form id="novo">
@@ -43,7 +55,6 @@
       <label hidden for="qtd">Quantidade</label>
       <input id="qtd" type="number" min="0" placeholder="Qtd" required>
       <button type="submit">Adicionar</button>
-      <button type="button" class="atualizar" id="atualizar">Atualizar lista</button>
     </form>
     <div id="lista"></div>
   </main>
@@ -87,12 +98,12 @@
       Mock.toast(`${nome} adicionado ao estoque`)
     })
 
-    document.getElementById('sair').addEventListener('click', () => {
+    document.querySelector('[data-component="menu-row"][data-tone="danger"]').addEventListener('click', () => {
       Mock.state.clear()
       Mock.go("../login/01-login.html")
     })
 
-    document.getElementById('atualizar').addEventListener('click', () => {
+    document.querySelector('[data-component="menu-row"][data-tone="default"]').addEventListener('click', () => {
       Mock.go('01-overview.html')
     })
 

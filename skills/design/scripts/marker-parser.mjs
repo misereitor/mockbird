@@ -43,6 +43,11 @@ export const VARIANT_KEYS = Object.freeze(["size", "tone", "state"]);
  * Variant class combos — SINGLE SOURCE: utilities-spec.md
  * "Component variant mapping" table (documentation-only matrix; no size- or
  * tone- classes exist in the vocabulary, only these utility combos).
+ * Every value of every registry variant set (todo 13) has an entry here —
+ * `variantClasses()` throws on a missing one, so a value without a combo can
+ * never materialize. Tone combos are the token-only rendering of each tone
+ * value (closed utilities matrix; the danger/error inversion is the strongest
+ * negative signal available — the matrix exposes no danger color class).
  * State variants emit NO classes (they resolve to `[data-state=...]` helpers),
  * so state is re-emitted only as the `data-state` attribute.
  */
@@ -53,14 +58,25 @@ export const VARIANT_CLASSES = Object.freeze({
     lg: Object.freeze(["p-3", "text-heading"]),
   }),
   tone: Object.freeze({
+    default: Object.freeze(["bg-surface", "text-text"]),
     primary: Object.freeze(["bg-accent", "text-bg"]),
+    secondary: Object.freeze(["bg-surface", "text-text", "border-border"]),
     ghost: Object.freeze(["text-accent", "border-accent"]),
+    danger: Object.freeze(["bg-text", "text-bg"]),
+    elevated: Object.freeze(["bg-accent", "text-bg"]),
+    error: Object.freeze(["bg-text", "text-bg"]),
+    success: Object.freeze(["bg-accent", "text-bg"]),
+    in: Object.freeze(["bg-surface", "text-text"]),
+    out: Object.freeze(["bg-accent", "text-bg"]),
   }),
   state: Object.freeze({
     default: Object.freeze([]),
     hover: Object.freeze([]),
     active: Object.freeze([]),
     disabled: Object.freeze([]),
+    interactive: Object.freeze([]),
+    filled: Object.freeze([]),
+    focus: Object.freeze([]),
   }),
 });
 
@@ -81,7 +97,7 @@ export const DEFAULT_REGISTRY = Object.freeze({
     template: "button.html",
     variants: Object.freeze({
       size: Object.freeze(["sm", "md", "lg"]),
-      tone: Object.freeze(["primary", "ghost"]),
+      tone: Object.freeze(["primary", "secondary", "ghost", "danger"]),
       state: Object.freeze(["default", "hover", "active", "disabled"]),
       device: Object.freeze([]),
     }),
@@ -93,13 +109,91 @@ export const DEFAULT_REGISTRY = Object.freeze({
     name: "card",
     template: "card.html",
     variants: Object.freeze({
-      size: Object.freeze(["sm", "md", "lg"]),
-      tone: Object.freeze(["primary", "ghost"]),
-      state: Object.freeze(["default", "hover", "active", "disabled"]),
+      size: Object.freeze(["sm", "md"]),
+      tone: Object.freeze(["default", "elevated"]),
+      state: Object.freeze(["default", "interactive"]),
       device: Object.freeze([]),
     }),
     slots: Object.freeze(["title", "body"]),
     realComponent: "Card",
+    dataProps: Object.freeze({ "data-action": "action" }),
+  }),
+  modal: Object.freeze({
+    name: "modal",
+    template: "modal.html",
+    variants: Object.freeze({
+      size: Object.freeze(["sm", "md", "lg"]),
+      tone: Object.freeze(["default", "danger"]),
+      state: Object.freeze(["default"]),
+      device: Object.freeze([]),
+    }),
+    slots: Object.freeze(["header", "body", "footer"]),
+    realComponent: "Modal",
+    dataProps: Object.freeze({ "data-action": "action" }),
+  }),
+  drawer: Object.freeze({
+    name: "drawer",
+    template: "drawer.html",
+    variants: Object.freeze({
+      size: Object.freeze(["sm", "md", "lg"]),
+      tone: Object.freeze(["default"]),
+      state: Object.freeze(["default"]),
+      device: Object.freeze([]),
+    }),
+    slots: Object.freeze(["header", "body", "footer"]),
+    realComponent: "Drawer",
+    dataProps: Object.freeze({ "data-action": "action" }),
+  }),
+  field: Object.freeze({
+    name: "field",
+    template: "field.html",
+    variants: Object.freeze({
+      size: Object.freeze(["sm", "md"]),
+      tone: Object.freeze(["default", "error", "success"]),
+      state: Object.freeze(["default", "filled", "focus", "disabled"]),
+      device: Object.freeze([]),
+    }),
+    slots: Object.freeze(["label", "input", "hint"]),
+    realComponent: "Field",
+    dataProps: Object.freeze({ "data-action": "action" }),
+  }),
+  bubble: Object.freeze({
+    name: "bubble",
+    template: "bubble.html",
+    variants: Object.freeze({
+      size: Object.freeze(["sm", "md"]),
+      tone: Object.freeze(["in", "out"]),
+      state: Object.freeze(["default"]),
+      device: Object.freeze([]),
+    }),
+    slots: Object.freeze(["content", "meta"]),
+    realComponent: "Bubble",
+    dataProps: Object.freeze({ "data-action": "action" }),
+  }),
+  "menu-row": Object.freeze({
+    name: "menu-row",
+    template: "menu-row.html",
+    variants: Object.freeze({
+      size: Object.freeze(["sm", "md"]),
+      tone: Object.freeze(["default", "danger"]),
+      state: Object.freeze(["default", "active", "disabled"]),
+      device: Object.freeze([]),
+    }),
+    slots: Object.freeze(["icon", "label", "shortcut"]),
+    realComponent: "MenuRow",
+    dataProps: Object.freeze({ "data-action": "action" }),
+  }),
+  "media-card": Object.freeze({
+    name: "media-card",
+    template: "media-card.html",
+    variants: Object.freeze({
+      size: Object.freeze(["sm", "md"]),
+      tone: Object.freeze(["default"]),
+      state: Object.freeze(["default"]),
+      device: Object.freeze([]),
+    }),
+    slots: Object.freeze(["media", "title", "body", "actions"]),
+    realComponent: "MediaCard",
     dataProps: Object.freeze({ "data-action": "action" }),
   }),
 });
