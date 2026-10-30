@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hard case: overlay com script legado morto</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 16px; }
+    .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: flex; align-items: center; justify-content: center; }
+    .overlay-card { background: #fff; max-width: 20rem; padding: 16px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Overlay com script legado</h1>
+  <!-- CASO DURO (sintetico): overlay com <script> legado embutido - espelho
+       do formato encontrado no corpus. O script esta MORTO: o
+       type="text/x-legacy" nao e JavaScript, entao o navegador NUNCA executa
+       o bloco. Ele permanece no HTML so como espelho do formato que as
+       migracoes vao encontrar (e que a caracterizacao precisa cobrir). -->
+  <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
+    <div class="overlay-card">
+      <h2 id="overlay-title">Confirmar exclusão</h2>
+      <p>Esta ação não pode ser desfeita.</p>
+      <script type="text/x-legacy">
+        /* legado morto: modal antigo com document.write e id global */
+        document.write('<div id="legacyModal">...</div>')
+        var legacyOpen = true
+      </script>
+      <button type="button">Cancelar</button>
+    </div>
+  </div>
+</body>
+</html>

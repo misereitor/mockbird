@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hard case: 3 routers locais</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 16px; }
+  </style>
+</head>
+<body>
+  <!-- CASO DURO (sintetico): 3 routers locais carregados pela mesma tela -
+       espelho do corpus (3 scripts de roteamento locais em paralelo). Os
+       arquivos existem de verdade ao lado desta tela (nenhum 404) e sao
+       inertes no load: so declaram suas tabelas de rota. -->
+  <h1>3 routers locais</h1>
+  <nav id="main-nav">
+    <a href="#home">Início</a>
+    <a href="#pedidos">Pedidos</a>
+    <a href="#config">Configurações</a>
+  </nav>
+  <script src="router-1.js"></script>
+  <script src="router-2.js"></script>
+  <script src="router-3.js"></script>
+</body>
+</html>

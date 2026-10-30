@@ -8,7 +8,8 @@
  * point at `design/`). Run it from the project root: `node design/serve.mjs`.
  *
  * Usage: node design/serve.mjs [porta] [--share] [--open[=canvas]] [--no-open]
- *   [porta]  TCP port (default 8765; when busy, the next free one is used)
+ *   [porta]  TCP port (default 8765; when busy, the next free one is used;
+ *            0 = ephemeral — the OS picks a free port, printed in the URL line)
  *   --share  bind 0.0.0.0 for LAN preview; every /api/* then answers 403
  *            (read-only degradation — writes and API reads are refused)
  *   --open[=canvas]  force-open the default browser at the viewer (optionally
@@ -91,7 +92,7 @@ const openArg = argv.find((arg) => arg === '--open' || arg.startsWith('--open=')
 const openCanvas = openArg?.startsWith('--open=') ? openArg.slice('--open='.length) : ''
 const portArg = argv.find((arg) => !arg.startsWith('--'))
 const port = portArg === undefined ? 8765 : Number(portArg)
-if (!Number.isInteger(port) || port < 1 || port > 65535) {
+if (!Number.isInteger(port) || port < 0 || port > 65535) {
   console.error('uso: node design/serve.mjs [porta] [--share] [--open[=canvas]] [--no-open]')
   process.exit(2)
 }
@@ -1468,20 +1469,26 @@ function tryListen(portToUse) {
 }
 
 let servePort = port
-for (let tries = 0; tries < 20 && !server.listening; tries++) {
-  const candidate = port + tries
-  if (candidate > 65535) break
-  if (await portInUse(candidate)) continue
-  if (await tryListen(candidate)) {
-    servePort = candidate
-    break
+if (port === 0) {
+  // porta efemera (0): o SO escolhe a livre - fora do loop de "proxima livre"
+  // (nao ha candidatas); o smoke.mjs sobe instancias concorrentes sem conflito
+  if (await tryListen(0)) servePort = server.address().port
+} else {
+  for (let tries = 0; tries < 20 && !server.listening; tries++) {
+    const candidate = port + tries
+    if (candidate > 65535) break
+    if (await portInUse(candidate)) continue
+    if (await tryListen(candidate)) {
+      servePort = candidate
+      break
+    }
   }
 }
 if (!server.listening) {
   console.error(`PORTA: nenhuma livre a partir de ${port} - rode com uma porta explicita`)
   process.exit(1)
 }
-if (servePort !== port) console.log(`PORTA: ${port} ocupada - usando ${servePort}`)
+if (port !== 0 && servePort !== port) console.log(`PORTA: ${port} ocupada - usando ${servePort}`)
 const host = bindHost === '0.0.0.0' ? '0.0.0.0' : '127.0.0.1'
 console.log(`URL: http://${host}:${servePort} TOKEN: ${token}`)
 if (share) {

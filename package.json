@@ -19,5 +19,8 @@
     "test:mock": "node scripts/mock-check.mjs",
     "test:ui": "node scripts/viewer-accept.mjs",
     "ci": "npm test && npm run test:mock && npm run smoke && npm run validate && npm run qa && npm run security && npm run check:i18n"
+  },
+  "devDependencies": {
+    "playwright-core": "1.64.1"
   }
 }

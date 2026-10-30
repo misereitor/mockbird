@@ -15,6 +15,10 @@
     "login/canvas.json",
     "login/data.json",
     "metrics.json",
+    "snapshots/dashboard-01-overview.png",
+    "snapshots/login-01-login.png",
+    "snapshots/login-02-cadastro.png",
+    "snapshots/login-03-modal.png",
     "snapshots/login/v1/manifest.json",
     "snapshots/login/v1/render/01-login.html",
     "snapshots/login/v1/render/02-cadastro.html",
@@ -28,6 +32,8 @@
     "snapshots/login/v1/src/components/components.json",
     "snapshots/login/v1/src/data.json",
     "snapshots/login/v1/src/tokens.json",
+    "snapshots/manifest.json",
+    "snapshots/threshold.json",
     "tokens.json",
     "utilities.css"
   ]

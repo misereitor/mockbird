@@ -1,0 +1,30 @@
+{
+  "smoke": "v1",
+  "snapshotThreshold": 0.02,
+  "viewport": [
+    1600,
+    1000
+  ],
+  "screens": [
+    {
+      "canvas": "dashboard",
+      "file": "01-overview.html",
+      "snapshot": "dashboard-01-overview.png"
+    },
+    {
+      "canvas": "login",
+      "file": "01-login.html",
+      "snapshot": "login-01-login.png"
+    },
+    {
+      "canvas": "login",
+      "file": "02-cadastro.html",
+      "snapshot": "login-02-cadastro.png"
+    },
+    {
+      "canvas": "login",
+      "file": "03-modal.html",
+      "snapshot": "login-03-modal.png"
+    }
+  ]
+}
