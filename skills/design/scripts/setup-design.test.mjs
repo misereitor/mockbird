@@ -3,12 +3,21 @@
  *
  * Windows-safety contract under test: separator normalization, rejection of
  * escaping paths and case-insensitive collision detection (the warn list).
+ * The CLI test runs the script as a subprocess: a write-phase fs failure must
+ * be a guided exit 3 (path + OS code named, zero raw stack frames).
  *
  * Run: node --test skills/design/scripts/setup-design.test.mjs
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { detectCaseCollisions, normalizeRel } from './setup-design.mjs'
+
+const SCRIPT = fileURLToPath(new URL('./setup-design.mjs', import.meta.url))
 
 test('normalizeRel maps backslashes to slashes (PowerShell input)', () => {
   assert.equal(normalizeRel('scripts\\lib\\token-groups.mjs'), 'scripts/lib/token-groups.mjs')
@@ -47,4 +56,20 @@ test('detectCaseCollisions ignores exact duplicates and distinct names', () => {
 test('detectCaseCollisions is stable across separator styles', () => {
   const groups = detectCaseCollisions(['scripts\\lib\\x.mjs', 'scripts/lib/X.mjs'])
   assert.deepEqual(groups, [['scripts/lib/X.mjs', 'scripts/lib/x.mjs']])
+})
+
+test('write-phase fs failure is guided: exit 3 + path/code, zero raw stack (F2 B1)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'setup-design-f2-'))
+  try {
+    const blocker = join(dir, 'blocker.json')
+    writeFileSync(blocker, '{}')
+    const res = spawnSync(process.execPath, [SCRIPT, '--update', '--target', join(blocker, 'sub')], { encoding: 'utf8' })
+    assert.equal(res.status, 3, `expected guided exit 3, got ${res.status}: ${res.stderr}`)
+    assert.match(res.stderr, /ENOTDIR/, 'message must name the OS error code')
+    assert.ok(res.stderr.includes(join(blocker, 'sub')), 'message must name the failing path')
+    assert.match(res.stderr, /cannot write/, 'message must be guided, not a raw throw')
+    assert.doesNotMatch(res.stderr, /\n[ \t]+at /, 'zero raw stack frames')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })

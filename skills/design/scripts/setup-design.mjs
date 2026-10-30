@@ -538,4 +538,17 @@ const isMain = (() => {
     return false
   }
 })()
-if (isMain) main()
+if (isMain) {
+  try {
+    main()
+  } catch (error) {
+    // any unguarded fs failure (write phase: ENOTDIR/EACCES/ENOSPC/...) is a
+    // guided failure (exit 3, the contract above), never a raw Node stack
+    const code = typeof error.code === 'string' ? error.code : 'unexpected error'
+    const where = typeof error.path === 'string' ? error.path : 'the target folder'
+    console.error(`setup-design: cannot write ${where} (${code})`)
+    console.error(`  ${error.message}`)
+    console.error('  fix the filesystem problem (permissions, a file where a folder belongs, disk space) and rerun — setup-design.mjs is idempotent')
+    process.exit(3)
+  }
+}
