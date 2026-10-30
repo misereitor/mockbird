@@ -1,0 +1,33 @@
+{
+  "chip": {
+    "name": "chip",
+    "template": "chip.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md"
+      ],
+      "tone": [
+        "neutral",
+        "info",
+        "success",
+        "warning",
+        "danger"
+      ],
+      "state": [
+        "default",
+        "selected",
+        "disabled"
+      ],
+      "device": []
+    },
+    "slots": [
+      "label",
+      "remove"
+    ],
+    "realComponent": "Chip",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

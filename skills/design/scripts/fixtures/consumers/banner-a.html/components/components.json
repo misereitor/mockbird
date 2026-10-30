@@ -1,0 +1,31 @@
+{
+  "banner": {
+    "name": "banner",
+    "template": "banner.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md"
+      ],
+      "tone": [
+        "info",
+        "warning",
+        "danger",
+        "success"
+      ],
+      "state": [
+        "default"
+      ],
+      "device": []
+    },
+    "slots": [
+      "icon",
+      "message",
+      "action"
+    ],
+    "realComponent": "Banner",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

@@ -102,5 +102,83 @@
     "slots": ["media", "title", "body", "actions"],
     "realComponent": "MediaCard",
     "dataProps": { "data-action": "action" }
+  },
+  "toast": {
+    "name": "toast",
+    "template": "toast.html",
+    "variants": {
+      "size": ["sm", "md"],
+      "tone": ["success", "error", "info"],
+      "state": ["default"],
+      "device": []
+    },
+    "slots": ["icon", "message", "action"],
+    "realComponent": "Toast",
+    "dataProps": { "data-action": "action" }
+  },
+  "pill": {
+    "name": "pill",
+    "template": "pill.html",
+    "variants": {
+      "size": ["sm", "md"],
+      "tone": ["neutral", "info", "success", "warning", "danger"],
+      "state": ["default"],
+      "device": []
+    },
+    "slots": ["label"],
+    "realComponent": "Pill",
+    "dataProps": { "data-action": "action" }
+  },
+  "avatar": {
+    "name": "avatar",
+    "template": "avatar.html",
+    "variants": {
+      "size": ["sm", "md", "lg"],
+      "tone": ["default"],
+      "state": ["default", "online", "offline"],
+      "device": []
+    },
+    "slots": ["image", "initials"],
+    "realComponent": "Avatar",
+    "dataProps": { "data-action": "action" }
+  },
+  "banner": {
+    "name": "banner",
+    "template": "banner.html",
+    "variants": {
+      "size": ["sm", "md"],
+      "tone": ["info", "warning", "danger", "success"],
+      "state": ["default"],
+      "device": []
+    },
+    "slots": ["icon", "message", "action"],
+    "realComponent": "Banner",
+    "dataProps": { "data-action": "action" }
+  },
+  "tabs": {
+    "name": "tabs",
+    "template": "tabs.html",
+    "variants": {
+      "size": ["sm", "md"],
+      "tone": ["default"],
+      "state": ["default"],
+      "device": []
+    },
+    "slots": ["tabs", "panel"],
+    "realComponent": "Tabs",
+    "dataProps": { "data-action": "action" }
+  },
+  "chip": {
+    "name": "chip",
+    "template": "chip.html",
+    "variants": {
+      "size": ["sm", "md"],
+      "tone": ["neutral", "info", "success", "warning", "danger"],
+      "state": ["default", "selected", "disabled"],
+      "device": []
+    },
+    "slots": ["label", "remove"],
+    "realComponent": "Chip",
+    "dataProps": { "data-action": "action" }
   }
 }

@@ -67,6 +67,12 @@ export const SEED = [
   ["components/bubble.html", join(DESIGN_ASSETS, "components", "bubble.html")],
   ["components/menu-row.html", join(DESIGN_ASSETS, "components", "menu-row.html")],
   ["components/media-card.html", join(DESIGN_ASSETS, "components", "media-card.html")],
+  ["components/toast.html", join(DESIGN_ASSETS, "components", "toast.html")],
+  ["components/pill.html", join(DESIGN_ASSETS, "components", "pill.html")],
+  ["components/avatar.html", join(DESIGN_ASSETS, "components", "avatar.html")],
+  ["components/banner.html", join(DESIGN_ASSETS, "components", "banner.html")],
+  ["components/tabs.html", join(DESIGN_ASSETS, "components", "tabs.html")],
+  ["components/chip.html", join(DESIGN_ASSETS, "components", "chip.html")],
   ["components/components.json", join(DESIGN_ASSETS, "components", "components.json")],
 ]
 

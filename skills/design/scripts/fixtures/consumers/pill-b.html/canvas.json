@@ -1,0 +1,10 @@
+{
+  "title": "Consumer pill b",
+  "screens": [
+    {
+      "id": "tela",
+      "name": "Tela",
+      "file": "01-s.html"
+    }
+  ]
+}

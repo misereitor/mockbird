@@ -1,0 +1,27 @@
+{
+  "tabs": {
+    "name": "tabs",
+    "template": "tabs.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md"
+      ],
+      "tone": [
+        "default"
+      ],
+      "state": [
+        "default"
+      ],
+      "device": []
+    },
+    "slots": [
+      "tabs",
+      "panel"
+    ],
+    "realComponent": "Tabs",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

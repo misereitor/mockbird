@@ -1,0 +1,30 @@
+{
+  "pill": {
+    "name": "pill",
+    "template": "pill.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md"
+      ],
+      "tone": [
+        "neutral",
+        "info",
+        "success",
+        "warning",
+        "danger"
+      ],
+      "state": [
+        "default"
+      ],
+      "device": []
+    },
+    "slots": [
+      "label"
+    ],
+    "realComponent": "Pill",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

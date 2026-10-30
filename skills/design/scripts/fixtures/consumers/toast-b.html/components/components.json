@@ -1,0 +1,30 @@
+{
+  "toast": {
+    "name": "toast",
+    "template": "toast.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md"
+      ],
+      "tone": [
+        "success",
+        "error",
+        "info"
+      ],
+      "state": [
+        "default"
+      ],
+      "device": []
+    },
+    "slots": [
+      "icon",
+      "message",
+      "action"
+    ],
+    "realComponent": "Toast",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}

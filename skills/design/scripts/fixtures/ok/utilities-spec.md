@@ -159,6 +159,9 @@ utility combos or the state hooks above. Pure documentation: the vocabulary emit
 | `data-tone` | `success` | `bg-accent text-bg` |
 | `data-tone` | `in` | `bg-surface text-text` |
 | `data-tone` | `out` | `bg-accent text-bg` |
+| `data-tone` | `neutral` | `bg-surface text-text` |
+| `data-tone` | `info` | `bg-surface text-text border-border` |
+| `data-tone` | `warning` | `text-accent border-accent` |
 | `data-state` | `default` | (none — baseline) |
 | `data-state` | `hover` | `[data-state="hover"]` helper |
 | `data-state` | `active` | `[data-state="active"]` helper |
@@ -166,6 +169,9 @@ utility combos or the state hooks above. Pure documentation: the vocabulary emit
 | `data-state` | `interactive` | (none — `[data-state="interactive"]` hook) |
 | `data-state` | `filled` | (none — `[data-state="filled"]` hook) |
 | `data-state` | `focus` | (none — `[data-state="focus"]` hook) |
+| `data-state` | `online` | (none — `[data-state="online"]` hook) |
+| `data-state` | `offline` | (none — `[data-state="offline"]` hook) |
+| `data-state` | `selected` | (none — `[data-state="selected"]` hook) |
 
 Tone values map to token-only combos from the closed matrix: fill/positive
 signals use the accent token (`primary`/`elevated`/`success`/`out`), neutral
@@ -173,7 +179,13 @@ surfaces use the surface token (`default`/`in`), outline shapes pair a border
 token with a text token (`ghost`/`secondary`), and negative signals invert
 text/bg (`danger`/`error` — the matrix exposes no danger color class; a
 `bg-danger`/`text-danger` class would be a matrix extension, out of the
-registry's scope). `elevated` keeps the historical accent-panel combo
+registry's scope). The display tones (todo 14) stay inside the same closed
+matrix: `neutral` is the quiet surface combo (same as `default`), `info` pairs
+a border token with the surface combo (outlined note), and `warning` takes the
+accent outline — the loudest non-destructive signal the matrix offers;
+`success`/`danger` reuse the accent-fill and inversion combos. States
+`online`/`offline`/`selected` emit no classes, like every other state
+(attribute hooks only). `elevated` keeps the historical accent-panel combo
 byte-identical so the card drift migration (todo 13) moves zero rendered
 classes.
 

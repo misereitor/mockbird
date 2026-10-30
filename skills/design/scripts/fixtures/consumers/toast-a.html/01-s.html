@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consumer toast a</title>
+</head>
+<body>
+  <main class="p-4">
+    <!-- component:toast size=sm tone=success state=default --><div data-component="toast" data-size="sm" data-tone="success" data-state="default" class="rounded-md font-body p-1 text-body bg-accent text-bg">
+  <span class="toast-icone"><!-- slot:icon -->✓<!-- /slot:icon --></span>
+  <p class="toast-mensagem m-0 leading-body" data-live="mock-live" aria-live="polite"><!-- slot:message -->Perfil salvo com sucesso.<!-- /slot:message --></p>
+  <!-- slot:action --><button type="button" class="toast-desfazer">Desfazer</button><!-- /slot:action -->
+</div><!-- /component:toast -->
+  </main>
+</body>
+</html>

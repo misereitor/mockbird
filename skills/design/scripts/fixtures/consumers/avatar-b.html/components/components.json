@@ -1,0 +1,30 @@
+{
+  "avatar": {
+    "name": "avatar",
+    "template": "avatar.html",
+    "variants": {
+      "size": [
+        "sm",
+        "md",
+        "lg"
+      ],
+      "tone": [
+        "default"
+      ],
+      "state": [
+        "default",
+        "online",
+        "offline"
+      ],
+      "device": []
+    },
+    "slots": [
+      "image",
+      "initials"
+    ],
+    "realComponent": "Avatar",
+    "dataProps": {
+      "data-action": "action"
+    }
+  }
+}
