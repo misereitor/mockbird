@@ -192,6 +192,40 @@ for the invariants, test commands and PR checklist. A few pointers:
 - By contributing you agree that your contributions are licensed under the
   MIT License of this repository.
 
+## 1.1.0
+
+**Freeze**: `skills/design/assets/copy-list.json` and the
+`skills/design/assets/validate.config.json` schema are the **stable surface** —
+scripts may be re-copied or re-wired without ever changing behavior. Publishing
+this release (tag, registry) is the maintainer's action; this note only records
+the freeze — nothing was published from here.
+
+What shipped in 1.1.0:
+
+- **Config-driven validator**: behavior lives in `validate.config.json`, so the
+  "re-copy reverts my settings" flip-flop is gone; `qa.mjs` (R1–R4) guards the
+  config contract in CI (marker line, pre-config script rejection, 10× run
+  stability).
+- **Encoding + metrics gates**: U+FFFD and CP1252 double-encoding fail
+  validation over text extensions with codepoint-level messages; `metrics.json`
+  is generated per screen/event with a frozen baseline that fails regressions.
+- **Declarative actions + accessibility**: `data-action="tela.acao"` with
+  per-screen action modules replaces inline `on*` handlers (residual ones need a
+  justified allowlist); overlays trap and restore focus, toasts announce through
+  `aria-live`, menus are keyboard-operable; components come from a 14-entry
+  registry that `sync-components.mjs` keeps in sync (0 duplicated `.m-*`).
+- **QA per screen**: browser smoke with device emulation and a non-regressive
+  snapshot manifest; `export-spec.mjs` emits a per-screen spec with the
+  real-frontend parity checklist; token contract/docs are generated from
+  `tokens.json`, mock data is shared in `data/`, and key components have React
+  codegen.
+- **Safe updates for client projects**: idempotent `setup-design.mjs --update`
+  (config, screens and data preserved, Windows-safe) plus
+  `docs/migration-guide.md`, so the client team migrates their own prototype as
+  guided commands.
+
+Historical changelog (up to v1.0.26) continues below.
+
 ## Changelog
 
 - **Responsive under `--share` + the canvas actually switches (v1.0.26)**: two
