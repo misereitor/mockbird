@@ -322,3 +322,117 @@ API. Never edit `comments.json` by hand. Validate again after any edit.
    marker pair): plain markup + token list, the SAME three-file form
    (`<nome>.jsx`, `<nome>.html`, `tokens-used.json`); the variants note then
    records "no component registry entry" instead of variant enums.
+
+## Ações e acessibilidade
+
+Interactive screens act through ONE closed vocabulary dispatched at a single
+click-delegation point in `mock.js` (it works standalone and inside overlay
+layers). This section is the written contract for that surface: the
+validator's rules (`action-contract`, with its checks `action-both`,
+`action-flat`, `action-allowlist-nojust` and `action-js-line`;
+`action-module`; `a11y`, with the codes `a11y-no-autofocus` and
+`a11y-toast-no-live`) enforce its static half and `scripts/mock-check.mjs`
+its behavioral half. A third action
+mechanism is forbidden — everything goes through the one dispatch point.
+
+1. **Naming.** An action attribute reads `data-action="<telaId>.<acao>"` — the
+   namespace, one dot, then the handler name. The full value must match
+   `actions.namespacePattern` in `validate.config.json`
+   (`^[a-z0-9_-]+\.[a-z0-9_-]+$` — lowercase letters, digits, `_` and `-`
+   per part) and the namespace registered via
+   `Mock.registerActions('<telaId>', { acao(event, el) { … } })` must match
+   `^[a-z0-9_-]+$` (the runtime rejects anything else with a warning). A flat
+   value like `data-action="salvar"` never matches the pattern — such names
+   are only possible through the transitional allowlist (item 2). Clicks run
+   `handler(event, el)`; the handler owns `event.preventDefault()` if it
+   needs it. A name with no registered handler warns on the console and never
+   throws (guided degrade).
+
+2. **Allowlist policy (transitional).** Flat `data-action` names (no dot) fail
+   `action-contract` unless listed in `actions.allowLegacy`, a list of
+   `{ "name": …, "justification": … }` items — an item without a non-empty
+   justification fails on its own (`action-allowlist-nojust`) and a listed
+   name is rescued regardless of its justification. Flat names are
+   transitional: the allowlist exists for the client corpus migration and
+   empties when that migration closes. The `on*` + `data-action` detector
+   (`action-both`) is PERMANENT and outlives the allowlist.
+
+3. **The unification table.** The complete action surface, dispatched by one
+   click router:
+
+   | attribute | runs | note |
+   |---|---|---|
+   | `data-toast="<msg>"` | `Mock.toast(msg)` | the message is also announced to `#mock-live` |
+   | `data-close` | `Mock.close()` | closes the topmost overlay layer |
+   | `data-go="<file>"` | `Mock.go(file)` | keep a real `href` on the same link as the JS-off fallback |
+   | `data-overlay="<url>"` | `Mock.overlay(url)` | opens the canvas screen as a modal layer |
+   | `data-action="tela.acao"` | registered `handler(event, el)` | naming per item 1 |
+
+   An element carrying several of these runs every verb present. The `onclick`
+   precedence guard in `mock.js` is TRANSITIONAL and retained on purpose: on an
+   element that carries an inline `onclick`, the inline handler WINS and every
+   `data-*` verb on that element is ignored. Never combine `on*` with
+   `data-action` on one element — rule `action-both` fails it — and the guard
+   is deleted together with the last inline handler. In a file that carries
+   `data-action`, a JS line over 80 chars inside an `on*` attribute also fails
+   (`action-js-line`).
+
+4. **Per-screen action modules.** `actions/<telaId>.js` (at the design root,
+   next to `mock.js`) is a plain script that calls
+   `Mock.registerActions('<telaId>', { … })`; its FIRST argument must be the
+   literal file stem — rule `action-module` fails a dynamic id or a
+   stem/literal mismatch. The module id of a screen reference is its file
+   stem (`"05-modal.html"` → `"05-modal"`, which must match `^[a-z0-9_-]+$`).
+   Loading semantics:
+    - the module URL anchors at `mock.js`'s own folder (the design root),
+      falling back to page-relative `actions/<id>.js` when no base resolves;
+    - overlay: the module is loaded and awaited BEFORE the fetched `<body>`
+      is injected — the `<script>` tags inside the injected innerHTML stay
+      dead; the module is the layer's live action surface;
+    - standalone: loaded on boot (and again at `DOMContentLoaded`, so a
+      mid-body include still sees `[data-action]`) and only when the screen
+      carries `[data-action]` — screens without actions never request a
+      module (no 404 noise);
+    - idempotent: one load per id (the cached promise is reused), so
+      reopening an overlay never injects twice and `registerActions` merges
+      handlers name by name;
+    - a missing module resolves `false` with a guided console warning and
+      zero throw — its `data-action` clicks degrade to the unregistered
+      handler warn. Content that gains `data-action` after boot must call
+      `Mock.loadActions('<telaId>')` explicitly.
+
+5. **Accessibility contract.**
+    - Overlay screens declare `[data-autofocus]` — the initial focus target
+      when `Mock.overlay` opens the screen (fallback: the first heading, then
+      the layer itself; a non-focusable target gets `tabindex="-1"`). Rule
+      `a11y-no-autofocus` fails an overlay/dialog template without it.
+    - Focus stays trapped inside the layer (Tab wraps over its focusables),
+      ESC always closes the topmost layer (`Mock.close()` does the same), and
+      closing restores focus to the opener.
+    - Toasts mirror their message into one `aria-live="polite"` `#mock-live`
+      region per document. The region is created on demand, so a screen
+      reader may miss the very first announcement. A toast template must
+      reference a live region (`data-live` or `aria-live`) — rule
+      `a11y-toast-no-live`; `role="status"` alone does NOT satisfy the
+      contract.
+    - Menus (`[role="menu"]`, `[data-menu]`, or a bare
+      `[role="menuitem"]`/`menu-row` list) move focus with the arrow keys
+      (wrapping) and activate the focused row with Enter. Escape closes:
+      inside an overlay the menu closes with its layer; standalone it
+      collapses back to its `[aria-controls]` opener (`aria-expanded="false"`,
+      focus restored). Opening/toggling a menu is NOT part of this contract.
+
+6. **Verification.** The three QA surfaces, run from the skill repo:
+
+   ```
+   node scripts/mock-check.mjs
+   node skills/design/scripts/qa.mjs --config skills/design/assets/validate.config.json --target skills/design/assets/example
+   node skills/design/scripts/smoke.mjs --config skills/design/assets/validate.config.json --design skills/design/assets/example
+   ```
+
+   `mock-check.mjs` is the vm behavior suite (navigation, overlay, action and
+   a11y contracts of `mock.js`); `qa.mjs` is the validator QA wrapper (config
+   marker, R1–R4 probes, 10-run output stability); `smoke.mjs` renders every
+   screen in a real browser and matches the frozen pixel baseline. In user
+   projects the static contract runs through `node design/validate.mjs
+   design/<canvas>` (Workflow step 4).
