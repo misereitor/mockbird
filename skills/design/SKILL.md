@@ -229,7 +229,15 @@ never in the example copy.
    `--mark-stale` is the validator's only write (it marks comment pins whose
    anchor is gone); `--example-inventory` is the example contract check (exact
    file list of `inventory.json` + `"_demo": true` on every pin; no
-   `inventory.json` = skip, exit 0).
+   `inventory.json` = skip, exit 0). **Registry gate (§13.2 criterion 4):**
+   `sync-components.mjs --check` clean AND the validator reporting zero
+   unknown `.m-*` classes TOGETHER are the gate — every `.m-*` class used in
+   screens/instances must exist in the registry templates (`components/`), or
+   be listed in the `classes.allow` allowlist in `validate.config.json`
+   (`{ "name": …, "justification": … }` — an item without justification fails
+   on its own, `m-allowlist-nojust`; an unknown class fails as `m-unknown`,
+   citing the class and the file). `classes.allow` is transitional: it exists
+   for the client corpus migration and empties when that migration closes.
 4b. **Impeccable audit.** After validating, run the sibling `impeccable`
    skill's technical audit on the canvas (installed layout, win32):
    `<skill-impeccable>/scripts/impeccable.cmd audit design/<canvas>` - the

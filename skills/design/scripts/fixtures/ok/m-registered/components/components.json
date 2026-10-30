@@ -1,0 +1,15 @@
+{
+  "panel": {
+    "name": "panel",
+    "template": "panel.html",
+    "variants": {
+      "size": [],
+      "tone": [],
+      "state": [],
+      "device": []
+    },
+    "slots": [],
+    "realComponent": "Panel",
+    "dataProps": {}
+  }
+}

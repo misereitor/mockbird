@@ -8,7 +8,7 @@
       "state": ["default"],
       "device": []
     },
-    "slots": ["icon", "message", "action"],
+    "slots": ["message"],
     "realComponent": "Toast",
     "dataProps": { "data-action": "action" }
   }
