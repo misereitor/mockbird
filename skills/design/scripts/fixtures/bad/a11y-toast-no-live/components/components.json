@@ -1,12 +1,15 @@
 {
   "toast": {
-    "id": "toast",
-    "file": "toast.html",
+    "name": "toast",
+    "template": "toast.html",
     "variants": {
       "size": ["sm", "md"],
       "tone": ["success", "error", "info"],
-      "state": ["default"]
+      "state": ["default"],
+      "device": []
     },
-    "slots": ["icon", "message", "action"]
+    "slots": ["icon", "message", "action"],
+    "realComponent": "Toast",
+    "dataProps": { "data-action": "action" }
   }
 }

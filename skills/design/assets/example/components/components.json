@@ -1,22 +1,28 @@
 {
   "button": {
-    "id": "button",
-    "file": "button.html",
+    "name": "button",
+    "template": "button.html",
     "variants": {
       "size": ["sm", "md", "lg"],
       "tone": ["primary", "ghost"],
-      "state": ["default", "hover", "active", "disabled"]
+      "state": ["default", "hover", "active", "disabled"],
+      "device": []
     },
-    "slots": ["label"]
+    "slots": ["label"],
+    "realComponent": "Button",
+    "dataProps": { "data-action": "action" }
   },
   "card": {
-    "id": "card",
-    "file": "card.html",
+    "name": "card",
+    "template": "card.html",
     "variants": {
       "size": ["sm", "md", "lg"],
       "tone": ["primary", "ghost"],
-      "state": ["default", "hover", "active", "disabled"]
+      "state": ["default", "hover", "active", "disabled"],
+      "device": []
     },
-    "slots": ["title", "body"]
+    "slots": ["title", "body"],
+    "realComponent": "Card",
+    "dataProps": { "data-action": "action" }
   }
 }

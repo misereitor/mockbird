@@ -6,9 +6,10 @@
  * For every `<!-- component:id … --> … <!-- /component:id -->` region under the
  * design-root, rewrites ONLY the region's inner content:
  *
- *   - Structure        = the partial's markup (registry maps id -> partial file;
- *                        registry loaded from `<design-root>/components/components.json`,
- *                        falling back to the parser's DEFAULT_REGISTRY).
+ *   - Structure        = the partial's markup (registry maps id -> partial
+ *                        template; registry loaded from
+ *                        `<design-root>/components/components.json`, falling
+ *                        back to the parser's DEFAULT_REGISTRY).
  *   - Root class attr  = the partial's FIXED base classes (its class list minus every
  *                        class appearing in any variantClasses combo) PLUS
  *                        `variantClasses(markerArgs)` — marker-args-win.
@@ -17,22 +18,46 @@
  *                        present).
  *   - Preserved byte-identical across rewrites: slot contents
  *     (`<!-- slot:name -->USER CONTENT<!-- /slot:name -->` — the inner bytes) and
- *     user extra `data-*` attributes on the root beyond the variant trio
- *     (data-size/data-tone/data-state).
+ *     user extra `data-*` attributes on the root beyond the schema attrs
+ *     (data-component and one `data-<key>` per registry variant key).
  *   - The opener/closer marker comments stay EXACTLY as the user wrote them.
  *
  * Usage: node sync-components.mjs [design-root] [--check] [--config <path>]
  *   design-root   default `./design` relative to cwd
  *   --check       dry-run: report `file:line` for every region whose current
  *                 bytes differ from the materialized bytes (with a line diff);
- *                 exit 1 if any divergence, 0 if clean; never writes
+ *                 exit 1 if any divergence, 0 if clean; never writes. ALSO
+ *                 enforces the registry schema v2 and instance drift below —
+ *                 plain sync (no --check) keeps its rematerialization
+ *                 semantics untouched.
  *   --config      explicit validate.config.json path (config-driven v2; the
  *                 same discovery chain as validate.mjs applies without it)
  *
- * Exit codes: 0 = up to date / clean, 1 = --check found divergence(s),
- * 2 = usage error or marker/slot parse error (the message carries the parser's
- * `component-marker` / `slot-marker` code), 3 = missing/broken
- * validate.config.json (guided setup — never a silent fallback).
+ * Registry schema v2 (one entry per component in components.json):
+ *   { name, template, variants: {size, tone, state, device}, slots,
+ *     realComponent, dataProps }
+ *   - entry keys are EXACTLY name/template/variants/slots/realComponent/
+ *     dataProps — an unknown key fails citing the key, a missing one fails
+ *     citing it too (`name` must equal the registry key; `realComponent` is
+ *     the target React component name; `dataProps` maps instance `data-*`
+ *     attributes to its props, both consumed by codegen);
+ *   - `variants` declares EXACTLY the `componentVariantKeys` of
+ *     validate.config.json (config-driven — the key set is never hardcoded
+ *     here); each value is a list of marker-safe values (empty = variant not
+ *     offered);
+ *   - every declared slot must exist as a `<!-- slot:name -->` pair in the
+ *     template — a missing declared slot fails citing the slot.
+ * Instance drift (--check, exit 1): a root `data-*` attribute outside the
+ * entry schema (data-component + variant keys + dataProps keys), a region
+ * slot the entry never declared, or a variant value outside the registered
+ * list (marker arg or root data-*) — each citing the exact attribute, slot,
+ * component+variant.
+ *
+ * Exit codes: 0 = up to date / clean, 1 = --check found divergence(s) or
+ * schema/drift violation(s), 2 = usage error or marker/slot parse error (the
+ * message carries the parser's `component-marker` / `slot-marker` code),
+ * 3 = missing/broken validate.config.json (guided setup — never a silent
+ * fallback).
  *
  * Node 18+, stdlib only, ZERO deps. Imports the shared marker grammar parser
  * (marker-parser.mjs) — `parseAll`, `parseSlots`, `variantCompare`,
@@ -67,6 +92,9 @@ const usage = "usage: node sync-components.mjs [design-root] [--check] [--config
 // validate.mjs) — never hardcoded here (flip-flop settle, §3.3/R2).
 let EXEMPT_FILES = new Set();
 let EXEMPT_DIRS = new Set(); // **/snapshots/** exempt whole tree
+// Registry schema v2 (schema enforcement, --check): the variant key set comes
+// from the external `componentVariantKeys` — never hardcoded here.
+let SCHEMA_VARIANT_KEYS = [];
 
 /** Non-marker input error (missing partial, unusable registry, ...) -> exit 2. */
 class InputError extends Error {
@@ -215,20 +243,24 @@ function substituteSlots(text, slotContents) {
 }
 
 /** Materialized inner bytes for a region (everything between its two markers). */
-function materializeInner(region, partialText, id) {
+function materializeInner(region, partialText, id, entry) {
   const tag = findRootTag(partialText);
   if (!tag) throw new InputError(`partial for component "${id}" has no root element`);
 
-  // User extra data-* on the CURRENT root: everything beyond the variant trio
-  // (and beyond data-component, which is re-emitted from the partial).
+  // User extra data-* on the CURRENT root: everything beyond the schema attrs
+  // (data-component and one data-<key> per variant key — the marker trio from
+  // the parser plus the entry's own variant keys, e.g. device). Schema attrs
+  // are managed by the partial/marker pair, never preserved as user extras.
+  const schemaAttrs = new Set(["data-component"]);
+  const variantKeys = isPlainObject(entry?.variants) ? Object.keys(entry.variants) : VARIANT_KEYS;
+  for (const key of [...VARIANT_KEYS, ...variantKeys]) schemaAttrs.add(`data-${key}`);
   const extrasRaw = [];
   const currentTag = findRootTag(region.inner);
   if (currentTag) {
     for (const attr of parseAttrList(currentTag.attrsRaw)) {
       const lname = attr.name.toLowerCase();
       if (!lname.startsWith("data-")) continue;
-      if (lname === "data-size" || lname === "data-tone") continue;
-      if (lname === "data-state" || lname === "data-component") continue;
+      if (schemaAttrs.has(lname)) continue;
       extrasRaw.push(attr.raw);
     }
   }
@@ -240,7 +272,7 @@ function materializeInner(region, partialText, id) {
 
 /**
  * Materialized INNER bytes for a region (everything between its two markers),
- * loading the component's partial from `<rootDir>/components/<entry.file>`.
+ * loading the component's partial from `<rootDir>/components/<entry.template>`.
  * THE materialization entry point — exported for validate.mjs's
  * `component-divergence` byte check (w2-9); the validator never reimplements it.
  * Throws InputError (missing partial / no root element) or MarkerError (partial
@@ -248,10 +280,18 @@ function materializeInner(region, partialText, id) {
  */
 export function materializeRegion(rootDir, region, registry = DEFAULT_REGISTRY) {
   const entry = registry[region.id];
-  if (!entry || typeof entry.file !== "string") {
-    throw new InputError(`registry has no partial file for component "${region.id}"`);
+  if (!entry || typeof entry.template !== "string") {
+    throw new InputError(`registry has no partial template for component "${region.id}"`);
   }
-  return materializeInner(region, loadPartial(rootDir, entry, region.id), region.id);
+  return materializeInner(region, loadPartial(rootDir, entry, region.id), region.id, entry);
+}
+
+function isPlainObject(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasOwn(object, key) {
+  return Object.prototype.hasOwnProperty.call(object, key);
 }
 
 function lineOf(text, index) {
@@ -286,13 +326,16 @@ function walkHtml(dir, out) {
   }
 }
 
+/** Registry + whether it came from a real components.json (schema enforcement
+ * applies to authored registries only — the parser's seeded DEFAULT_REGISTRY
+ * is trusted, absence policy like validate.mjs). */
 function loadRegistry(rootDir) {
   const registryPath = join(rootDir, "components", "components.json");
   let raw;
   try {
     raw = readFileSync(registryPath, "utf8");
   } catch {
-    return DEFAULT_REGISTRY; // seeded registry from the shared parser
+    return { registry: DEFAULT_REGISTRY, fromFile: false }; // seeded registry from the shared parser
   }
   let parsed;
   try {
@@ -300,12 +343,12 @@ function loadRegistry(rootDir) {
   } catch (error) {
     throw new InputError(`invalid registry ${registryPath}: ${String(error?.message ?? error)}`);
   }
-  return parsed;
+  return { registry: parsed, fromFile: true };
 }
 
 function loadPartial(rootDir, entry, id) {
-  const rel = `components/${entry.file}`;
-  const partialPath = join(rootDir, "components", entry.file);
+  const rel = `components/${entry.template}`;
+  const partialPath = join(rootDir, "components", entry.template);
   let raw;
   try {
     raw = readFileSync(partialPath, "utf8");
@@ -315,6 +358,150 @@ function loadPartial(rootDir, entry, id) {
   const text = raw.replace(/\s+$/, "");
   parseSlots(text); // partial slot grammar is parser-owned; errors propagate
   return text;
+}
+
+// ---------------------------------------------------------------------------
+// Registry schema v2 + instance drift — enforced in --check mode ONLY (plain
+// sync keeps its rematerialization semantics untouched). Every violation
+// string cites the exact offending key, attribute, slot or component+variant
+// (misleading-success rule: never a generic error).
+// ---------------------------------------------------------------------------
+const SCHEMA_ENTRY_KEYS = ["name", "template", "variants", "slots", "realComponent", "dataProps"];
+const VALUE_RE = /^[a-zA-Z0-9_-]+$/; // marker-safe variant value (parser's own rule)
+const DATA_PROPS_KEY_RE = /^data-[a-z][a-z0-9-]*$/;
+
+/** Registry schema v2 violations for components/components.json (empty =
+ * schema-clean). Keys allowed = SCHEMA_ENTRY_KEYS; variant keys = the
+ * configured `componentVariantKeys` (SCHEMA_VARIANT_KEYS). */
+function registrySchemaErrors(rootDir, registry) {
+  const errors = [];
+  for (const [key, entry] of Object.entries(registry)) {
+    const where = `components/components.json: entry "${key}"`;
+    if (!isPlainObject(entry)) {
+      errors.push(`${where}: must be an object`);
+      continue;
+    }
+    for (const k of Object.keys(entry)) {
+      if (!SCHEMA_ENTRY_KEYS.includes(k)) {
+        errors.push(`${where}: unknown key "${k}" (allowed: ${SCHEMA_ENTRY_KEYS.join(", ")})`);
+      }
+    }
+    for (const k of SCHEMA_ENTRY_KEYS) {
+      if (!hasOwn(entry, k)) errors.push(`${where}: missing required key "${k}"`);
+    }
+    if (typeof entry.name === "string" && entry.name !== key) {
+      errors.push(`${where}: name "${entry.name}" must equal the registry key "${key}"`);
+    }
+    // template: non-empty string + parseable slot grammar (the slot check
+    // below needs the parsed names).
+    let templateSlots = null;
+    if (typeof entry.template === "string" && entry.template.length > 0) {
+      try {
+        const text = readFileSync(join(rootDir, "components", entry.template), "utf8").replace(/\s+$/, "");
+        templateSlots = parseSlots(text);
+      } catch (error) {
+        if (error instanceof MarkerError) {
+          errors.push(`${where}: template "${entry.template}": ${error.code}: ${error.message}`);
+        } else {
+          errors.push(`${where}: template "${entry.template}" not found (components/${entry.template})`);
+        }
+      }
+    } else if (hasOwn(entry, "template")) {
+      errors.push(`${where}: template must be a non-empty string`);
+    }
+    // variants: EXACTLY the configured key set (config-driven), each a list of
+    // unique marker-safe values (empty list = variant not offered).
+    if (isPlainObject(entry.variants)) {
+      for (const vk of Object.keys(entry.variants)) {
+        if (!SCHEMA_VARIANT_KEYS.includes(vk)) {
+          errors.push(`${where}: unknown key "${vk}" in variants (allowed: ${SCHEMA_VARIANT_KEYS.join(", ")})`);
+        }
+      }
+      for (const vk of SCHEMA_VARIANT_KEYS) {
+        if (!hasOwn(entry.variants, vk)) {
+          errors.push(`${where}: missing required key "${vk}" in variants`);
+          continue;
+        }
+        const list = entry.variants[vk];
+        if (!Array.isArray(list) || list.some((v) => typeof v !== "string" || !VALUE_RE.test(v))) {
+          errors.push(`${where}: variants.${vk} must be a list of marker-safe values`);
+          continue;
+        }
+        if (new Set(list).size !== list.length) errors.push(`${where}: variants.${vk} has duplicate value(s)`);
+      }
+    } else if (hasOwn(entry, "variants")) {
+      errors.push(`${where}: variants must be an object`);
+    }
+    // slots: unique names; every DECLARED slot must exist in the template.
+    if (Array.isArray(entry.slots) && entry.slots.every((s) => typeof s === "string" && s.length > 0)) {
+      if (new Set(entry.slots).size !== entry.slots.length) errors.push(`${where}: slots has duplicate value(s)`);
+      if (templateSlots !== null) {
+        for (const slot of entry.slots) {
+          if (!hasOwn(templateSlots, slot)) {
+            errors.push(`${where}: declared slot "${slot}" is missing from the template "${entry.template}"`);
+          }
+        }
+      }
+    } else if (hasOwn(entry, "slots")) {
+      errors.push(`${where}: slots must be a list of strings`);
+    }
+    if (hasOwn(entry, "realComponent") && (typeof entry.realComponent !== "string" || entry.realComponent.length === 0)) {
+      errors.push(`${where}: realComponent must be a non-empty string`);
+    }
+    if (isPlainObject(entry.dataProps)) {
+      for (const [attr, prop] of Object.entries(entry.dataProps)) {
+        if (!DATA_PROPS_KEY_RE.test(attr)) {
+          errors.push(`${where}: dataProps key "${attr}" must be a data-* attribute`);
+        }
+        if (typeof prop !== "string" || prop.length === 0) {
+          errors.push(`${where}: dataProps["${attr}"] must be a non-empty prop name`);
+        }
+      }
+    } else if (hasOwn(entry, "dataProps")) {
+      errors.push(`${where}: dataProps must be an object`);
+    }
+  }
+  return errors;
+}
+
+/** Instance drift (schema v2): root data-* attrs outside the entry schema,
+ * variant values outside the registered lists, region slots the entry never
+ * declared. Called from main() in --check mode. */
+function instanceDriftChecks(registry, regions, rel, html, violations) {
+  for (const region of regions) {
+    const entry = registry[region.id];
+    if (!isPlainObject(entry)) continue;
+    const where = `${rel}:${lineOf(html, region.start)}: component:${region.id}`;
+    const dataPropsAttrs = isPlainObject(entry.dataProps) ? Object.keys(entry.dataProps) : [];
+    const allowedAttrs = [
+      "component",
+      ...SCHEMA_VARIANT_KEYS,
+      ...dataPropsAttrs.map((attr) => attr.slice("data-".length)),
+    ];
+    const tag = findRootTag(region.inner);
+    if (tag) {
+      for (const attr of parseAttrList(tag.attrsRaw)) {
+        const lname = attr.name.toLowerCase();
+        if (!lname.startsWith("data-")) continue;
+        const bare = lname.slice("data-".length);
+        if (!allowedAttrs.includes(bare)) {
+          const allowed = allowedAttrs.map((k) => `data-${k}`).join(", ");
+          violations.push(`${where}: instance attribute "${lname}" is outside the schema (allowed data-*: ${allowed})`);
+          continue;
+        }
+        const enums = isPlainObject(entry.variants) ? entry.variants[bare] : undefined;
+        if (Array.isArray(enums) && !enums.includes(attr.value)) {
+          violations.push(`${where}: variant ${bare}="${attr.value}" is outside the registered list (allowed: ${enums.join(", ")})`);
+        }
+      }
+    }
+    const declaredSlots = Array.isArray(entry.slots) ? entry.slots : [];
+    for (const slot of Object.keys(region.slots)) {
+      if (!declaredSlots.includes(slot)) {
+        violations.push(`${where}: unknown slot "${slot}" (declared slots: ${declaredSlots.join(", ")})`);
+      }
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -373,6 +560,7 @@ function loadConfig(configArg, targetDir) {
   }
   const exemptFilesSync = configStringArray(parsed, "exemptFilesSync");
   const exemptDirs = configStringArray(parsed, "exemptDirs");
+  const variantKeys = configStringArray(parsed, "componentVariantKeys");
   const toolchain = configStringArray(parsed, "toolchainScripts");
   // R2: every toolchain script must exist and carry the config marker.
   const configDir = dirname(resolve(configPath));
@@ -391,6 +579,7 @@ function loadConfig(configArg, targetDir) {
   console.log(`config: ${configPath}`);
   EXEMPT_FILES = new Set(exemptFilesSync);
   EXEMPT_DIRS = new Set(exemptDirs);
+  SCHEMA_VARIANT_KEYS = variantKeys;
 }
 
 function pathExists(target) {
@@ -452,12 +641,23 @@ try {
     throw new InputError(`${designRootArg} is not a folder`);
   }
 
-  const registry = loadRegistry(rootDir);
+  const { registry, fromFile } = loadRegistry(rootDir);
+  if (check && fromFile) {
+    // Registry schema v2 enforcement (authored registries only): unknown key
+    // / missing key / wrong shape / declared slot missing from its template.
+    const schemaErrors = registrySchemaErrors(rootDir, registry);
+    if (schemaErrors.length > 0) {
+      for (const error of schemaErrors) console.log(`registry-schema: ${error}`);
+      console.log(`${schemaErrors.length} registry schema violation(s)`);
+      process.exit(1);
+    }
+  }
   const files = [];
   walkHtml(rootDir, files);
 
   const pending = []; // { full, rel, html, regions: [{ region, id, nextInner }] }
   const divergences = []; // --check report rows
+  const violations = []; // --check schema/drift rows
   const partialCache = new Map();
 
   for (const full of files) {
@@ -468,6 +668,22 @@ try {
       regions = parseAll(html, registry);
     } catch (error) {
       if (error instanceof MarkerError) {
+        // --check drift: a registry enum failure IS "variant outside the
+        // registered list" (exit 1, citing component+variant); every other
+        // marker failure keeps the parser's own exit 2.
+        const enumFailure = /^invalid ([a-z]+)="([^"]*)" for component "([^"]*)"/.exec(error.message);
+        if (check && enumFailure) {
+          const [, key, value, id] = enumFailure;
+          const entry = registry[id];
+          const allowed =
+            isPlainObject(entry?.variants) && Array.isArray(entry.variants[key])
+              ? entry.variants[key].join(", ")
+              : "(none)";
+          violations.push(
+            `${rel}:${lineOf(html, html.indexOf(`component:${id}`))}: component:${id}: variant ${key}="${value}" is outside the registered list (allowed: ${allowed})`
+          );
+          continue;
+        }
         console.error(`${rel}: ${error.code}: ${error.message}`);
         process.exit(2);
       }
@@ -475,16 +691,18 @@ try {
     }
     if (regions.length === 0) continue;
 
+    if (check) instanceDriftChecks(registry, regions, rel, html, violations);
+
     const rewrites = [];
     for (const region of regions) {
       const entry = registry[region.id];
-      if (!entry || typeof entry.file !== "string") {
-        throw new InputError(`registry has no partial file for component "${region.id}"`);
+      if (!entry || typeof entry.template !== "string") {
+        throw new InputError(`registry has no partial template for component "${region.id}"`);
       }
-      if (!partialCache.has(entry.file)) {
-        partialCache.set(entry.file, loadPartial(rootDir, entry, region.id));
+      if (!partialCache.has(entry.template)) {
+        partialCache.set(entry.template, loadPartial(rootDir, entry, region.id));
       }
-      const nextInner = materializeInner(region, partialCache.get(entry.file), region.id);
+      const nextInner = materializeInner(region, partialCache.get(entry.template), region.id, entry);
       if (nextInner !== region.inner) {
         if (check) {
           divergences.push({ rel, region, html, nextInner });
@@ -497,6 +715,7 @@ try {
   }
 
   if (check) {
+    for (const v of violations) console.log(v);
     for (const d of divergences) {
       console.log(
         `${d.rel}:${lineOf(d.html, d.region.start)}: component:${d.region.id}: stale region (bytes differ from materialized; run sync)`
@@ -511,8 +730,9 @@ try {
         );
       }
     }
-    if (divergences.length > 0) {
-      console.log(`${divergences.length} divergent region(s)`);
+    if (divergences.length > 0) console.log(`${divergences.length} divergent region(s)`);
+    if (violations.length > 0) console.log(`${violations.length} schema/drift violation(s)`);
+    if (divergences.length > 0 || violations.length > 0) {
       process.exit(1);
     }
     console.log("up to date");

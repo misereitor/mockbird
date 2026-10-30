@@ -2,7 +2,7 @@
   "exemptDirs": ["vendor", "scripts", "snapshots", ".history"],
   "exemptFiles": ["design-system.css", "utilities.css", "mock.css", "viewer.html", "docs.html", "mock.js", "tokens.w3c.json"],
   "exemptFilesSync": ["viewer.html", "docs.html", "mock.js"],
-  "componentVariantKeys": ["size", "tone", "state"],
+  "componentVariantKeys": ["size", "tone", "state", "device"],
   "toolchainScripts": ["../scripts/validate.mjs", "../scripts/sync-components.mjs", "../scripts/marker-parser.mjs", "../scripts/gen-tokens.mjs", "../scripts/export-tokens.mjs", "mock.js"],
   "actions": {
     "namespacePattern": "^[a-z0-9_-]+\\.[a-z0-9_-]+$",

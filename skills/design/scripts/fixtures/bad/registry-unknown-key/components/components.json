@@ -1,0 +1,16 @@
+{
+  "panel": {
+    "name": "panel",
+    "template": "panel.html",
+    "file": "panel.html",
+    "variants": {
+      "size": ["sm", "md"],
+      "tone": ["primary", "ghost"],
+      "state": ["default"],
+      "device": ["mobile", "desktop"]
+    },
+    "slots": ["title", "body"],
+    "realComponent": "Panel",
+    "dataProps": { "data-action": "action" }
+  }
+}

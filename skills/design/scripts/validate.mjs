@@ -92,11 +92,15 @@ const COLOR_LITERAL_RE = /^(?:#(?:[0-9a-fA-F]{3,8})|rgba?\()/i
 // tag scan for instance attrs.
 // The scan ALTERNATION consumes comments/script/style wholesale so markup text
 // inside them can never masquerade as an element (byte offsets stay valid).
+// DATA_ATTR_RE captures EVERY data-* name; the checks below filter to
+// data-component + the configured variant keys (componentVariantKeys — size/
+// tone/state/device), so a variant key like `device` is enum-checked against
+// the registry entry instead of silently ignored.
 let COMPONENT_VARIANT_KEYS = []
 const TAG_SCAN_RE =
   /<!--[\s\S]*?-->|<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>|<([a-zA-Z][a-zA-Z0-9-]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>/gi
 const DATA_ATTR_RE =
-  /(?<![A-Za-z0-9_-])data-(component|size|tone|state)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi
+  /(?<![A-Za-z0-9_-])data-([a-z][a-z0-9-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi
 
 // ---------------------------------------------------------------------------
 // CLI contract

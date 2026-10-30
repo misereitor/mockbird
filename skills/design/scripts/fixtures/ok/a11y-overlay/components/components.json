@@ -1,12 +1,15 @@
 {
   "modal": {
-    "id": "modal",
-    "file": "modal.html",
+    "name": "modal",
+    "template": "modal.html",
     "variants": {
       "size": ["sm", "md", "lg"],
       "tone": ["default", "danger"],
-      "state": ["default"]
+      "state": ["default"],
+      "device": []
     },
-    "slots": ["header", "body", "footer"]
+    "slots": ["header", "body", "footer"],
+    "realComponent": "Modal",
+    "dataProps": { "data-action": "action" }
   }
 }

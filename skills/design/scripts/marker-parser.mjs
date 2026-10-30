@@ -67,28 +67,40 @@ export const VARIANT_CLASSES = Object.freeze({
 /**
  * Seeded registry — must stay byte-identical in content to
  * skills/design/assets/components/components.json (QA asserts equality).
- * Plain map id -> entry: { id, file, variants: {size,tone,state}, slots }.
+ * Plain map id -> entry (schema v2, todo 12):
+ *   { name, template, variants: {size,tone,state,device}, slots,
+ *     realComponent, dataProps }
+ * `name` equals the registry key; `template` is the partial under
+ * components/; `realComponent` is the target React component name (codegen,
+ * todo 22) and `dataProps` maps instance `data-*` attributes to its props
+ * (partial maps are fine — codegen consumes them as declared).
  */
 export const DEFAULT_REGISTRY = Object.freeze({
   button: Object.freeze({
-    id: "button",
-    file: "button.html",
+    name: "button",
+    template: "button.html",
     variants: Object.freeze({
       size: Object.freeze(["sm", "md", "lg"]),
       tone: Object.freeze(["primary", "ghost"]),
       state: Object.freeze(["default", "hover", "active", "disabled"]),
+      device: Object.freeze([]),
     }),
     slots: Object.freeze(["label"]),
+    realComponent: "Button",
+    dataProps: Object.freeze({ "data-action": "action" }),
   }),
   card: Object.freeze({
-    id: "card",
-    file: "card.html",
+    name: "card",
+    template: "card.html",
     variants: Object.freeze({
       size: Object.freeze(["sm", "md", "lg"]),
       tone: Object.freeze(["primary", "ghost"]),
       state: Object.freeze(["default", "hover", "active", "disabled"]),
+      device: Object.freeze([]),
     }),
     slots: Object.freeze(["title", "body"]),
+    realComponent: "Card",
+    dataProps: Object.freeze({ "data-action": "action" }),
   }),
 });
 

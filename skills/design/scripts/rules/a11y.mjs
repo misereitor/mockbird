@@ -99,8 +99,8 @@ function readRegistry(dir) {
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return byFile
   for (const entry of Object.values(parsed)) {
     if (!entry || typeof entry !== 'object') continue
-    if (typeof entry.file !== 'string') continue
-    byFile[entry.file] = typeof entry.id === 'string' && entry.id.length > 0 ? entry.id : entry.file.replace(/\.html?$/i, '')
+    if (typeof entry.template !== 'string') continue
+    byFile[entry.template] = typeof entry.name === 'string' && entry.name.length > 0 ? entry.name : entry.template.replace(/\.html?$/i, '')
   }
   return byFile
 }
