@@ -26,6 +26,7 @@
  *   - The opener/closer marker comments stay EXACTLY as the user wrote them.
  *
  * Usage: node sync-components.mjs [design-root] [--check] [--config <path>]
+ *                                 [--codegen [--out <dir>]]
  *   design-root   default `./design` relative to cwd
  *   --check       dry-run: report `file:line` for every region whose current
  *                 bytes differ from the materialized bytes (with a line diff);
@@ -35,6 +36,11 @@
  *                 semantics untouched.
  *   --config      explicit validate.config.json path (config-driven v2; the
  *                 same discovery chain as validate.mjs applies without it)
+ *   --codegen     after the sync, run codegen.mjs (same code path as its
+ *                 standalone CLI) over the registry and write the typed React
+ *                 TSX into `--out <dir>` (default `<design-root>/generated/`);
+ *                 refused together with --check (which never writes). A
+ *                 codegen failure exits with codegen.mjs's own exit code.
  *
  * Registry schema v2 (one entry per component in components.json):
  *   { name, template, variants: {size, tone, state, device}, slots,
@@ -84,11 +90,13 @@ import {
   VARIANT_CLASSES,
   MarkerError,
 } from "./marker-parser.mjs";
+import { runCodegen, CodegenError } from "./codegen.mjs";
 
 // ---------------------------------------------------------------------------
 // CLI contract
 // ---------------------------------------------------------------------------
-const usage = "usage: node sync-components.mjs [design-root] [--check] [--config <path>]";
+const usage =
+  "usage: node sync-components.mjs [design-root] [--check] [--config <path>] [--codegen [--out <dir>]]";
 
 // Walk exemptions come from the external validate.config.json (loaded in
 // main(): `exemptFilesSync` for the .html-only walk, `exemptDirs` shared with
@@ -602,6 +610,7 @@ function loadConfig(configArg, targetDir) {
   EXEMPT_FILES = new Set(exemptFilesSync);
   EXEMPT_DIRS = new Set(exemptDirs);
   SCHEMA_VARIANT_KEYS = variantKeys;
+  return configPath;
 }
 
 function pathExists(target) {
@@ -622,22 +631,24 @@ function main() {
   const flags = [];
   const positional = [];
   let configArg = null;
+  let outArg = null;
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
-    if (token === "--config") {
+    if (token === "--config" || token === "--out") {
       const value = argv[i + 1];
       if (value === undefined || value.startsWith("--")) {
-        console.error(`--config requires a path — ${usage}`);
+        console.error(`${token} requires a path — ${usage}`);
         process.exit(2);
       }
-      configArg = value;
+      if (token === "--config") configArg = value;
+      else outArg = value;
       i += 1;
       continue;
     }
     if (token.startsWith("--")) flags.push(token);
     else positional.push(token);
   }
-  const unknownFlags = flags.filter((f) => f !== "--check");
+  const unknownFlags = flags.filter((f) => f !== "--check" && f !== "--codegen");
   if (unknownFlags.length > 0) {
     console.error(`unknown flag "${unknownFlags[0]}" — ${usage}`);
     process.exit(2);
@@ -647,11 +658,20 @@ function main() {
     process.exit(2);
   }
   const check = flags.includes("--check");
+  const codegen = flags.includes("--codegen");
+  if (codegen && check) {
+    console.error(`--codegen cannot run with --check (check never writes) — ${usage}`);
+    process.exit(2);
+  }
+  if (outArg !== null && !codegen) {
+    console.error(`--out requires --codegen — ${usage}`);
+    process.exit(2);
+  }
   const designRootArg = positional[0] ?? "./design";
 
   // Config-driven v2: same discovery chain as validate.mjs (validated root =
   // the resolved design-root), loaded before anything else.
-  loadConfig(configArg, resolve(process.cwd(), designRootArg.replaceAll("\\", "/")));
+  const configPath = loadConfig(configArg, resolve(process.cwd(), designRootArg.replaceAll("\\", "/")));
 
 try {
   const rootDir = resolve(process.cwd(), designRootArg.replaceAll("\\", "/"));
@@ -780,8 +800,21 @@ try {
       ? `updated ${regionCount} region(s) in ${pending.length} file(s)`
       : "up to date"
   );
+  if (codegen) {
+    // --codegen plug (todo 22): same code path as the standalone codegen.mjs
+    // CLI — sync writes nothing else after the region rewrites above.
+    const written = runCodegen({ rootDir, configPath, only: null, outDir: outArg });
+    for (const w of written) {
+      console.log(`codegen: ${w.key} -> ${join(w.dir, w.file).split(sep).join("/")}`);
+    }
+    console.log(`codegen: wrote ${written.length} file(s)`);
+  }
   process.exit(0);
 } catch (error) {
+  if (error instanceof CodegenError) {
+    console.error(error.message);
+    process.exit(error.exitCode);
+  }
   if (error instanceof MarkerError) {
     console.error(`${error.code}: ${error.message}`);
     process.exit(2);
