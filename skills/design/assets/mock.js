@@ -30,12 +30,19 @@
   let cache = null
   async function loadData() {
     if (cache) return cache
+    let raw = {}
     try {
       const response = await fetch('data.json', { cache: 'no-store' })
-      cache = response.ok ? await response.json() : {}
+      raw = response.ok ? await response.json() : {}
     } catch {
-      cache = {}
+      raw = {}
     }
+    // Shared datasets (todo 21): data.json values of the exact form
+    // {"$ref": "file.json#key"} resolve from <design-root>/data/file.json
+    // (key selects a top-level key of that file; a dataset value may itself be
+    // a $ref — chains end in inline data). Inline data.json keeps the old path
+    // untouched: no $ref anywhere = zero resolution, zero extra fetch.
+    cache = hasRef(raw) ? await resolveRefs(raw, []) : raw
     // A named scenario overrides top-level keys of the base data:
     // data.json "scenarios": { "vazio": { "items": [] } } + ?scenario=vazio
     const overrides = cache?.scenarios?.[scenario]
@@ -43,6 +50,98 @@
       cache = { ...cache, ...overrides }
     }
     return cache
+  }
+
+  // ---- $ref binder (todo 21): {"$ref": "file.json#key"} -> <design-root>/data/ ----
+  // ONE data mechanism: a plain object carrying a "$ref" key MUST be exactly
+  // {"$ref": "file.json#key"} (file = dataset basename, key = one of its
+  // top-level keys). Everything else about data.json stays as it always was —
+  // inline values, "scenarios" overrides and Mock.data(key) are unchanged.
+  // Broken refs (bad shape, missing file, missing key, circular chain) NEVER
+  // throw: they guide on the console and degrade to undefined. The validator
+  // rule rules/data-ref.mjs fails those at validate time; this is the runtime
+  // safety net. Caches: one fetch per dataset file + one entry per file#key.
+  const REF_RE = /^([A-Za-z0-9][A-Za-z0-9._-]*)\.json#([A-Za-z0-9][A-Za-z0-9._-]*)$/
+  const datasetFiles = new Map() // file -> Promise<object|null>
+  const refValues = new Map() // 'file#key' -> Promise<value>
+
+  function isPlainObject(value) {
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+  }
+
+  function hasRef(value) {
+    if (Array.isArray(value)) return value.some(hasRef)
+    if (!isPlainObject(value)) return false
+    if ('$ref' in value) return true
+    return Object.values(value).some(hasRef)
+  }
+
+  function loadDataset(file) {
+    if (datasetFiles.has(file)) return datasetFiles.get(file)
+    const promise = (async () => {
+      try {
+        const url = MOCK_BASE ? new URL('data/' + file, MOCK_BASE).href : 'data/' + file
+        const response = await fetch(url, { cache: 'no-store' })
+        if (!response.ok) return null
+        const parsed = await response.json()
+        return isPlainObject(parsed) ? parsed : null
+      } catch {
+        return null
+      }
+    })()
+    datasetFiles.set(file, promise)
+    return promise
+  }
+
+  async function resolveRefs(value, chain) {
+    if (Array.isArray(value)) {
+      const out = []
+      for (const item of value) out.push(await resolveRefs(item, chain))
+      return out
+    }
+    if (!isPlainObject(value)) return value
+    if ('$ref' in value) {
+      const raw = value.$ref
+      const match = typeof raw === 'string' ? REF_RE.exec(raw) : null
+      if (!match || Object.keys(value).length !== 1) {
+        console.warn(
+          'mock: $ref ' + JSON.stringify(raw) + ' must be exactly {"$ref": "file.json#key"} — the value degrades to undefined',
+        )
+        return undefined
+      }
+      const ref = match[1] + '.json#' + match[2]
+      if (chain.includes(ref)) {
+        console.warn(
+          'mock: circular $ref chain ' + chain.concat(ref).join(' -> ') +
+            ' — a reference chain must end in inline data; the value degrades to undefined',
+        )
+        return undefined
+      }
+      if (refValues.has(ref)) return refValues.get(ref)
+      const promise = (async () => {
+        const data = await loadDataset(match[1] + '.json')
+        if (data === null) {
+          console.warn(
+            'mock: $ref "' + ref + '" is broken — data/' + match[1] +
+              '.json did not load (shared datasets live in <design-root>/data/); the value degrades to undefined',
+          )
+          return undefined
+        }
+        if (!Object.prototype.hasOwnProperty.call(data, match[2])) {
+          console.warn(
+            'mock: $ref "' + ref + '" is broken — data/' + match[1] + '.json has no key "' + match[2] +
+              '"; the value degrades to undefined',
+          )
+          return undefined
+        }
+        return resolveRefs(data[match[2]], chain.concat(ref))
+      })()
+      refValues.set(ref, promise)
+      return promise
+    }
+    const out = {}
+    for (const key of Object.keys(value)) out[key] = await resolveRefs(value[key], chain)
+    return out
   }
 
   /*

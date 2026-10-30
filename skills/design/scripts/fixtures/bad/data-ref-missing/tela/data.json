@@ -1,0 +1,4 @@
+{
+  "users": { "$ref": "usuarios.json#lista" },
+  "produtos": { "$ref": "produtos.json#itens" }
+}

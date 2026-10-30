@@ -1,0 +1,3 @@
+{
+  "ciclo": { "$ref": "a.json#x" }
+}

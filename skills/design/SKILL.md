@@ -38,12 +38,19 @@ design/
                          runtime (copied once per project)
   components/            component registry + partials seed (copied once per
                          project): components.json + one partial per component
+  data/                  shared mock datasets — ONE JSON object per file, only
+                         what a <canvas>/data.json binds via
+                         {"$ref": "file.json#key"} (key = one top-level key of
+                         data/<file>.json); nothing else reads this folder
   vendor/html-to-image.js  PNG export library (copied once per project)
   index.json             {"canvases": ["login", ...]} so the viewer can list them
   <canvas>/              one folder per canvas, kebab-case (login, dashboard)
     canvas.json
-    data.json            optional fictitious data; optional "scenarios" object
-                         with named top-level overrides (empty, critical…)
+    data.json            optional fictitious data: inline values, or bindings
+                         {"$ref": "file.json#key"} to ../data/<file>.json (a
+                         dataset value may itself be a $ref — chains end in
+                         inline data); optional "scenarios" object with named
+                         top-level overrides (empty, critical…)
     01-<screen>.html     one complete HTML document per screen
     assets/              optional local images/scripts
 ```
@@ -177,7 +184,11 @@ never in the example copy.
      (`<script src="../mock.js"></script>`, copied by Setup): forms validate
      and submit, buttons give feedback, screens navigate with
      `Mock.go('03-dashboard.html')`, fictitious data lives in the canvas's
-     `data.json` (`await Mock.data('items')`), flow state (logged-in user,
+     `data.json` (`await Mock.data('items')`) — inline, or bound to shared
+     datasets in `design/data/` with `{"$ref": "file.json#key"}` so several
+     canvases read the same data (a broken ref guides on the console and
+     degrades to `undefined`; the `data-ref` validator rule fails it at
+     validate time), flow state (logged-in user,
      items created along the way) lives in `Mock.state` (session, namespaced
      per canvas), and simulated actions confirm with `Mock.toast('…')`.
      Every screen must still render as a static composition if JS fails.

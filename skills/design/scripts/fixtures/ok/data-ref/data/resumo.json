@@ -1,0 +1,3 @@
+{
+  "totais": { "$ref": "usuarios.json#lista" }
+}

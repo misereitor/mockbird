@@ -16,7 +16,13 @@
  *     the single router) and the transitional onclick precedence guard;
  *   - action-module contracts: Mock.loadActions injects actions/<id>.js
  *     (onload-awaiter, never fetch+eval) and completes BEFORE the overlay body
- *     is populated, idempotent per id, missing module guides and never throws.
+ *     is populated, idempotent per id, missing module guides and never throws;
+ *   - data-resolver contracts (todo 21): {"$ref": "file.json#key"} values in
+ *     data.json resolve from <design-root>/data/<file>.json (chains allowed),
+ *     datasets are cached per file+key (a second load never re-fetches), a
+ *     plain inline data.json keeps the old behavior byte for byte (scenarios
+ *     included), and broken refs (missing file/key, malformed object, circular
+ *     chain) guide on the console and NEVER throw.
  *
  * Run: node scripts/mock-check.mjs
  */
@@ -759,4 +765,275 @@ console.log('suite  action-module contracts')
   console.log('ok  missing module -> guided console message, zero throw (degraded data-action)')
 }
 
-console.log('mock-check OK — 4 suites hold: navigation/overlay, a11y, data-action dispatch, action-module')
+/* ---------------------------------------------------------------------------
+ * Shared dataset + $ref binder contracts (todo 21): data.json values of the
+ * exact form {"$ref": "file.json#key"} resolve from <design-root>/data/<file>.json
+ * (mock.js's own folder, same anchor as actions/<id>.js). The fetch stub logs
+ * every requested URL and serves from a files map keyed by "data.json" /
+ * "data/<file>.json", so "2nd load performs no re-fetch" is falsifiable by
+ * counting the stub calls.
+ * ------------------------------------------------------------------------- */
+function bootData(options = {}) {
+  const files = options.files ?? {}
+  const fetchCalls = []
+  const warns = [] // captured console.warn (guided messages)
+  const listeners = {}
+  const document = {
+    body: {
+      classList: { add() {}, remove() {}, toggle() {} },
+      appendChild() {},
+      removeChild() {},
+    },
+    documentElement: {
+      getAttribute: () => 'en',
+      setAttribute() {},
+      classList: { add() {}, remove() {} },
+    },
+    addEventListener(type, fn) {
+      ;(listeners[type] ??= []).push(fn)
+    },
+    getElementById: () => null,
+    createElement: () => ({
+      style: {},
+      classList: { add() {}, remove() {} },
+      setAttribute() {},
+      appendChild() {},
+      remove() {},
+      textContent: '',
+    }),
+    querySelector: () => null,
+    querySelectorAll: () => [],
+  }
+  if (options.currentScript) document.currentScript = options.currentScript
+  const window = { addEventListener() {}, removeEventListener() {} }
+  window.window = window
+  const store = new Map()
+  const sandbox = {
+    window,
+    document,
+    location: {
+      pathname: '/design/login/01-login.html',
+      search: options.search ?? '',
+      href: 'http://localhost:8765/login/01-login.html' + (options.search ?? ''),
+    },
+    navigator: { language: 'en' },
+    URL,
+    URLSearchParams,
+    sessionStorage: {
+      getItem: (key) => (store.has(key) ? store.get(key) : null),
+      setItem: (key, value) => store.set(key, String(value)),
+      removeItem: (key) => store.delete(key),
+    },
+    setTimeout,
+    clearTimeout,
+    console: { log() {}, error() {}, warn: (message) => warns.push(String(message)) },
+    fetch: async (url) => {
+      const path = String(url).split(/[?#]/)[0]
+      const name = /(?:^|\/)(data\.json)$/.exec(path)?.[1] ?? /(?:^|\/)(data\/[^/]+\.json)$/.exec(path)?.[1] ?? path
+      fetchCalls.push(String(url))
+      return name in files
+        ? { ok: true, status: 200, json: async () => files[name] }
+        : { ok: false, status: 404, json: async () => ({}) }
+    },
+  }
+  vm.runInNewContext(SRC, sandbox, { filename: 'mock.js' })
+  return { sandbox, fetchCalls, warns, Mock: window.Mock }
+}
+
+// vm-realm values carry a foreign Object/Array prototype — JSON round-trip them
+// before deepStrictEqual (the harness realm owns the expected values).
+const plain = (value) => JSON.parse(JSON.stringify(value))
+
+console.log('suite  data-resolver contracts')
+
+/* 18. $ref binder: {"$ref": "usuarios.json#lista"} resolves from
+ *     data/usuarios.json into Mock.data('users') (and the whole base object) */
+{
+  const h = bootData({
+    files: {
+      'data.json': { users: { $ref: 'usuarios.json#lista' } },
+      'data/usuarios.json': { lista: [{ name: 'Maria', role: 'Estoquista' }] },
+    },
+  })
+  const users = await h.Mock.data('users')
+  assert.deepEqual(plain(users), [{ name: 'Maria', role: 'Estoquista' }], 'the $ref value must resolve to the dataset key')
+  assert.deepEqual(plain(await h.Mock.data()), { users: [{ name: 'Maria', role: 'Estoquista' }] }, 'the resolved base object must hold the bound key')
+  assert.deepEqual(
+    h.fetchCalls,
+    ['data.json', 'data/usuarios.json'],
+    'resolution must fetch data.json once and the dataset file once',
+  )
+  console.log('ok  $ref "usuarios.json#lista" -> Mock.data("users") resolved from data/ (binder)')
+}
+
+/* 19. cache per file+key: two keys bound to ONE dataset file + repeated loads
+ *     never re-fetch (the fetch log freezes at one call per file) */
+{
+  const h = bootData({
+    files: {
+      'data.json': {
+        users: { $ref: 'd.json#x' },
+        gestores: { $ref: 'd.json#y' },
+        denovo: { $ref: 'd.json#x' },
+      },
+      'data/d.json': { x: [1], y: [2] },
+    },
+  })
+  assert.deepEqual(plain(await h.Mock.data('users')), [1], 'first key resolves')
+  assert.deepEqual(plain(await h.Mock.data('gestores')), [2], 'second key of the SAME file resolves')
+  assert.deepEqual(plain(await h.Mock.data('denovo')), [1], 'the same file#key resolves again from cache')
+  await h.Mock.data('users')
+  await h.Mock.data()
+  assert.deepEqual(
+    h.fetchCalls,
+    ['data.json', 'data/d.json'],
+    'a second load must perform no re-fetch (cache per file+key — fetch stub call count)',
+  )
+  console.log('ok  2nd load -> zero re-fetch, dataset cached per file+key (cache)')
+}
+
+/* 20. inline data.json (no $ref anywhere) keeps the OLD behavior byte for
+ *     byte: values untouched, zero dataset fetch, scenario overrides intact */
+{
+  const h = bootData({
+    search: '?scenario=vazio',
+    files: {
+      'data.json': {
+        users: [{ name: 'Maria' }],
+        items: [1, 2],
+        scenarios: { vazio: { items: [] } },
+      },
+    },
+  })
+  assert.deepEqual(plain(await h.Mock.data('users')), [{ name: 'Maria' }], 'inline values must pass through untouched')
+  assert.deepEqual(plain(await h.Mock.data('items')), [], 'the named scenario must override the base key (semantics unchanged)')
+  assert.deepEqual(h.fetchCalls, ['data.json'], 'an inline data.json must fetch ONLY data.json (zero data/ requests)')
+  console.log('ok  inline data.json -> values + scenarios untouched, zero extra fetch (compat)')
+}
+
+/* 21. chained refs: a dataset value may itself be a $ref — the chain resolves
+ *     end to end (binder -> a.json#x -> b.json#y) */
+{
+  const h = bootData({
+    files: {
+      'data.json': { c: { $ref: 'a.json#x' } },
+      'data/a.json': { x: { $ref: 'b.json#y' } },
+      'data/b.json': { y: [42] },
+    },
+  })
+  assert.deepEqual(plain(await h.Mock.data('c')), [42], 'the chained $ref must resolve to the final inline value')
+  assert.deepEqual(
+    h.fetchCalls,
+    ['data.json', 'data/a.json', 'data/b.json'],
+    'each file of the chain is fetched exactly once',
+  )
+  console.log('ok  chain a.json#x -> b.json#y resolves end to end (chained $ref)')
+}
+
+/* 22. circular $ref (A -> B -> A): guided console message citing the chain,
+ *     ZERO throw, the value degrades to undefined */
+{
+  const h = bootData({
+    files: {
+      'data.json': { ciclo: { $ref: 'a.json#x' } },
+      'data/a.json': { x: { $ref: 'b.json#y' } },
+      'data/b.json': { y: { $ref: 'a.json#x' } },
+    },
+  })
+  let value = 'sentinel'
+  let threw = null
+  try {
+    value = await h.Mock.data('ciclo')
+  } catch (error) {
+    threw = error
+  }
+  assert.equal(threw, null, 'a circular $ref must never throw')
+  assert.equal(value, undefined, 'a circular $ref must degrade to undefined')
+  assert.ok(
+    h.warns.some((m) => m.includes('circular') && m.includes('a.json#x') && m.includes('b.json#y')),
+    'a circular $ref must guide on the console citing the chain (A -> B -> A)',
+  )
+  console.log('ok  circular a.json#x -> b.json#y -> a.json#x -> guided console, zero throw (degrade)')
+}
+
+/* 23. broken refs (missing dataset file + missing key): guided console
+ *     message citing file#key, ZERO throw, both degrade to undefined */
+{
+  const h = bootData({
+    files: {
+      'data.json': {
+        semArquivo: { $ref: 'fantasma.json#k' },
+        semChave: { $ref: 'd.json#nao' },
+      },
+      'data/d.json': { x: 1 },
+    },
+  })
+  let values = ['sentinel', 'sentinel']
+  let threw = null
+  try {
+    values = [await h.Mock.data('semArquivo'), await h.Mock.data('semChave')]
+  } catch (error) {
+    threw = error
+  }
+  assert.equal(threw, null, 'broken refs must never throw')
+  assert.deepEqual(values, [undefined, undefined], 'broken refs must degrade to undefined')
+  assert.ok(
+    h.warns.some((m) => m.includes('fantasma.json#k')),
+    'the missing FILE ref must guide on the console citing file#key',
+  )
+  assert.ok(
+    h.warns.some((m) => m.includes('d.json#nao') && m.includes('"nao"')),
+    'the missing KEY ref must guide on the console citing the key',
+  )
+  console.log('ok  broken $ref (file/key) -> guided console citing file#key, zero throw (degrade)')
+}
+
+/* 24. dataset URL anchors at mock.js's folder (the design root — same anchor
+ *     as actions/<id>.js): <base>/data/<file>.json */
+{
+  const h = bootData({
+    currentScript: { src: 'http://localhost:8765/design/mock.js' },
+    files: {
+      'data.json': { users: { $ref: 'usuarios.json#lista' } },
+      'data/usuarios.json': { lista: [7] },
+    },
+  })
+  assert.deepEqual(plain(await h.Mock.data('users')), [7], 'the ref resolves with a resolvable base')
+  assert.deepEqual(
+    h.fetchCalls,
+    ['data.json', 'http://localhost:8765/design/data/usuarios.json'],
+    'the dataset URL must anchor at the design root (mock.js folder)',
+  )
+  console.log('ok  dataset fetch -> <mock.js folder>/data/<file>.json (design-root anchor)')
+}
+
+/* 25. malformed $ref object (not exactly {"$ref": "file.json#key"}): guided
+ *     console message, ZERO throw, the value degrades to undefined */
+{
+  const h = bootData({
+    files: {
+      'data.json': {
+        semHash: { $ref: 'usuarios.json' },
+        comExtra: { $ref: 'usuarios.json#lista', outro: 1 },
+      },
+      'data/usuarios.json': { lista: [1] },
+    },
+  })
+  let values = ['sentinel', 'sentinel']
+  let threw = null
+  try {
+    values = [await h.Mock.data('semHash'), await h.Mock.data('comExtra')]
+  } catch (error) {
+    threw = error
+  }
+  assert.equal(threw, null, 'malformed $ref objects must never throw')
+  assert.deepEqual(values, [undefined, undefined], 'malformed $ref objects must degrade to undefined')
+  assert.ok(
+    h.warns.filter((m) => m.includes('must be exactly')).length === 2,
+    'every malformed $ref object must guide on the console with the required form',
+  )
+  assert.deepEqual(h.fetchCalls, ['data.json'], 'a malformed ref must never reach the store')
+  console.log('ok  malformed $ref object -> guided console, zero throw, zero fetch (shape)')
+}
+
+console.log('mock-check OK — 5 suites hold: navigation/overlay, a11y, data-action dispatch, action-module, data-resolver')

@@ -7,6 +7,8 @@
     "dashboard/01-overview.html",
     "dashboard/canvas.json",
     "dashboard/data.json",
+    "data/estoque.json",
+    "data/usuarios.json",
     "design-system.css",
     "inventory.json",
     "login/01-login.html",

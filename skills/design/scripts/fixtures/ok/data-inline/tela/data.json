@@ -1,0 +1,8 @@
+{
+  "users": [
+    { "name": "Maria da Silva", "role": "Estoquista" }
+  ],
+  "scenarios": {
+    "vazio": { "users": [] }
+  }
+}

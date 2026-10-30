@@ -1,0 +1,5 @@
+{
+  "users": { "$ref": "usuarios.json#lista" },
+  "gestores": { "$ref": "usuarios.json#admins" },
+  "resumo": { "$ref": "resumo.json#totais" }
+}

@@ -1,0 +1,8 @@
+{
+  "lista": [
+    { "name": "Maria da Silva", "role": "Estoquista" }
+  ],
+  "admins": [
+    { "name": "Joao Souza", "role": "Gerente" }
+  ]
+}
