@@ -1,0 +1,6 @@
+{
+  "title": "smoke-console (fixture)",
+  "screens": [
+    { "id": "console", "name": "console.error na tela", "file": "01-s.html", "device": "mobile", "width": 390, "height": 844 }
+  ]
+}

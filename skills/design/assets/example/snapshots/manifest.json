@@ -1,30 +1,161 @@
 {
-  "smoke": "v1",
-  "snapshotThreshold": 0.02,
-  "viewport": [
-    1600,
-    1000
-  ],
   "screens": [
     {
+      "asserts": {
+        "clientWidth": 768,
+        "consoleErrors": 0,
+        "innerWidth": 768,
+        "scrollWidth": 768,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          768,
+          1024
+        ]
+      },
       "canvas": "dashboard",
+      "emulated": "desktop",
       "file": "01-overview.html",
-      "snapshot": "dashboard-01-overview.png"
+      "snapshot": "dashboard-01-overview-768x1024.png",
+      "source": "derived",
+      "viewport": [
+        768,
+        1024
+      ]
     },
     {
+      "asserts": {
+        "clientWidth": 390,
+        "consoleErrors": 0,
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          390,
+          844
+        ]
+      },
       "canvas": "login",
+      "emulated": "iPhone 12",
       "file": "01-login.html",
-      "snapshot": "login-01-login.png"
+      "snapshot": "login-01-login-390x844.png",
+      "source": "derived",
+      "viewport": [
+        390,
+        844
+      ]
     },
     {
+      "asserts": {
+        "clientWidth": 375,
+        "consoleErrors": 0,
+        "innerWidth": 375,
+        "scrollWidth": 375,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          375,
+          667
+        ]
+      },
       "canvas": "login",
+      "emulated": "iPhone 6",
+      "file": "01-login.html",
+      "snapshot": "login-01-login-375x667.png",
+      "source": "pair",
+      "viewport": [
+        375,
+        667
+      ]
+    },
+    {
+      "asserts": {
+        "clientWidth": 390,
+        "consoleErrors": 0,
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          390,
+          844
+        ]
+      },
+      "canvas": "login",
+      "emulated": "iPhone 12",
       "file": "02-cadastro.html",
-      "snapshot": "login-02-cadastro.png"
+      "snapshot": "login-02-cadastro-390x844.png",
+      "source": "derived",
+      "viewport": [
+        390,
+        844
+      ]
     },
     {
+      "asserts": {
+        "clientWidth": 375,
+        "consoleErrors": 0,
+        "innerWidth": 375,
+        "scrollWidth": 375,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          375,
+          667
+        ]
+      },
       "canvas": "login",
+      "emulated": "iPhone 6",
+      "file": "02-cadastro.html",
+      "snapshot": "login-02-cadastro-375x667.png",
+      "source": "pair",
+      "viewport": [
+        375,
+        667
+      ]
+    },
+    {
+      "asserts": {
+        "clientWidth": 390,
+        "consoleErrors": 0,
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          390,
+          844
+        ]
+      },
+      "canvas": "login",
+      "emulated": "iPhone 12",
       "file": "03-modal.html",
-      "snapshot": "login-03-modal.png"
+      "snapshot": "login-03-modal-390x844.png",
+      "source": "derived",
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "asserts": {
+        "clientWidth": 375,
+        "consoleErrors": 0,
+        "innerWidth": 375,
+        "scrollWidth": 375,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          375,
+          667
+        ]
+      },
+      "canvas": "login",
+      "emulated": "iPhone 6",
+      "file": "03-modal.html",
+      "snapshot": "login-03-modal-375x667.png",
+      "source": "pair",
+      "viewport": [
+        375,
+        667
+      ]
     }
-  ]
+  ],
+  "smoke": "v2",
+  "snapshotThreshold": 0.02,
+  "timeoutMs": 15000
 }

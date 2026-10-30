@@ -1,18 +1,32 @@
 #!/usr/bin/env node
 /**
- * Characterization smoke (v1) for the design skill — BEFORE any DOM migration
- * (plan c4a). Renders every screen of a design root in a real browser and
- * freezes the pixels as a snapshot baseline; later runs must match the
- * baseline so a migration that moves pixels is caught on the spot.
+ * Smoke v2 for the design skill (plan todo 17, GAP-6): renders every screen
+ * of a design root in emulated device contexts and asserts the plan contract
+ * per screen x viewport — then freezes/compares pixel snapshots.
  *
- * Usage: node design/scripts/smoke.mjs [--config <path>] [--design <path>] [--print-viewport]
- *   --config         explicit validate.config.json path
- *   --design         design root whose screens are smoke-tested (default ./design)
- *   --print-viewport print per-screen viewport JSON (screen id -> {width,height})
- *                    derived from each canvas.json via lib/viewport.mjs
- *                    (deriveViewport — the SINGLE viewport truth, todo 16) and
- *                    exit; no browser, no snapshots. Viewports are NEVER
- *                    hardcoded here (todo 17 emulates devices with these).
+ * Usage: node design/scripts/smoke.mjs [--config <path>] [--design <path>]
+ *          [--all-devices] [--update-snapshots] [--print-viewport]
+ *   --config            explicit validate.config.json path
+ *   --design            design root whose screens are smoke-tested (default ./design)
+ *   --all-devices       cross-check the emulated pairs (config smoke.viewports,
+ *                       e.g. 390x844 & 375x667) for every `device: mobile`
+ *                       screen; tablet/desktop screens run ONLY their derived
+ *                       viewport (never a mobile pair)
+ *   --update-snapshots  the ONLY declared baseline regeneration path (the
+ *                       --update-metrics analogue): overwrite the snapshot
+ *                       baselines of runs that pass every non-snapshot assert
+ *   --print-viewport    print per-screen viewport JSON (screen id -> {width,height})
+ *                       derived from each canvas.json via lib/viewport.mjs
+ *                       (deriveViewport — the SINGLE viewport truth, todo 16)
+ *                       and exit; no browser, no snapshots
+ *
+ * Viewports are NEVER hardcoded: every screen runs at deriveViewport(canvas.json)
+ * (lib/viewport.mjs, todo 16) and the emulated pairs come from
+ * config.smoke.viewports. Mobile screens ALWAYS run in a playwright-core
+ * `devices[...]` emulation (device descriptor + viewport override) — NEVER the
+ * physical window (the ~504px headless minimum makes an unemulated "mobile"
+ * capture false, plan §13.2); tablet/desktop screens run a plain desktop
+ * context at their derived viewport.
  *
  * Screens come from <canvas>/canvas.json manifests (the metrics census
  * convention): canvases are the top-level dirs of the design root minus
@@ -20,37 +34,53 @@
  * (exit 1) naming the screen — a manifest that lies about its files is a
  * characterization failure.
  *
- * What v1 asserts (NOTHING else — device emulation and horizontal-viewport
- * checks belong to todo 17):
- *   1. every listed screen loads (HTTP 2xx + load event);
- *   2. zero console.error / pageerror while loading ("Failed to load
+ * Per screen x viewport the run asserts, in order:
+ *   1. no horizontal scroll — document.scrollingElement.scrollWidth <=
+ *      window.innerWidth + 1px (on mobile emulation the layout viewport
+ *      EXPANDS with overflowing content, so the reference is the narrower of
+ *      innerWidth and documentElement.clientWidth — the meta-pinned layout
+ *      width; see the probe note at the assert);
+ *   2. the applied viewport IS the requested one — page.viewportSize() must
+ *      match the run dimensions (plan §13.2 criterion 5: the ~504px minimum
+ *      must fail loudly, never silently);
+ *   3. zero console.error / pageerror while loading ("Failed to load
  *      resource" is filtered out — the scripts/viewer-accept.mjs precedent);
- *   3. a PNG snapshot per screen is frozen at <design>/snapshots/<tela>.png
- *      plus threshold.json (maxDiffPixelRatio = config.smoke.snapshotThreshold)
- *      and a deterministic manifest.json listing the loaded screens.
+ *   4. loads bounded by the declared config.smoke.timeoutMs — a violation
+ *      cites the declared timeout;
+ *   5. a PNG snapshot at <design>/snapshots/<tela>-<w>x<h>.png compared
+ *      pixel-by-pixel against the baseline with maxDiffPixelRatio =
+ *      config.smoke.snapshotThreshold (declared in config — NEVER implicit;
+ *      threshold.json + a deterministic manifest.json listing every
+ *      screen x viewport with its assert results are written when the whole
+ *      run is green).
  *
  * Baseline semantics: a missing baseline PNG is WRITTEN (first run); an
- * existing one is COMPARED pixel-by-pixel and NEVER overwritten — the baseline
- * is a freeze. The comparison tolerance is the declared maxDiffPixelRatio and
- * the exact diff is printed per screen; the characterization freeze is the
- * run with every diff at 0. threshold.json and manifest.json are rewritten
- * byte-identically every green run (no timestamps — manifest sha256 printed).
+ * existing one is COMPARED and NEVER overwritten — the baseline is a freeze.
+ * Regeneration is ONLY the declared --update-snapshots path. The exact diff
+ * is printed per run; the freeze is the run with every diff at 0.
+ *
+ * [v1 -> v2] the v1 capture window (1600x1000 hardcoded) and <tela>.png
+ * naming are superseded by plan mandate: snapshots are <tela>-<w>x<h>.png per
+ * derived/emulated viewport.
  *
  * The served root is a throwaway COPY of the design root (serve.mjs writes
  * design/.history while it runs; the repo tree must stay clean), served by
- * skills/design/assets/serve.mjs on an ephemeral port (port 0). Page loads
- * are bounded by config.smoke.timeoutMs. When the design root does not ship
- * the mock runtime (example/ is a seed), mock.js/mock.css are layered into
- * the copy — the scripts/viewer-accept.mjs precedent.
+ * skills/design/assets/serve.mjs on an ephemeral port (port 0). When the
+ * design root does not ship the mock runtime (example/ is a seed),
+ * mock.js/mock.css are layered into the copy — the scripts/viewer-accept.mjs
+ * precedent.
  *
  * Requires playwright-core (devDependency) — dynamic require from the CWD,
  * the scripts/viewer-accept.mjs pattern: missing -> exit 5 with the guided
- * install command. The browser engine is Playwright's own
+ * install command. Args are parsed BEFORE the require, so an invalid argument
+ * without playwright-core installed exits 2 (usage) — documented todo-16
+ * reorder. The browser engine is Playwright's own
  * (`npx playwright-core install chromium`).
  *
  * Exit codes: 0 = green (baseline written or diff within maxDiffPixelRatio),
- *   1 = characterization failure (screen missing on disk, load error,
- *   console.error/pageerror, timeout, pixel diff over maxDiffPixelRatio),
+ *   1 = smoke failure (screen missing on disk, viewport derivation failure,
+ *   load error, timeout, console.error/pageerror, viewport mismatch,
+ *   horizontal scroll, pixel diff over maxDiffPixelRatio),
  *   2 = bad usage / wrong-shape config key, 3 = missing/broken config
  *   (guided: run setup-design.mjs), 5 = playwright-core absent.
  */
@@ -76,15 +106,21 @@ import { deriveViewport } from './lib/viewport.mjs'
 
 // ---------- args ----------
 
-const usage = 'usage: node design/scripts/smoke.mjs [--config <path>] [--design <path>] [--print-viewport]'
+const usage = 'usage: node design/scripts/smoke.mjs [--config <path>] [--design <path>] [--all-devices] [--update-snapshots] [--print-viewport]'
 const argv = process.argv.slice(2)
 let configArg = null
 let designArg = './design'
 let printViewport = false
+let allDevices = false
+let updateSnapshots = false
 for (let i = 0; i < argv.length; i += 1) {
   const token = argv[i]
   if (token === '--print-viewport') {
     printViewport = true
+  } else if (token === '--all-devices') {
+    allDevices = true
+  } else if (token === '--update-snapshots') {
+    updateSnapshots = true
   } else if (token === '--config' || token === '--design') {
     const value = argv[i + 1]
     if (value === undefined || value.startsWith('--')) {
@@ -99,15 +135,20 @@ for (let i = 0; i < argv.length; i += 1) {
     process.exit(2)
   }
 }
+if (printViewport && (allDevices || updateSnapshots)) {
+  console.error(`--print-viewport cannot be combined with --all-devices/--update-snapshots — ${usage}`)
+  process.exit(2)
+}
 
 // ---------- playwright-core (dynamic require — viewer-accept.mjs pattern) ----------
 // --print-viewport derives JSON from canvas.json only: no browser needed there.
 
 const requireFrom = createRequire(join(process.cwd(), 'noop.js'))
 let chromium
+let devices
 if (!printViewport) {
   try {
-    ;({ chromium } = requireFrom('playwright-core'))
+    ;({ chromium, devices } = requireFrom('playwright-core'))
   } catch {
     console.error('playwright-core nao encontrado — rode "npm i playwright-core" nesta pasta e tente de novo.')
     process.exit(5)
@@ -159,12 +200,24 @@ function loadConfig() {
   if (smoke === null || typeof smoke !== 'object' || Array.isArray(smoke)) {
     configFatal(`${configPath}: ${CONFIG_NAME}: "smoke" must be a JSON object`, 2)
   }
-  const { timeoutMs, snapshotThreshold } = smoke
+  const { timeoutMs, snapshotThreshold, viewports } = smoke
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1) {
     configFatal(`${configPath}: ${CONFIG_NAME}: smoke.timeoutMs must be a positive integer`, 2)
   }
   if (typeof snapshotThreshold !== 'number' || !(snapshotThreshold >= 0 && snapshotThreshold <= 1)) {
     configFatal(`${configPath}: ${CONFIG_NAME}: smoke.snapshotThreshold must be a number in [0, 1]`, 2)
+  }
+  if (
+    !Array.isArray(viewports) ||
+    viewports.length === 0 ||
+    viewports.some(
+      (pair) => !Array.isArray(pair) || pair.length !== 2 || pair.some((value) => !Number.isInteger(value) || value < 1),
+    )
+  ) {
+    configFatal(
+      `${configPath}: ${CONFIG_NAME}: smoke.viewports must be a non-empty list of [width, height] pairs of positive integers`,
+      2,
+    )
   }
   return {
     configPath,
@@ -172,7 +225,29 @@ function loadConfig() {
     exemptDirs: new Set(exemptDirsValue),
     timeoutMs,
     snapshotThreshold,
+    viewports: viewports.map(([width, height]) => ({ width, height })),
   }
+}
+
+/** canvasMeta.breakpoints — consumed by deriveViewport (config-driven, NEVER
+ *  hardcoded). Wrong shape = exit 2 (config integrity), same guided line the
+ *  v1 --print-viewport path used. */
+function requireBreakpoints() {
+  const breakpoints = config.raw?.canvasMeta?.breakpoints
+  if (
+    breakpoints === null ||
+    typeof breakpoints !== 'object' ||
+    Array.isArray(breakpoints) ||
+    !Number.isFinite(breakpoints.mobileMax) ||
+    !Number.isFinite(breakpoints.tabletMax) ||
+    !(breakpoints.mobileMax < breakpoints.tabletMax)
+  ) {
+    configFatal(
+      `${config.configPath}: ${CONFIG_NAME}: "canvasMeta.breakpoints" must be { "mobileMax": <number>, "tabletMax": <number> } with mobileMax < tabletMax`,
+      2,
+    )
+  }
+  return breakpoints
 }
 
 const config = loadConfig()
@@ -217,8 +292,8 @@ function discoverScreens(rootDir, exemptDirs) {
         canvas,
         file,
         label: `${canvas}/${file}`,
-        snapshot: `${canvas}-${stem}.png`,
-        meta: screen, // raw canvas.json entry (deriveViewport input for --print-viewport)
+        tela: `${canvas}-${stem}`, // snapshot stem: <tela>-<w>x<h>.png (v2 naming)
+        meta: screen, // raw canvas.json entry (deriveViewport input)
       })
     }
   }
@@ -335,18 +410,7 @@ if (screens.length === 0) {
 }
 
 if (printViewport) {
-  const breakpoints = config.raw?.canvasMeta?.breakpoints
-  if (
-    breakpoints === null ||
-    typeof breakpoints !== 'object' ||
-    Array.isArray(breakpoints) ||
-    !Number.isFinite(breakpoints.mobileMax) ||
-    !Number.isFinite(breakpoints.tabletMax) ||
-    !(breakpoints.mobileMax < breakpoints.tabletMax)
-  ) {
-    console.error(`${config.configPath}: ${CONFIG_NAME}: "canvasMeta.breakpoints" must be { "mobileMax": <number>, "tabletMax": <number> } with mobileMax < tabletMax`)
-    process.exit(2)
-  }
+  const breakpoints = requireBreakpoints()
   const perScreen = {}
   let printFailed = 0
   for (const screen of screens) {
@@ -372,9 +436,61 @@ if (printViewport) {
 const snapshotsDir = join(designDir, 'snapshots')
 const SERVE_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'serve.mjs')
 
+// ---------- run matrix ----------
+// Viewports are NEVER hardcoded: deriveViewport (lib/viewport.mjs) supplies
+// the per-screen viewport and the emulated pairs come from config.smoke.viewports
+// (cross-check ONLY for device:mobile screens — tablet/desktop run just their
+// derived viewport). Identical dimensions collapse into ONE run (a 390x844
+// mobile screen runs its derived/pair viewport once).
+
+function pickMobileDescriptor(viewport) {
+  const exact = Object.keys(devices)
+    .filter(
+      (name) =>
+        devices[name].isMobile === true &&
+        devices[name].viewport.width === viewport.width &&
+        devices[name].viewport.height === viewport.height,
+    )
+    .sort()
+  if (exact.length > 0) return exact[0]
+  const fallback = ['iPhone 12', 'iPhone 13', 'Pixel 5'].find(
+    (name) => devices[name] !== undefined && devices[name].isMobile === true,
+  )
+  if (fallback !== undefined) return fallback
+  const anyMobile = Object.keys(devices).filter((name) => devices[name].isMobile === true).sort()
+  if (anyMobile.length > 0) return anyMobile[0]
+  throw new Error('playwright-core devices[] has no mobile descriptor to emulate')
+}
+
+const breakpoints = requireBreakpoints()
+const matrix = []
+let planFailed = false
+for (const screen of screens) {
+  let derived
+  try {
+    derived = deriveViewport(screen.meta, breakpoints)
+  } catch (error) {
+    console.error(`smoke: FAIL ${screen.label} — ${String(error?.message ?? error)}`)
+    planFailed = true
+    continue
+  }
+  const runs = [{ width: derived.width, height: derived.height, source: 'derived' }]
+  if (allDevices && screen.meta?.device === 'mobile') {
+    for (const pair of config.viewports) {
+      if (!runs.some((run) => run.width === pair.width && run.height === pair.height)) {
+        runs.push({ width: pair.width, height: pair.height, source: 'pair' })
+      }
+    }
+  }
+  matrix.push({ screen, runs })
+}
+if (planFailed) process.exit(1)
+const runCount = matrix.reduce((total, entry) => total + entry.runs.length, 0)
+
 console.log(`smoke: config ${configArg ?? CONFIG_NAME}`)
-console.log(`smoke: design ${designArg} — ${screens.length} screens`)
-console.log(`smoke: snapshots ${join(designArg, 'snapshots')} (maxDiffPixelRatio ${config.snapshotThreshold})`)
+console.log(`smoke: design ${designArg} — ${screens.length} screens, ${runCount} runs`)
+console.log(`smoke: snapshots ${join(designArg, 'snapshots')} (maxDiffPixelRatio ${config.snapshotThreshold}, timeoutMs ${config.timeoutMs})`)
+if (updateSnapshots) console.log('smoke: --update-snapshots — baseline regeneration (declared path)')
 
 const workRoot = mkdtempSync(join(tmpdir(), 'design-smoke-'))
 const workDesign = join(workRoot, 'design')
@@ -394,6 +510,7 @@ for (const runtime of ['mock.js', 'mock.css']) {
 let server = null
 let browser = null
 let failed = 0
+const manifestScreens = []
 
 try {
   server = spawn(process.execPath, [SERVE_SCRIPT, '0', '--no-open'], {
@@ -424,73 +541,136 @@ try {
     headless: true,
   })
 
-  mkdirSync(snapshotsDir, { recursive: true })
-  writeFileSync(join(snapshotsDir, 'threshold.json'), `${JSON.stringify({ maxDiffPixelRatio: config.snapshotThreshold }, null, 2)}\n`)
-
-  for (const screen of screens) {
-    const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } })
-    const errors = []
-    page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`))
-    page.on('console', (message) => {
-      if (message.type() === 'error' && !message.text().includes('Failed to load resource')) {
-        errors.push(`console.error: ${message.text()}`)
-      }
-    })
-    let reason = null
-    let png = null
-    try {
-      const response = await page.goto(`${base}/${screen.canvas}/${screen.file}`, {
-        waitUntil: 'load',
-        timeout: config.timeoutMs,
-      })
-      if (!response || !response.ok()) {
-        reason = `load failed (HTTP ${response ? response.status() : 'no response'})`
+  for (const { screen, runs } of matrix) {
+    for (const run of runs) {
+      const snapshot = `${screen.tela}-${run.width}x${run.height}.png`
+      const where = `${screen.label} @ ${run.width}x${run.height}`
+      let deviceName = null
+      let contextOptions
+      if (screen.meta?.device === 'mobile') {
+        // Device emulation via playwright-core descriptors + viewport override
+        // — NEVER the physical window (plan §13.2: the ~504px headless minimum
+        // makes an unemulated "mobile" capture false).
+        deviceName = pickMobileDescriptor(run)
+        const { defaultBrowserType, ...device } = devices[deviceName]
+        contextOptions = { ...device, viewport: { width: run.width, height: run.height } }
       } else {
-        await page.waitForLoadState('networkidle', { timeout: config.timeoutMs }).catch(() => {})
-        png = await page.screenshot({ fullPage: true, animations: 'disabled' })
+        contextOptions = { viewport: { width: run.width, height: run.height } }
       }
-    } catch (error) {
-      const message = String(error?.message ?? error)
-      reason = message.includes('Timeout') ? `timeout after ${config.timeoutMs}ms` : `load failed (${message.split('\n')[0]})`
-    }
-    await page.close().catch(() => {})
-    if (reason === null && errors.length > 0) reason = errors.join(' | ')
-    if (reason !== null) {
-      failed += 1
-      console.log(`smoke: FAIL ${screen.label} — ${reason}`)
-      continue
-    }
+      const page = await browser.newPage(contextOptions)
+      const errors = []
+      page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`))
+      page.on('console', (message) => {
+        if (message.type() === 'error' && !message.text().includes('Failed to load resource')) {
+          errors.push(`console.error: ${message.text()}`)
+        }
+      })
+      let reason = null
+      let png = null
+      let scroll = null
+      try {
+        const response = await page.goto(`${base}/${screen.canvas}/${screen.file}`, {
+          waitUntil: 'load',
+          timeout: config.timeoutMs,
+        })
+        if (!response || !response.ok()) {
+          reason = `load failed (HTTP ${response ? response.status() : 'no response'})`
+        } else {
+          await page.waitForLoadState('networkidle', { timeout: config.timeoutMs }).catch(() => {})
+          // (1) no horizontal scroll (plan: scrollWidth <= innerWidth + 1px).
+          // On mobile emulation Chrome EXPANDS the layout viewport with
+          // overflowing content (window.innerWidth tracks the content width),
+          // so the reference is the narrower of innerWidth and
+          // documentElement.clientWidth (the meta-pinned layout width) — the
+          // plan formula then holds on every context type (probe evidence:
+          // 500px element @ 390 emulated -> innerWidth 501, clientWidth 390).
+          scroll = await page.evaluate(() => ({
+            scrollWidth: document.scrollingElement.scrollWidth,
+            innerWidth: window.innerWidth,
+            clientWidth: document.documentElement.clientWidth,
+          }))
+          const viewportWidth = Math.min(scroll.innerWidth, scroll.clientWidth)
+          if (scroll.scrollWidth > viewportWidth + 1) {
+            reason = `horizontal scroll: scrollWidth ${scroll.scrollWidth} > viewport width ${viewportWidth} (innerWidth ${scroll.innerWidth}, clientWidth ${scroll.clientWidth}, +1px tolerance)`
+          } else {
+            // (2) applied viewport == requested (plan §13.2 criterion 5)
+            const applied = page.viewportSize()
+            if (applied === null || applied.width !== run.width || applied.height !== run.height) {
+              reason = `viewport mismatch: applied ${applied === null ? 'none' : `${applied.width}x${applied.height}`} != requested ${run.width}x${run.height}`
+            } else {
+              png = await page.screenshot({ fullPage: true, animations: 'disabled' })
+            }
+          }
+        }
+      } catch (error) {
+        const message = String(error?.message ?? error)
+        // (4) the declared smoke.timeoutMs bounds every load
+        reason = message.includes('Timeout') ? `timeout after ${config.timeoutMs}ms (smoke.timeoutMs)` : `load failed (${message.split('\n')[0]})`
+      }
+      await page.close().catch(() => {})
+      // (3) zero console.error / pageerror
+      if (reason === null && errors.length > 0) reason = errors.join(' | ')
+      if (reason !== null) {
+        failed += 1
+        console.log(`smoke: FAIL ${where} — ${reason}`)
+        continue
+      }
 
-    const baselinePath = join(snapshotsDir, screen.snapshot)
-    if (!existsSync(baselinePath)) {
-      writeFileSync(baselinePath, png)
-      console.log(`smoke: ok ${screen.label} — 0 errors, baseline written (${screen.snapshot})`)
-      continue
+      // (5) snapshot <tela>-<w>x<h>.png — written when missing or under
+      // --update-snapshots (the ONLY regeneration path); otherwise compared
+      // pixel-by-pixel against the frozen baseline.
+      const baselinePath = join(snapshotsDir, snapshot)
+      const existedBefore = existsSync(baselinePath)
+      let diffRatio = 0
+      let detail
+      if (updateSnapshots || !existedBefore) {
+        mkdirSync(snapshotsDir, { recursive: true })
+        writeFileSync(baselinePath, png)
+        detail = `${updateSnapshots && existedBefore ? 'baseline updated' : 'baseline written'} (${snapshot})`
+      } else {
+        let outcome
+        try {
+          outcome = pixelDiff(decodePng(readFileSync(baselinePath)), decodePng(png))
+        } catch (error) {
+          outcome = { sizeMismatch: null, decodeError: String(error?.message ?? error) }
+        }
+        if (outcome.decodeError) {
+          failed += 1
+          console.log(`smoke: FAIL ${where} — baseline decode: ${outcome.decodeError}`)
+          continue
+        }
+        if (outcome.sizeMismatch) {
+          failed += 1
+          const [bw, bh, cw, ch] = outcome.sizeMismatch
+          console.log(`smoke: FAIL ${where} — size mismatch: baseline ${bw}x${bh} vs current ${cw}x${ch}`)
+          continue
+        }
+        if (outcome.ratio > config.snapshotThreshold) {
+          failed += 1
+          console.log(`smoke: FAIL ${where} — diff ${outcome.ratio.toFixed(6)} (${outcome.differing} px) vs ${snapshot} exceeds maxDiffPixelRatio ${config.snapshotThreshold}`)
+          continue
+        }
+        diffRatio = Math.round(outcome.ratio * 1e6) / 1e6
+        detail = `diff ${outcome.ratio.toFixed(6)} (${outcome.differing} px) vs ${snapshot}`
+      }
+      console.log(`smoke: ok ${where} [${run.source}, ${deviceName === null ? 'desktop' : `emulated ${deviceName}`}] — 0 errors, ${detail}`)
+      manifestScreens.push({
+        canvas: screen.canvas,
+        file: screen.file,
+        viewport: [run.width, run.height],
+        source: run.source,
+        emulated: deviceName ?? 'desktop',
+        snapshot,
+        asserts: {
+          viewportApplied: [run.width, run.height],
+          scrollWidth: scroll.scrollWidth,
+          innerWidth: scroll.innerWidth,
+          clientWidth: scroll.clientWidth,
+          consoleErrors: 0,
+          snapshotDiffRatio: diffRatio,
+        },
+      })
     }
-    let outcome
-    try {
-      outcome = pixelDiff(decodePng(readFileSync(baselinePath)), decodePng(png))
-    } catch (error) {
-      outcome = { sizeMismatch: null, decodeError: String(error?.message ?? error) }
-    }
-    if (outcome.decodeError) {
-      failed += 1
-      console.log(`smoke: FAIL ${screen.label} — baseline decode: ${outcome.decodeError}`)
-      continue
-    }
-    if (outcome.sizeMismatch) {
-      failed += 1
-      const [bw, bh, cw, ch] = outcome.sizeMismatch
-      console.log(`smoke: FAIL ${screen.label} — size mismatch: baseline ${bw}x${bh} vs current ${cw}x${ch}`)
-      continue
-    }
-    const detail = `diff ${outcome.ratio.toFixed(6)} (${outcome.differing} px) vs ${screen.snapshot}`
-    if (outcome.ratio > config.snapshotThreshold) {
-      failed += 1
-      console.log(`smoke: FAIL ${screen.label} — ${detail} exceeds maxDiffPixelRatio ${config.snapshotThreshold}`)
-      continue
-    }
-    console.log(`smoke: ok ${screen.label} — 0 errors, ${detail}`)
   }
 } finally {
   if (browser !== null) await browser.close().catch(() => {})
@@ -502,17 +682,29 @@ try {
 }
 
 if (failed > 0) {
-  console.log(`smoke: ${screens.length - failed}/${screens.length} screens ok`)
+  console.log(`smoke: ${runCount - failed}/${runCount} runs ok`)
   process.exit(1)
 }
 
-const manifest = {
-  smoke: 'v1',
-  snapshotThreshold: config.snapshotThreshold,
-  viewport: [1600, 1000],
-  screens: screens.map((screen) => ({ canvas: screen.canvas, file: screen.file, snapshot: screen.snapshot })),
+/** Deterministic manifest serialization — recursively sorted keys, no
+ *  timestamps: the same state always yields the same bytes. */
+function sortKeys(value) {
+  if (Array.isArray(value)) return value.map(sortKeys)
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, sortKeys(value[key])]))
+  }
+  return value
 }
-const manifestBytes = `${JSON.stringify(manifest, null, 2)}\n`
+
+const manifest = {
+  smoke: 'v2',
+  timeoutMs: config.timeoutMs,
+  snapshotThreshold: config.snapshotThreshold,
+  screens: manifestScreens,
+}
+mkdirSync(snapshotsDir, { recursive: true })
+writeFileSync(join(snapshotsDir, 'threshold.json'), `${JSON.stringify({ maxDiffPixelRatio: config.snapshotThreshold }, null, 2)}\n`)
+const manifestBytes = `${JSON.stringify(sortKeys(manifest), null, 2)}\n`
 writeFileSync(join(snapshotsDir, 'manifest.json'), manifestBytes)
 console.log(`smoke: manifest sha256 ${createHash('sha256').update(manifestBytes).digest('hex')}`)
-console.log(`smoke: ${screens.length}/${screens.length} screens ok`)
+console.log(`smoke: ${runCount}/${runCount} runs ok`)

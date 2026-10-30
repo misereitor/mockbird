@@ -1,0 +1,6 @@
+{
+  "title": "smoke-timeout (fixture)",
+  "screens": [
+    { "id": "timeout", "name": "Carga lenta (excede timeoutMs)", "file": "01-s.html", "device": "mobile", "width": 390, "height": 844 }
+  ]
+}

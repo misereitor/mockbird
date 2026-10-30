@@ -21,3 +21,9 @@ Uso (carrega as 5 telas + congela snapshots em `snapshots/`):
 ```
 node skills/design/scripts/smoke.mjs --config skills/design/assets/validate.config.json --design skills/design/scripts/fixtures/smoke
 ```
+
+Smoke v2: as telas declaram `device: mobile` 390×844 no `canvas.json` e rodam
+emuladas (`devices[...]` + override de viewport); os snapshots são nomeados
+`<tela>-<w>x<h>.png`. `--all-devices` acrescenta o par emulado 375×667
+(10 snapshots) e `--update-snapshots` é o ÚNICO caminho de re-geração da
+baseline.

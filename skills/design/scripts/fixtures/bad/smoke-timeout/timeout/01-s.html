@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>smoke-timeout: carga mais lenta que smoke.timeoutMs</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; padding: 16px; }
+  </style>
+</head>
+<body>
+  <p>Carga propositalmente lenta — o smoke v2 deve reprovar citando o timeout declarado.</p>
+  <script>
+    // Bloqueia o evento de load por ~2s: com smoke.timeoutMs = 100 (config da
+    // fixture) o page.goto deve estourar o timeout declarado.
+    const until = Date.now() + 2000
+    while (Date.now() < until) { /* busy-wait proposital */ }
+  </script>
+</body>
+</html>

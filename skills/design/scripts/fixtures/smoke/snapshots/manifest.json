@@ -1,35 +1,227 @@
 {
-  "smoke": "v1",
-  "snapshotThreshold": 0.02,
-  "viewport": [
-    1600,
-    1000
-  ],
   "screens": [
     {
+      "asserts": {
+        "clientWidth": 390,
+        "consoleErrors": 0,
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          390,
+          844
+        ]
+      },
       "canvas": "hardcases",
+      "emulated": "iPhone 12",
       "file": "01-inline-handler.html",
-      "snapshot": "hardcases-01-inline-handler.png"
+      "snapshot": "hardcases-01-inline-handler-390x844.png",
+      "source": "derived",
+      "viewport": [
+        390,
+        844
+      ]
     },
     {
+      "asserts": {
+        "clientWidth": 375,
+        "consoleErrors": 0,
+        "innerWidth": 375,
+        "scrollWidth": 375,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          375,
+          667
+        ]
+      },
       "canvas": "hardcases",
+      "emulated": "iPhone 6",
+      "file": "01-inline-handler.html",
+      "snapshot": "hardcases-01-inline-handler-375x667.png",
+      "source": "pair",
+      "viewport": [
+        375,
+        667
+      ]
+    },
+    {
+      "asserts": {
+        "clientWidth": 390,
+        "consoleErrors": 0,
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          390,
+          844
+        ]
+      },
+      "canvas": "hardcases",
+      "emulated": "iPhone 12",
       "file": "02-legacy-script-overlay.html",
-      "snapshot": "hardcases-02-legacy-script-overlay.png"
+      "snapshot": "hardcases-02-legacy-script-overlay-390x844.png",
+      "source": "derived",
+      "viewport": [
+        390,
+        844
+      ]
     },
     {
+      "asserts": {
+        "clientWidth": 375,
+        "consoleErrors": 0,
+        "innerWidth": 375,
+        "scrollWidth": 375,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          375,
+          667
+        ]
+      },
       "canvas": "hardcases",
+      "emulated": "iPhone 6",
+      "file": "02-legacy-script-overlay.html",
+      "snapshot": "hardcases-02-legacy-script-overlay-375x667.png",
+      "source": "pair",
+      "viewport": [
+        375,
+        667
+      ]
+    },
+    {
+      "asserts": {
+        "clientWidth": 390,
+        "consoleErrors": 0,
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          390,
+          844
+        ]
+      },
+      "canvas": "hardcases",
+      "emulated": "iPhone 12",
       "file": "03-local-routers.html",
-      "snapshot": "hardcases-03-local-routers.png"
+      "snapshot": "hardcases-03-local-routers-390x844.png",
+      "source": "derived",
+      "viewport": [
+        390,
+        844
+      ]
     },
     {
+      "asserts": {
+        "clientWidth": 375,
+        "consoleErrors": 0,
+        "innerWidth": 375,
+        "scrollWidth": 375,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          375,
+          667
+        ]
+      },
       "canvas": "hardcases",
+      "emulated": "iPhone 6",
+      "file": "03-local-routers.html",
+      "snapshot": "hardcases-03-local-routers-375x667.png",
+      "source": "pair",
+      "viewport": [
+        375,
+        667
+      ]
+    },
+    {
+      "asserts": {
+        "clientWidth": 390,
+        "consoleErrors": 0,
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          390,
+          844
+        ]
+      },
+      "canvas": "hardcases",
+      "emulated": "iPhone 12",
       "file": "04-flat-action-names.html",
-      "snapshot": "hardcases-04-flat-action-names.png"
+      "snapshot": "hardcases-04-flat-action-names-390x844.png",
+      "source": "derived",
+      "viewport": [
+        390,
+        844
+      ]
     },
     {
+      "asserts": {
+        "clientWidth": 375,
+        "consoleErrors": 0,
+        "innerWidth": 375,
+        "scrollWidth": 375,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          375,
+          667
+        ]
+      },
       "canvas": "hardcases",
+      "emulated": "iPhone 6",
+      "file": "04-flat-action-names.html",
+      "snapshot": "hardcases-04-flat-action-names-375x667.png",
+      "source": "pair",
+      "viewport": [
+        375,
+        667
+      ]
+    },
+    {
+      "asserts": {
+        "clientWidth": 390,
+        "consoleErrors": 0,
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          390,
+          844
+        ]
+      },
+      "canvas": "hardcases",
+      "emulated": "iPhone 12",
       "file": "05-so-mobile.html",
-      "snapshot": "hardcases-05-so-mobile.png"
+      "snapshot": "hardcases-05-so-mobile-390x844.png",
+      "source": "derived",
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "asserts": {
+        "clientWidth": 375,
+        "consoleErrors": 0,
+        "innerWidth": 375,
+        "scrollWidth": 375,
+        "snapshotDiffRatio": 0,
+        "viewportApplied": [
+          375,
+          667
+        ]
+      },
+      "canvas": "hardcases",
+      "emulated": "iPhone 6",
+      "file": "05-so-mobile.html",
+      "snapshot": "hardcases-05-so-mobile-375x667.png",
+      "source": "pair",
+      "viewport": [
+        375,
+        667
+      ]
     }
-  ]
+  ],
+  "smoke": "v2",
+  "snapshotThreshold": 0.02,
+  "timeoutMs": 15000
 }

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>smoke-overflow: elemento estoura a viewport de 390px</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    .wide { width: 500px; height: 40px; background: #c62828; color: #fff; }
+  </style>
+</head>
+<body>
+  <!-- 500px > 390px de viewport: scroll horizontal que o smoke v2 deve reprovar -->
+  <div class="wide">500px — estoura a viewport de 390px</div>
+</body>
+</html>

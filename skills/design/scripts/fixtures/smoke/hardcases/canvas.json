@@ -1,10 +1,10 @@
 {
   "title": "Hard cases (sintético)",
   "screens": [
-    { "id": "inline-handler", "name": "Handler inline de 2.024 chars", "file": "01-inline-handler.html" },
-    { "id": "legacy-script-overlay", "name": "Overlay com script legado morto", "file": "02-legacy-script-overlay.html" },
-    { "id": "local-routers", "name": "3 routers locais", "file": "03-local-routers.html" },
-    { "id": "flat-action-names", "name": "17 nomes planos de ação", "file": "04-flat-action-names.html" },
-    { "id": "so-mobile", "name": "Classes so-mobile (11 ocorrências)", "file": "05-so-mobile.html" }
+    { "id": "inline-handler", "name": "Handler inline de 2.024 chars", "file": "01-inline-handler.html", "device": "mobile", "width": 390, "height": 844 },
+    { "id": "legacy-script-overlay", "name": "Overlay com script legado morto", "file": "02-legacy-script-overlay.html", "device": "mobile", "width": 390, "height": 844 },
+    { "id": "local-routers", "name": "3 routers locais", "file": "03-local-routers.html", "device": "mobile", "width": 390, "height": 844 },
+    { "id": "flat-action-names", "name": "17 nomes planos de ação", "file": "04-flat-action-names.html", "device": "mobile", "width": 390, "height": 844 },
+    { "id": "so-mobile", "name": "Classes so-mobile (11 ocorrências)", "file": "05-so-mobile.html", "device": "mobile", "width": 390, "height": 844 }
   ]
 }

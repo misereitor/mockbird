@@ -1,0 +1,6 @@
+{
+  "title": "smoke-overflow (fixture)",
+  "screens": [
+    { "id": "overflow", "name": "Elemento estoura 390px", "file": "01-s.html", "device": "mobile", "width": 390, "height": 844 }
+  ]
+}
