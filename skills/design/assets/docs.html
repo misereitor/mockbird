@@ -263,13 +263,13 @@
   mock.js                interactivity runtime
   mock.css               runtime styles (toast/overlay/transitions)
   vendor/html-to-image.js  PNG export (vendored, no CDN)
-  index.json             system name + canvas list {"title": "My System", "canvases": ["login", …]}
+  index.json             canvas list {"canvases": ["login", …]}
   comments.json          persistent comment pins (written only by the server)
   &lt;canvas&gt;/              one flow per folder (login, dashboard, …)
     canvas.json          title + screens in order
     data.json            fictitious data + scenarios (optional)
     01-&lt;screen&gt;.html     one complete HTML document per screen</code></pre>
-    <p><code>canvas.json</code> defines order and size: <code>device</code> is <code>mobile</code> (390×844), <code>tablet</code> (834×1112) or <code>desktop</code> (1440×900), with optional <code>width</code>/<code>height</code> - screens with neither declared default to <strong>Desktop 1440&#215;900</strong>; each screen's enter transition is declared there too (<code>"transition": "fade"|"slide-left"|"none"</code> — see the mock API), and the optional <code>"group"</code> field clusters the screens into titled blocks in the viewer (complex projects stay readable). The system name lives in <code>index.json</code> (<code>"title"</code>): it shows in the header, the browser tab and presentation mode.</p>
+    <p><code>canvas.json</code> defines order and size: <code>device</code> is <code>mobile</code> (390×844), <code>tablet</code> (834×1112) or <code>desktop</code> (1440×900), with optional <code>width</code>/<code>height</code> - screens with neither declared default to <strong>Desktop 1440&#215;900</strong>; each screen's enter transition is declared there too (<code>"transition": "fade"|"slide-left"|"none"</code> — see the mock API), and the optional <code>"group"</code> field clusters the screens into titled blocks in the viewer (complex projects stay readable). The viewer is branded <strong>Mockbird</strong> - the name shows in the header, the browser tab and presentation mode (where the tab becomes just the name).</p>
 
     <h2 id="api-local">Local API</h2>
     <p>Besides serving files, <code>serve.mjs</code> exposes a <strong>write API</strong> at <code>/api/*</code> (comments and snapshots) used by the viewer. The served root is <code>./design</code> relative to the directory the server runs from (behavior change — it used to be the script's own folder); it is the same root the pipeline (<code>gen-tokens</code>/<code>sync-components</code>/<code>validate</code>) uses.</p>
@@ -579,13 +579,13 @@
   mock.js                runtime de interatividade
   mock.css               estilos do runtime (toast/overlay/transições)
   vendor/html-to-image.js  export de PNG (vendado, sem CDN)
-  index.json             nome do sistema + lista de canvases {"title": "Meu Sistema", "canvases": ["login", …]}
+  index.json             lista de canvases {"canvases": ["login", …]}
   comments.json          pins de comentários persistentes (escrito só pelo servidor)
   &lt;canvas&gt;/              um fluxo por pasta (login, dashboard, …)
     canvas.json          título + telas em ordem
     data.json            dados fictícios + cenários (opcional)
     01-&lt;tela&gt;.html       um documento HTML completo por tela</code></pre>
-  <p><code>canvas.json</code> define a ordem e o tamanho: <code>device</code> é <code>mobile</code> (390×844), <code>tablet</code> (834×1112) ou <code>desktop</code> (1440×900), com <code>width</code>/<code>height</code> opcionais - telas sem nenhum dos dois declarados valem <strong>Desktop 1440&#215;900</strong>; a transição de entrada de cada tela também é declarada ali (<code>"transition": "fade"|"slide-left"|"none"</code> — ver API do mock), e o campo opcional <code>"group"</code> agrupa as telas em blocos com título no visualizador (projetos complexos ficam legíveis). O nome do sistema mora no <code>index.json</code> (<code>"title"</code>): aparece no cabeçalho, na aba do navegador e no modo apresentação.</p>
+  <p><code>canvas.json</code> define a ordem e o tamanho: <code>device</code> é <code>mobile</code> (390×844), <code>tablet</code> (834×1112) ou <code>desktop</code> (1440×900), com <code>width</code>/<code>height</code> opcionais - telas sem nenhum dos dois declarados valem <strong>Desktop 1440&#215;900</strong>; a transição de entrada de cada tela também é declarada ali (<code>"transition": "fade"|"slide-left"|"none"</code> — ver API do mock), e o campo opcional <code>"group"</code> agrupa as telas em blocos com título no visualizador (projetos complexos ficam legíveis). O visualizador tem a marca <strong>Mockbird</strong> - o nome aparece no cabeçalho, na aba do navegador e no modo apresentação (onde a aba vira só o nome).</p>
 
   <h2 id="api-local">API local</h2>
   <p>Além de servir os arquivos, o <code>serve.mjs</code> expõe uma <strong>API de escrita</strong> em <code>/api/*</code> (comentários e snapshots) usada pelo visualizador. A raiz servida é <code>./design</code> relativo ao diretório de onde o servidor é executado (mudança de comportamento — antes era a pasta do próprio script); é a mesma raiz que o pipeline (<code>gen-tokens</code>/<code>sync-components</code>/<code>validate</code>) usa.</p>

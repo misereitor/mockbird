@@ -38,6 +38,7 @@
   }
   #crumbs { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
   #crumbs strong { font-size: 16px; }
+  #crumbs .brand-mark { color: var(--ui-accent); }
   .crumb-sep { color: var(--ui-muted); font-size: 14px; margin: 0 2px; }
   #crumbs span { color: var(--ui-muted); font-size: 12px; }
   #controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -524,7 +525,7 @@
 <body>
 
 <header id="bar" hidden>
-  <div id="crumbs"><strong id="systemName" hidden></strong><span class="crumb-sep" id="systemSep" hidden>&#8250;</span><strong id="canvasTitle"></strong><span id="canvasPath"></span></div>
+  <div id="crumbs"><strong class="brand-mark">Mockbird</strong><span class="crumb-sep">&#8250;</span><strong id="canvasTitle"></strong><span id="canvasPath"></span></div>
   <div id="controls">
     <label id="canvasLabel" hidden>Canvas
       <select id="canvasSelect"></select>
@@ -592,7 +593,7 @@
 </main>
 
 <section id="selector" hidden>
-  <h1>Design canvas</h1>
+  <h1>Mockbird</h1>
   <p data-i18n-html="selectorIntro">Pick a canvas to preview. They live in folders with a <code>canvas.json</code> next to this viewer.</p>
   <ul id="canvasList"></ul>
   <form id="manualForm">
@@ -742,7 +743,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.1.1</div>
+<div id="versionTag">v1.1.2</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -1500,7 +1501,7 @@ async function loadCanvas() {
   state.problems = result.problems
   state.screens = result.screens
   $('canvasTitle').textContent = result.title || state.canvas
-  applySystemName() // w23: a aba acompanha "Tela · Sistema"
+  applyAppTitle() // w24: a aba acompanha "Tela · Mockbird"
   $('canvasPath').textContent = `design/${state.canvas}`
   await loadScenarioSelect()
   await loadCanvasSelect()
@@ -3773,7 +3774,7 @@ function openPresentation(screen) {
   frame.style.height = `${height}px`
   frame.src = screenUrl(screen)
   $('present').hidden = false
-  applySystemName() // w23: na apresentacao a aba vira "so o sistema"
+  applyAppTitle() // w24: na apresentacao a aba vira so "Mockbird"
   fitPresentation()
   try {
     const request = document.documentElement.requestFullscreen?.()
@@ -3784,7 +3785,7 @@ function openPresentation(screen) {
 function closePresentation() {
   if (!presentOpen()) return
   $('present').hidden = true
-  applySystemName() // volta o titulo "Tela · Sistema"
+  applyAppTitle() // volta o titulo "Tela · Mockbird"
   $('presentFrame').src = 'about:blank' // para o mock - nada roda apos a vista
   if (document.fullscreenElement) {
     try {
@@ -4982,7 +4983,6 @@ async function boot() {
     $('bar').hidden = true
     $('viewport').hidden = true
     $('selector').hidden = false
-    await loadSystemName() // w23: o nome do sistema no titulo da selecao
     await listCanvases()
     return
   }
@@ -5012,7 +5012,6 @@ async function boot() {
   $('viewport').hidden = false
   applyTheme()
   await loadCanvas()
-  await loadSystemName() // w23: nome do sistema (index.json "title")
   updateCopyAll()
   // w4-19: cross-canvas jump from the pending panel lands on the target screen
   const screenParam = params.get('screen') ?? ''
@@ -5025,40 +5024,18 @@ async function boot() {
   pollFiles() // baseline agora - mudancas nos primeiros 2.5s nao passam batidas
 }
 
-/** w23: o nome do sistema (design/index.json "title") - a marca que faltava.
- *  Sem ele nada muda (titulo generico); com ele, aparece no cabecalho, na aba
- *  do navegador e na apresentacao (onde a aba vira "so o sistema", como real). */
-let systemName = ''
+/** w24: o nome do sistema e MOCKBIRD - na aba do navegador, no cabecalho e
+ *  na apresentacao (onde a aba vira so o nome, como o software de verdade). */
+const APP_NAME = 'Mockbird'
 
-async function loadSystemName() {
-  try {
-    const index = JSON.parse(await fetchText('index.json'))
-    const title = typeof index?.title === 'string' ? index.title.trim() : ''
-    if (title) systemName = title
-  } catch { /* sem index.json: fica o titulo generico */ }
-  applySystemName()
-}
-
-function applySystemName() {
-  const label = $('systemName')
-  const sep = $('systemSep')
-  if (label) {
-    label.textContent = systemName
-    label.hidden = !systemName
-  }
-  if (sep) sep.hidden = !systemName
-  const heading = document.querySelector('#selector h1')
-  if (heading && systemName) heading.textContent = systemName
+function applyAppTitle() {
   const canvasTitle = $('canvasTitle')?.textContent?.trim() ?? ''
   if (presentOpen()) {
-    // apresentacao: a aba vira "so o sistema" - como o software de verdade
-    document.title = systemName || canvasTitle || document.title
-  } else if (systemName && canvasTitle) {
-    document.title = `${canvasTitle} · ${systemName}`
-  } else if (systemName) {
-    document.title = systemName
+    document.title = APP_NAME
   } else if (canvasTitle) {
-    document.title = canvasTitle
+    document.title = `${canvasTitle} · ${APP_NAME}`
+  } else {
+    document.title = APP_NAME
   }
 }
 

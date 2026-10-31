@@ -40,9 +40,8 @@ for (const item of ['mock.js', 'mock.css', 'vendor', 'scripts', 'validate.mjs', 
   } catch { /* optional file */ }
 }
 // fixture: one open + one RESOLVED comment (resolved ones must stay visible)
-// w23: the system name comes from index.json ("title")
+// w23: index.json lista os canvases (a descoberta fica deterministica)
 writeFileSync(join(ROOT, 'design', 'index.json'), JSON.stringify({
-  title: 'Sistema Teste',
   canvases: ['login', 'dashboard'],
 }, null, 2))
 // w19: the THIRD screen drops device AND width/height - proves the desktop
@@ -118,11 +117,11 @@ const commentEnabled = await page.$eval('#commentBtn', (el) => !el.disabled)
 if (selected >= 1 && commentEnabled) ok('selecionar tela (clique)')
 else fail('selecionar tela', `selected=${selected} commentBtn.disabled=${!commentEnabled}`)
 
-// 1.5 SYSTEM NAME (w23): index.json "title" in the header and the browser tab
-const systemLabel = await page.$eval('#systemName', (el) => el.textContent)
+// 1.5 BRAND (w24): the system's name - Mockbird - in the header and the tab
+const brandLabel = await page.$eval('.brand-mark', (el) => el.textContent)
 const tabTitle = await page.title()
-if (systemLabel.includes('Sistema Teste') && tabTitle.includes('Sistema Teste')) ok(`nome do sistema visivel (${systemLabel.trim()} | ${tabTitle})`)
-else fail('nome do sistema', `label=${JSON.stringify(systemLabel)} titulo=${JSON.stringify(tabTitle)}`)
+if (brandLabel.trim() === 'Mockbird' && tabTitle.includes('Mockbird')) ok(`nome do sistema visivel (${brandLabel.trim()} | ${tabTitle})`)
+else fail('nome do sistema', `marca=${JSON.stringify(brandLabel)} titulo=${JSON.stringify(tabTitle)}`)
 
 // 2. COMMENT screen: Enter saves, Shift+Enter breaks the line (w16)
 await page.click('#commentBtn')
@@ -409,7 +408,7 @@ const presentLoaded = await page.$eval('#presentFrame', (el) => !!el.contentDocu
 if (presentOpenNow && presentLoaded) ok('modo apresentacao abre (tela limpa, sem editor)')
 else fail('apresentacao', `aberto=${presentOpenNow} frame=${presentLoaded}`)
 const presentTitle = await page.title()
-if (presentTitle === 'Sistema Teste') ok('apresentacao: a aba mostra so o nome do sistema')
+if (presentTitle === 'Mockbird') ok('apresentacao: a aba mostra so o nome do sistema')
 else fail('titulo na apresentacao', JSON.stringify(presentTitle))
 await page.keyboard.press('Escape')
 await page.waitForTimeout(300)

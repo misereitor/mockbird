@@ -189,6 +189,12 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **O nome do sistema é Mockbird (v1.1.2)**: o visualizador agora tem a marca
+  **Mockbird** — o nome aparece no cabeçalho (wordmark em destaque), na aba do
+  navegador (`Canvas · Mockbird`) e na página de seleção; no **modo
+  apresentação** a aba vira só **Mockbird**, como o software de verdade. Isso
+  substitui a experimentação do `"title"` no `index.json` da v1.1.1 (removida —
+  o nome é do produto, não de cada projeto).
 - **O sistema agora tem nome (v1.1.1)**: o `design/index.json` aceita
   `"title"` — o nome do sistema/marca — e ele aparece na **aba do navegador**
   (`Canvas · Sistema`), no cabeçalho (breadcrumb) e na página de seleção. No
