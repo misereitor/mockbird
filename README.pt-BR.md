@@ -189,6 +189,11 @@ para os invariantes, comandos de teste e checklist de PR. Alguns pontos:
 
 ## Changelog
 
+- **O sistema agora tem nome (v1.1.1)**: o `design/index.json` aceita
+  `"title"` — o nome do sistema/marca — e ele aparece na **aba do navegador**
+  (`Canvas · Sistema`), no cabeçalho (breadcrumb) e na página de seleção. No
+  **modo apresentação** a aba vira só o nome do sistema, como o software de
+  verdade. Sem título = o rótulo genérico antigo, nada quebra.
 - **Responsivo no `--share` + o canvas realmente troca (v1.0.26)**: duas
   correções do dono. (1) O controle de tamanho responsivo sumia no `--share`
   como se redimensionar fosse escrita — agora ele continua disponível como

@@ -40,11 +40,21 @@ for (const item of ['mock.js', 'mock.css', 'vendor', 'scripts', 'validate.mjs', 
   } catch { /* optional file */ }
 }
 // fixture: one open + one RESOLVED comment (resolved ones must stay visible)
-// w19: the THIRD screen drops its device - proves the desktop default (1440x900)
+// w23: the system name comes from index.json ("title")
+writeFileSync(join(ROOT, 'design', 'index.json'), JSON.stringify({
+  title: 'Sistema Teste',
+  canvases: ['login', 'dashboard'],
+}, null, 2))
+// w19: the THIRD screen drops device AND width/height - proves the desktop
+// default (1440x900) when nothing is declared
 {
   const manifestPath = join(ROOT, 'design', 'login', 'canvas.json')
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
-  if (manifest.screens[2]) delete manifest.screens[2].device
+  if (manifest.screens[2]) {
+    delete manifest.screens[2].device
+    delete manifest.screens[2].width
+    delete manifest.screens[2].height
+  }
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
 }
 writeFileSync(join(ROOT, 'design', 'comments.json'), JSON.stringify({
@@ -107,6 +117,12 @@ const selected = await page.$$eval('.card.selected', (els) => els.length)
 const commentEnabled = await page.$eval('#commentBtn', (el) => !el.disabled)
 if (selected >= 1 && commentEnabled) ok('selecionar tela (clique)')
 else fail('selecionar tela', `selected=${selected} commentBtn.disabled=${!commentEnabled}`)
+
+// 1.5 SYSTEM NAME (w23): index.json "title" in the header and the browser tab
+const systemLabel = await page.$eval('#systemName', (el) => el.textContent)
+const tabTitle = await page.title()
+if (systemLabel.includes('Sistema Teste') && tabTitle.includes('Sistema Teste')) ok(`nome do sistema visivel (${systemLabel.trim()} | ${tabTitle})`)
+else fail('nome do sistema', `label=${JSON.stringify(systemLabel)} titulo=${JSON.stringify(tabTitle)}`)
 
 // 2. COMMENT screen: Enter saves, Shift+Enter breaks the line (w16)
 await page.click('#commentBtn')
@@ -392,6 +408,9 @@ const presentOpenNow = await page.$eval('#present', (el) => !el.hidden)
 const presentLoaded = await page.$eval('#presentFrame', (el) => !!el.contentDocument?.body)
 if (presentOpenNow && presentLoaded) ok('modo apresentacao abre (tela limpa, sem editor)')
 else fail('apresentacao', `aberto=${presentOpenNow} frame=${presentLoaded}`)
+const presentTitle = await page.title()
+if (presentTitle === 'Sistema Teste') ok('apresentacao: a aba mostra so o nome do sistema')
+else fail('titulo na apresentacao', JSON.stringify(presentTitle))
 await page.keyboard.press('Escape')
 await page.waitForTimeout(300)
 if (await page.$eval('#present', (el) => el.hidden)) ok('esc volta ao editor')

@@ -228,6 +228,11 @@ Historical changelog (up to v1.0.26) continues below.
 
 ## Changelog
 
+- **The system now has a name (v1.1.1)**: `design/index.json` accepts
+  `"title"` — the system/brand name — and it shows in the **browser tab**
+  (`Canvas · System`), the header breadcrumb and the picker page. In
+  **presentation mode** the tab becomes just the system name, like the real
+  software. No title = the old generic label, nothing breaks.
 - **Responsive under `--share` + the canvas actually switches (v1.0.26)**: two
   fixes from the owner. (1) The responsive size control was hidden under
   `--share` as if resizing were writing — it now stays available as a
