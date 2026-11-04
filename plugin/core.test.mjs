@@ -5,10 +5,28 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, frontmatter, loadCommands, loadSkills, MIRROR, PACK_ROOT, SEED, syncProject } from './core.mjs'
+
+// Independent recomputation of the stamp hash — same documented rule as the
+// stamp itself: `dest\n<sha256>\n` per MIRROR entry, in order, fed to SHA-256.
+function recomputedMirrorHash(designDir) {
+  const composite = createHash('sha256')
+  for (const [dest] of MIRROR) {
+    const file = join(designDir, dest)
+    if (!existsSync(file)) continue
+    const hex = createHash('sha256').update(readFileSync(file)).digest('hex')
+    composite.update(`${dest}\n${hex}\n`)
+  }
+  return composite.digest('hex')
+}
+
+function readStamp(designDir) {
+  return JSON.parse(readFileSync(join(designDir, '.mockbird-version'), 'utf8'))
+}
 
 test('frontmatter parses name/description with indented continuations', () => {
   const fm = frontmatter('---\nname: design\ndescription: line one\n  line two\n---\n# body')
@@ -96,6 +114,116 @@ test('syncProject never overwrites evolved components (SEED policy)', () => {
     const summary = syncProject(dir)
     assert.ok(!summary.updated.includes('components/button.html'))
     assert.equal(readFileSync(button, 'utf8'), '<button>project evolved</button>')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('syncProject stamps design/.mockbird-version with version, mirrorHash and date', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mockbird-test-'))
+  try {
+    mkdirSync(join(dir, 'design'))
+    syncProject(dir)
+    const stamp = readStamp(join(dir, 'design')) // written, then re-read
+    const packVersion = JSON.parse(readFileSync(join(PACK_ROOT, 'package.json'), 'utf8')).version
+    assert.equal(stamp.version, packVersion)
+    assert.match(stamp.mirrorHash, /^[0-9a-f]{64}$/)
+    assert.ok(Number.isFinite(Date.parse(stamp.date)), `unparseable date: ${stamp.date}`)
+    assert.deepEqual(Object.keys(stamp.files).sort(), MIRROR.map(([d]) => d).sort())
+    assert.equal(stamp.mirrorHash, recomputedMirrorHash(join(dir, 'design')))
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('stamp records divergent files backed up as .bak', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mockbird-test-'))
+  try {
+    mkdirSync(join(dir, 'design'))
+    syncProject(dir)
+    const local = join(dir, 'design', 'mock.js')
+    writeFileSync(local, '// local experiment')
+    syncProject(dir)
+    assert.equal(readFileSync(`${local}.bak`, 'utf8'), '// local experiment')
+    assert.deepEqual(readStamp(join(dir, 'design')).divergent, ['mock.js'])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('stamp detects a corrupted recorded hash and backs up divergent content (QA failure path)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mockbird-test-'))
+  try {
+    mkdirSync(join(dir, 'design'))
+    syncProject(dir)
+    const stampPath = join(dir, 'design', '.mockbird-version')
+    // corrupt the recorded hash and re-run syncProject: the divergence must
+    // be detected (drift record), not silently accepted
+    const corrupt = JSON.parse(readFileSync(stampPath, 'utf8'))
+    corrupt.mirrorHash = '0'.repeat(64)
+    writeFileSync(stampPath, JSON.stringify(corrupt, null, 2))
+    syncProject(dir)
+    let stamp = readStamp(join(dir, 'design'))
+    assert.equal(stamp.mirrorHash, recomputedMirrorHash(join(dir, 'design')))
+    assert.ok(stamp.drift, 'corrupted recorded hash must be flagged as drift')
+    assert.equal(stamp.drift.mirrorMismatch, true)
+    assert.equal(stamp.drift.previousMirrorHash, '0'.repeat(64))
+    // diverging mirrored content: .bak created/updated + divergence recorded
+    const local = join(dir, 'design', 'mock.js')
+    writeFileSync(local, '// local experiment')
+    syncProject(dir)
+    assert.equal(readFileSync(`${local}.bak`, 'utf8'), '// local experiment')
+    stamp = readStamp(join(dir, 'design'))
+    assert.deepEqual(stamp.divergent, ['mock.js'])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('stamp drift reports a missing mirrored file (mismatch signal)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mockbird-test-'))
+  try {
+    mkdirSync(join(dir, 'design'))
+    syncProject(dir)
+    rmSync(join(dir, 'design', 'mock.js'))
+    syncProject(dir)
+    const stamp = readStamp(join(dir, 'design'))
+    assert.ok(stamp.drift, 'missing mirrored file must be signalled')
+    assert.equal(stamp.drift.mirrorMismatch, true)
+    assert.ok(stamp.drift.missing.includes('mock.js'), `missing not reported: ${JSON.stringify(stamp.drift)}`)
+    assert.ok(existsSync(join(dir, 'design', 'mock.js')), 'mirror loop still re-adds the file')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('a pre-existing design/ without the stamp adopts it on the next sync', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mockbird-test-'))
+  try {
+    mkdirSync(join(dir, 'design'))
+    writeFileSync(join(dir, 'design', 'mock.js'), '// project evolved before the stamp')
+    syncProject(dir)
+    const stamp = readStamp(join(dir, 'design'))
+    assert.equal(stamp.mirrorHash, recomputedMirrorHash(join(dir, 'design')))
+    assert.equal(stamp.drift, undefined, 'no previous stamp — nothing to verify')
+    assert.deepEqual(stamp.divergent, ['mock.js'])
+    assert.equal(readFileSync(join(dir, 'design', 'mock.js.bak'), 'utf8'), '// project evolved before the stamp')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('a malformed stamp is replaced without crashing', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mockbird-test-'))
+  try {
+    mkdirSync(join(dir, 'design'))
+    syncProject(dir)
+    writeFileSync(join(dir, 'design', '.mockbird-version'), 'not json {')
+    const summary = syncProject(dir)
+    assert.ok(summary)
+    const stamp = readStamp(join(dir, 'design'))
+    assert.match(stamp.mirrorHash, /^[0-9a-f]{64}$/)
+    assert.equal(stamp.drift, undefined, 'malformed stamp counts as absent')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

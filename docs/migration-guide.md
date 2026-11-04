@@ -3,7 +3,9 @@
 Guia para projetos cliente EXISTENTES que já têm um corpus de telas em
 `design/` e vão (1) atualizar o toolchain instalado e (2) migrar o corpus para
 o contrato de ações/registry. Duas metades independentes: a Seção 1 é o
-caminho de atualização; a Seção 2 é a migração do corpus.
+caminho de atualização; a Seção 2 é a migração do corpus. A Seção 3 cobre a
+adoção aditiva dos payloads novos (carimbo de versão, `design/.visual/`,
+`design/decisions.json`, `design/approvals.json`) — vale em qualquer ordem.
 
 > **Blocos CLIENT-RUN.** Todos os comandos da Seção 2 rodam NO SEU workspace,
 > com o seu corpus. O repositório da skill não executa nada da migração.
@@ -784,7 +786,196 @@ node design\scripts\qa.mjs --config design\validate.config.json --target design\
 
 ---
 
-## 3. Mapa de cobertura — WP (§15) → seção → comando → verificação
+## 3. Migração de payloads — diretórios novos em projetos já semeados
+
+Os payloads novos são **aditivos**: projeto que já tem `design/` semeado os
+adota sem quebrar o corpus existente. Regras: nada de payload é sobrescrito;
+diretório/arquivo ausente é um estado válido (as ferramentas tratam como
+"nada registrado" e nunca reprovam o corpus por isso); quem popula um payload
+é a ferramenta que o consome, nunca edição à mão. Cada WP fecha com o
+pipeline verde + commit (regra de ouro §2).
+
+### 3.1 WP-P1 — `design/.visual/`: capturas, manifest e scores
+
+O diretório guarda a matriz de captura por tela
+(`design/.visual/<tela>/<viewport>__<estado>.png`), o manifest
+`design/.visual/manifest.json` (uma entrada por imagem: gitSHA, screenHash,
+pngHash, timestamp, platform, viewport, state) e o histórico
+`design/.visual/scores.json`. Projeto que ainda não captura nada não tem o
+diretório — e continua válido. Quem popula é a ferramenta de captura quando
+rodar; nunca edite PNGs ou manifest à mão.
+
+bash:
+
+```bash
+PROJ=/caminho/para/o-projeto
+cd "$PROJ"
+
+# 1) adotar o payload: a raiz nasce vazia (a captura cria o resto)
+mkdir -p design/.visual
+
+# 2) pipeline continua verde com o diretório vazio
+node design/scripts/qa.mjs --config design/validate.config.json --target design
+
+# 3) versionar só o estável (manifest + scores); capturas transitórias ficam de fora
+git add design/.visual/manifest.json design/.visual/scores.json 2>/dev/null || git add design/.visual
+git commit -m "chore(design): adota design/.visual/ (payload de captura)"
+```
+
+PowerShell:
+
+```pwsh
+$PROJ = "C:\caminho\para\o-projeto"
+Set-Location $PROJ
+
+# 1) adotar o payload: a raiz nasce vazia (a captura cria o resto)
+New-Item -ItemType Directory -Force design\.visual | Out-Null
+
+# 2) pipeline continua verde com o diretório vazio
+node design\scripts\qa.mjs --config design\validate.config.json --target design
+
+# 3) versionar só o estável (manifest + scores); capturas transitórias ficam de fora
+git add design/.visual/manifest.json design/.visual/scores.json 2>$null; if ($LASTEXITCODE -ne 0) { git add design/.visual }
+git commit -m "chore(design): adota design/.visual/ (payload de captura)"
+```
+
+Verificação: `node design/validate.mjs design` exit 0 com E sem
+`design/.visual/`; `git diff` não mostra mudanças fora do payload; na
+primeira captura (quando a ferramenta entrar no pacote) o manifest nasce com
+1 entrada por PNG.
+
+### 3.2 WP-P2 — `design/decisions.json` + `design/approvals.json`
+
+Dois payloads novos de governança, ambos nascendo vazios em projeto
+existente:
+
+- `design/decisions.json` — registro de decisões (DEC-xxx):
+  `{schemaVersion, decisions:[{id, category, decision, reason, status(active|superseded), scope, screens, createdAt, supersedes}]}`.
+  Contrato: decisão sem `reason` não entra; decisão nunca é apagada —
+  superseder (campo `supersedes`).
+- `design/approvals.json` — aprovação por tela:
+  `{schemaVersion, approvals:[{screen, contentHash:sha256, status(draft|review|changes-requested|approved|implemented), decIds, reviewedBy, at}]}`.
+  Contrato: sem `contentHash` não há aprovação; se o conteúdo da tela mudar,
+  o status volta a `review`.
+
+Ausência de ambos = "nenhuma decisão/aprovação registrada" — os scripts que
+vão preenchê-los (`decisions.mjs`, `approve.mjs`) criam e populam sob demanda
+quando o recurso entrar no pacote.
+
+bash:
+
+```bash
+PROJ=/caminho/para/o-projeto
+cd "$PROJ"
+
+# 1) nascer os dois payloads vazios (schemaVersion + lista vazia)
+node -e 'const fs=require("fs");for(const [p,k] of [["design/decisions.json","decisions"],["design/approvals.json","approvals"]]){if(!fs.existsSync(p))fs.writeFileSync(p,JSON.stringify({schemaVersion:1,[k]:[]},null,2)+"\n")}'
+
+# 2) pipeline verde antes de qualquer registro
+node design/scripts/qa.mjs --config design/validate.config.json --target design
+
+git add design/decisions.json design/approvals.json
+git commit -m "chore(design): adota decisions.json + approvals.json (vazios)"
+```
+
+PowerShell:
+
+```pwsh
+$PROJ = "C:\caminho\para\o-projeto"
+Set-Location $PROJ
+
+# 1) nascer os dois payloads vazios (schemaVersion + lista vazia)
+node -e 'const fs=require("fs");for(const [p,k] of [["design/decisions.json","decisions"],["design/approvals.json","approvals"]]){if(!fs.existsSync(p))fs.writeFileSync(p,JSON.stringify({schemaVersion:1,[k]:[]},null,2)+"\n")}'
+
+# 2) pipeline verde antes de qualquer registro
+node design\scripts\qa.mjs --config design\validate.config.json --target design
+
+git add design/decisions.json design/approvals.json
+git commit -m "chore(design): adota decisions.json + approvals.json (vazios)"
+```
+
+Verificação: os dois arquivos parseiam como JSON com `schemaVersion` +
+lista vazia; `node design/validate.mjs design` exit 0 com e sem eles;
+`git diff` mostra apenas os arquivos novos (nenhum payload existente tocado).
+
+### 3.3 WP-P3 — Carimbo `design/.mockbird-version` (projetos semeados antes do carimbo)
+
+Todo `design/` sincronizado pelo plugin (ativação ou `/design-sync`) carrega
+o carimbo `design/.mockbird-version` — JSON regravado a cada sync que registra
+qual kit criou o payload:
+
+    {
+      "version": "1.1.0",                         // semver do pack
+      "mirrorHash": "<sha256>",                   // hash composto do conjunto MIRROR espelhado
+      "date": "2026-11-04T12:34:56.789Z",         // data do sync
+      "files": { "mock.js": "<sha256>", "…": "…" } // hash por arquivo espelhado
+    }
+
+Regra do `mirrorHash`: para cada arquivo da lista MIRROR, na ordem da lista,
+entra no hash final a linha `dest\n<sha256 do arquivo>\n`. Um hash que não se
+reproduz é sinal de drift.
+
+Campos de divergência (só aparecem quando há o que registrar):
+
+- `divergent` — arquivos cujo conteúdo local divergiu do pack neste sync;
+  cada um também ganhou `<arquivo>.bak` com os bytes locais (o `.bak` nunca é
+  apagado).
+- `drift` — o carimbo anterior não pôde ser reproduzido:
+  - `missing` — arquivos MIRROR ausentes do `design/` na verificação;
+  - `mirrorMismatch` — o conjunto espelhado não reproduz o hash gravado
+    (carimbo corrompido, arquivo editado ou apagado à mão);
+  - `kitDrift` — o conteúdo MIRROR do pack mudou desde o carimbo (kit
+    atualizado: hash divergente = kit em outra versão);
+  - `previousVersion` / `previousMirrorHash` — o que o carimbo anterior dizia.
+
+Migração de projeto semeado antes do carimbo: **nada a rodar** — o próximo
+sync do plugin grava o carimbo, sem campo `drift` (não há carimbo anterior a
+verificar). Versione o arquivo junto com o projeto e nunca o remova.
+
+bash:
+
+```bash
+SKILL=/caminho/para/o-pacote-mockbird   # pasta que contém skills/design
+PROJ=/caminho/para/o-projeto
+cd "$PROJ"
+
+# 1) gravar o carimbo agora (o sync do plugin /design-sync faz o mesmo)
+node "$SKILL/plugin/smoke.mjs" "$PROJ"
+
+# 2) conferir: JSON com version + mirrorHash + date
+cat design/.mockbird-version
+
+# 3) conferência item a item contra o campo "files" (exit 1 se algum hash divergir)
+node -e 'const{createHash}=require("crypto"),fs=require("fs");const s=JSON.parse(fs.readFileSync("design/.mockbird-version","utf8"));let ok=true;for(const[f,h]of Object.entries(s.files)){const a=createHash("sha256").update(fs.readFileSync("design/"+f)).digest("hex");console.log((a===h?"ok  ":"DIFF"),f);if(a!==h)ok=false}process.exit(ok?0:1)'
+```
+
+PowerShell:
+
+```pwsh
+$SKILL = "C:\caminho\para\o-pacote-mockbird"   # pasta que contém skills\design
+$PROJ = "C:\caminho\para\o-projeto"
+Set-Location $PROJ
+
+# 1) gravar o carimbo agora (o sync do plugin /design-sync faz o mesmo)
+node "$SKILL\plugin\smoke.mjs" "$PROJ"
+
+# 2) conferir: JSON com version + mirrorHash + date
+Get-Content design\.mockbird-version
+
+# 3) conferência item a item contra o campo "files" (exit 1 se algum hash divergir)
+node -e 'const{createHash}=require("crypto"),fs=require("fs");const s=JSON.parse(fs.readFileSync("design/.mockbird-version","utf8"));let ok=true;for(const[f,h]of Object.entries(s.files)){const a=createHash("sha256").update(fs.readFileSync("design/"+f)).digest("hex");console.log((a===h?"ok  ":"DIFF"),f);if(a!==h)ok=false}process.exit(ok?0:1)'
+```
+
+Verificação: o JSON tem `version`, `mirrorHash`, `date` + `files`; a regra do
+`mirrorHash` reproduz o hash gravado sobre os arquivos MIRROR; projeto antigo
+sem carimbo recebe o carimbo no primeiro sync, sem `drift`. Sinal de mismatch
+(em qualquer dos sentidos acima): apague um arquivo MIRROR do `design/` e
+rode um novo sync — o carimbo novo traz `drift.missing` nomeando o arquivo, e
+o arquivo volta a ser espelhado.
+
+---
+
+## 4. Mapa de cobertura — WP (§15) → seção → comando → verificação
 
 | WP (corpus §15) | Seção do guia | Comando (client-run) | Verificação |
 |---|---|---|---|

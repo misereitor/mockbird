@@ -10,8 +10,12 @@
  *     version around.
  *   - SEED: `components/` is only filled in when missing — the registry can
  *     grow per project and must never be overwritten.
+ *   - Stamp: every sync writes `design/.mockbird-version` (pack semver +
+ *     SHA-256 of the mirrored MIRROR set + date). Diverging local content and
+ *     any previous-stamp mismatch (drift) are recorded in the stamp itself.
  */
 import { execFileSync } from "node:child_process"
+import { createHash } from "node:crypto"
 import {
   copyFileSync,
   existsSync,
@@ -166,11 +170,70 @@ export function pullPack() {
   }
 }
 
+/** design/.mockbird-version — which kit version + mirrored content stamped this design/. */
+const STAMP_FILE = ".mockbird-version"
+
+/**
+ * Composite SHA-256 over [dest, path] entries: for each, in order, feeds
+ * `dest\n<sha256 of content>\n` into the hash. Absent files are skipped and
+ * listed in `missing` — a set that cannot reproduce the recorded hash (or a
+ * divergent recorded hash) is the drift signal stored in the next stamp.
+ */
+function hashFileSet(entries) {
+  const files = {}
+  const missing = []
+  const composite = createHash("sha256")
+  for (const [dest, path] of entries) {
+    if (!existsSync(path)) {
+      missing.push(dest)
+      continue
+    }
+    const hex = createHash("sha256").update(readFileSync(path)).digest("hex")
+    files[dest] = hex
+    composite.update(`${dest}\n${hex}\n`)
+  }
+  return { files, missing, mirrorHash: composite.digest("hex") }
+}
+
+const mirroredEntries = (designDir) => MIRROR.map(([dest]) => [dest, join(designDir, dest)])
+
+/** Previous stamp, or null when absent/malformed (a malformed stamp is replaced). */
+function readStamp(designDir) {
+  const path = join(designDir, STAMP_FILE)
+  if (!existsSync(path)) return null
+  try {
+    const stamp = JSON.parse(readFileSync(path, "utf8"))
+    return stamp && typeof stamp.mirrorHash === "string" ? stamp : null
+  } catch {
+    return null
+  }
+}
+
+/** Compares the previous stamp against the mirrored set and the current kit. */
+function stampDrift(designDir, previous) {
+  const mirrored = hashFileSet(mirroredEntries(designDir))
+  const kit = hashFileSet(MIRROR)
+  const mirrorMismatch = mirrored.mirrorHash !== previous.mirrorHash
+  const kitDrift = kit.mirrorHash !== previous.mirrorHash
+  if (!mirrorMismatch && !kitDrift) return null
+  return {
+    previousVersion: previous.version,
+    previousMirrorHash: previous.mirrorHash,
+    missing: mirrored.missing,
+    mirrorMismatch,
+    kitDrift,
+  }
+}
+
 /** Mirrors the runtime into the project's design/. Null when the project has none. */
 export function syncProject(projectDir) {
   const designDir = join(projectDir, "design")
   if (!existsSync(designDir)) return null
   const summary = { updated: [], added: [] }
+  // Verify the previous stamp BEFORE the mirror loop restores anything, so
+  // hand edits and deletions are still visible in the drift record.
+  const previous = readStamp(designDir)
+  const drift = previous ? stampDrift(designDir, previous) : null
   for (const [dest, src] of MIRROR) {
     if (!existsSync(src)) continue
     const target = join(designDir, dest)
@@ -194,6 +257,19 @@ export function syncProject(projectDir) {
     copyFileSync(src, target)
     summary.added.push(dest)
   }
+  // Version stamp: which kit version + mirrored content created this design/.
+  // Divergences (each file also got its .bak) and drift are recorded here.
+  const stamped = hashFileSet(mirroredEntries(designDir))
+  const version = JSON.parse(readFileSync(join(PACK_ROOT, "package.json"), "utf8")).version
+  const stamp = {
+    version,
+    mirrorHash: stamped.mirrorHash,
+    date: new Date().toISOString(),
+    files: stamped.files,
+  }
+  if (summary.updated.length > 0) stamp.divergent = [...summary.updated]
+  if (drift) stamp.drift = drift
+  writeFileSync(join(designDir, STAMP_FILE), `${JSON.stringify(stamp, null, 2)}\n`)
   return summary
 }
 
