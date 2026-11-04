@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrada não confiável</title>
+</head>
+<body>
+  <!-- state:default -->
+  <!-- fixture map-adversarial: texto externo hostil em atributos e nós de
+       texto. O gerador deve tratar tudo como DADO escapado no JSON e nunca
+       avaliar nada (sem eval; corpos de script não são marcção). -->
+  <main>
+    <h1>Entrada não confiável</h1>
+    <button type="button" data-toast="'); process.exit(1); //">Toast hostil</button>
+    <button type="button" data-action="fuga.exec'); process.exit(1); //">Ação hostil</button>
+    <a href="10-fuga.html" data-go="10-fuga.html"><svg data-icon='x" onload="process.exit(1)' viewBox="0 0 8 8"><path d="M0 0h8v8H0z"/></svg> Fuga</a>
+    <p>'); process.exit(1); //</p>
+    <script>
+      // '); process.exit(1); // — string de script NÃO é marcção
+      document.querySelector('[data-component="fake-not-markup"]')
+    </script>
+  </main>
+</body>
+</html>

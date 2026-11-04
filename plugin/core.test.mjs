@@ -237,12 +237,22 @@ test('describe summarizes the sync for the setup log', () => {
 
 test('loadCommands ships one slash command per skill', () => {
   const commands = loadCommands()
-  assert.deepEqual(commands.map((c) => c.name).sort(), ['design', 'emil-design-eng', 'impeccable', 'taste'])
+  assert.deepEqual(commands.map((c) => c.name).sort(), ['design', 'design-map', 'emil-design-eng', 'impeccable', 'taste'])
   for (const command of commands) {
     assert.ok(command.description.length > 0, `/${command.name} needs a description`)
     assert.ok(command.template.includes('$ARGUMENTS'), `/${command.name} must forward $ARGUMENTS`)
     assert.ok(command.template.includes(`\`${command.name}\``), `/${command.name} must point at its skill id`)
   }
+})
+
+test('loadCommands registers /design-map with the regeneration template', () => {
+  const command = loadCommands().find((c) => c.name === 'design-map')
+  assert.ok(command, '/design-map must load from commands/design-map.md')
+  assert.ok(command.template.includes('agent-map.mjs'), '/design-map must point at the generator')
+  assert.ok(command.template.includes('--check-verbs'), '/design-map must run the verb sync check')
+  assert.match(command.template, /diff/i, '/design-map must report the diff')
+  assert.match(command.template, /todo 7/i, '/design-map must cover the per-screen packs when they exist')
+  assert.match(command.template, /todo 8/i, '/design-map must cover the search index when it exists')
 })
 
 test('install.mjs places slash commands next to OpenCode skill dirs', () => {

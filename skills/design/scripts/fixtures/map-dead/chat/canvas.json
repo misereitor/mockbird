@@ -1,0 +1,7 @@
+{
+  "title": "Map dead",
+  "screens": [
+    { "id": "lista", "name": "Lista de conversas", "file": "01-lista.html", "device": "mobile", "width": 390, "height": 844 },
+    { "id": "novo-chat", "name": "Novo chat", "file": "09-novo-chat.html", "device": "mobile", "width": 390, "height": 844 }
+  ]
+}

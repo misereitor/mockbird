@@ -1,0 +1,6 @@
+{
+  "title": "Adversarial",
+  "screens": [
+    { "id": "fuga", "name": "Entrada não confiável", "file": "01-x.html", "device": "mobile", "width": 390, "height": 844 }
+  ]
+}

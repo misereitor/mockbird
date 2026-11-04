@@ -1,0 +1,372 @@
+{
+  "schemaVersion": 1,
+  "gitSHA": "e4e237052883bfdbcfbfe5b9d5020d569c44be4b",
+  "contentHash": "b6ab9fc717ec76eaf3e8e238c7f5746428d02e0977cc590e2305469cb91bde88",
+  "timestamp": "2026-11-04T19:39:36+00:00",
+  "target": "skills/design/assets/example",
+  "canvases": [
+    {
+      "dir": "dashboard",
+      "title": "Dashboard",
+      "screens": 1
+    },
+    {
+      "dir": "login",
+      "title": "Login",
+      "screens": 3
+    }
+  ],
+  "screens": [
+    {
+      "id": "overview",
+      "name": "Visão geral",
+      "canvas": "dashboard",
+      "file": "dashboard/01-overview.html",
+      "elements": [],
+      "components": [
+        {
+          "id": "menu-row",
+          "size": "md",
+          "tone": "default",
+          "state": "default",
+          "file": "dashboard/01-overview.html",
+          "line": 41
+        },
+        {
+          "id": "menu-row",
+          "size": "md",
+          "tone": "danger",
+          "state": "default",
+          "file": "dashboard/01-overview.html",
+          "line": 46
+        }
+      ],
+      "icons": [],
+      "states": [
+        {
+          "name": "default",
+          "via": "marker",
+          "file": "dashboard/01-overview.html",
+          "line": 31
+        },
+        {
+          "name": "vazio",
+          "via": "marker",
+          "file": "dashboard/01-overview.html",
+          "line": 32
+        },
+        {
+          "name": "critico",
+          "via": "marker",
+          "file": "dashboard/01-overview.html",
+          "line": 33
+        }
+      ]
+    },
+    {
+      "id": "login",
+      "name": "Login",
+      "canvas": "login",
+      "file": "login/01-login.html",
+      "elements": [],
+      "components": [
+        {
+          "id": "card",
+          "size": "md",
+          "tone": "elevated",
+          "state": "default",
+          "file": "login/01-login.html",
+          "line": 25
+        },
+        {
+          "id": "field",
+          "size": "md",
+          "tone": "default",
+          "state": "default",
+          "file": "login/01-login.html",
+          "line": 29
+        },
+        {
+          "id": "field",
+          "size": "md",
+          "tone": "default",
+          "state": "default",
+          "file": "login/01-login.html",
+          "line": 35
+        },
+        {
+          "id": "button",
+          "size": "md",
+          "tone": "primary",
+          "state": "default",
+          "file": "login/01-login.html",
+          "line": 41
+        },
+        {
+          "id": "button",
+          "size": "md",
+          "tone": "ghost",
+          "state": "default",
+          "file": "login/01-login.html",
+          "line": 42
+        }
+      ],
+      "icons": [],
+      "states": [
+        {
+          "name": "default",
+          "via": "marker",
+          "file": "login/01-login.html",
+          "line": 21
+        }
+      ]
+    },
+    {
+      "id": "cadastro",
+      "name": "Cadastro",
+      "canvas": "login",
+      "file": "login/02-cadastro.html",
+      "elements": [],
+      "components": [
+        {
+          "id": "card",
+          "size": "md",
+          "tone": "elevated",
+          "state": "default",
+          "file": "login/02-cadastro.html",
+          "line": 25
+        },
+        {
+          "id": "button",
+          "size": "md",
+          "tone": "primary",
+          "state": "default",
+          "file": "login/02-cadastro.html",
+          "line": 33
+        },
+        {
+          "id": "button",
+          "size": "md",
+          "tone": "ghost",
+          "state": "default",
+          "file": "login/02-cadastro.html",
+          "line": 34
+        }
+      ],
+      "icons": [],
+      "states": [
+        {
+          "name": "default",
+          "via": "marker",
+          "file": "login/02-cadastro.html",
+          "line": 21
+        }
+      ]
+    },
+    {
+      "id": "excluir",
+      "name": "Excluir conta",
+      "canvas": "login",
+      "file": "login/03-modal.html",
+      "elements": [],
+      "components": [
+        {
+          "id": "modal",
+          "size": "md",
+          "tone": "danger",
+          "state": "default",
+          "file": "login/03-modal.html",
+          "line": 24
+        }
+      ],
+      "icons": [],
+      "states": [
+        {
+          "name": "default",
+          "via": "marker",
+          "file": "login/03-modal.html",
+          "line": 12
+        }
+      ]
+    }
+  ],
+  "verbs": [
+    {
+      "verb": "data-go",
+      "kind": "attr",
+      "runs": "window.Mock.go(target.getAttribute('data-go'))",
+      "source": "skills/design/assets/mock.js:829"
+    },
+    {
+      "verb": "data-overlay",
+      "kind": "attr",
+      "runs": "window.Mock.overlay(target.getAttribute('data-overlay'))",
+      "source": "skills/design/assets/mock.js:833"
+    },
+    {
+      "verb": "data-toast",
+      "kind": "attr",
+      "runs": "window.Mock.toast(target.getAttribute('data-toast'))",
+      "source": "skills/design/assets/mock.js:827"
+    },
+    {
+      "verb": "data-close",
+      "kind": "attr",
+      "runs": "window.Mock.close()",
+      "source": "skills/design/assets/mock.js:828"
+    },
+    {
+      "verb": "data-action",
+      "kind": "attr",
+      "runs": "runAction(target.getAttribute('data-action'), event, target)",
+      "source": "skills/design/assets/mock.js:837"
+    },
+    {
+      "verb": "Mock.state/flash",
+      "kind": "api",
+      "runs": "Mock.state.get/set/clear · Mock.toast(message, ms = 2200)",
+      "source": "skills/design/assets/mock.js:476"
+    },
+    {
+      "verb": "actions/<stem>.js",
+      "kind": "loader",
+      "runs": "Mock.loadActions(id) → new URL('actions/' + id + '.js', MOCK_BASE)",
+      "source": "skills/design/assets/mock.js:410"
+    }
+  ],
+  "contracts": {
+    "tokens": {
+      "file": "tokens.json",
+      "line": 1,
+      "themes": [
+        "dark",
+        "light"
+      ],
+      "groups": [
+        "borderRadius",
+        "breakpoints",
+        "color",
+        "density",
+        "dimension",
+        "font",
+        "fontSize",
+        "layers",
+        "motion",
+        "radius",
+        "shadow",
+        "space",
+        "typography"
+      ],
+      "count": 112
+    },
+    "icons": {
+      "convention": {
+        "file": "skills/taste/SKILL.md",
+        "line": 140,
+        "section": "3.C"
+      },
+      "iconSlots": [
+        {
+          "component": "menu-row",
+          "file": "skills/design/scripts/marker-parser.mjs",
+          "line": 188
+        },
+        {
+          "component": "toast",
+          "file": "skills/design/scripts/marker-parser.mjs",
+          "line": 214
+        },
+        {
+          "component": "banner",
+          "file": "skills/design/scripts/marker-parser.mjs",
+          "line": 253
+        }
+      ]
+    },
+    "breakpoints": {
+      "file": "skills/design/assets/validate.config.json",
+      "line": 27,
+      "mobileMax": 640,
+      "tabletMax": 900,
+      "note": "default do pack (alvo sem validate.config.json)"
+    },
+    "partials": [
+      {
+        "id": "avatar",
+        "file": "components/avatar.html",
+        "line": 1
+      },
+      {
+        "id": "banner",
+        "file": "components/banner.html",
+        "line": 1
+      },
+      {
+        "id": "bubble",
+        "file": "components/bubble.html",
+        "line": 1
+      },
+      {
+        "id": "button",
+        "file": "components/button.html",
+        "line": 1
+      },
+      {
+        "id": "card",
+        "file": "components/card.html",
+        "line": 1
+      },
+      {
+        "id": "chip",
+        "file": "components/chip.html",
+        "line": 1
+      },
+      {
+        "id": "drawer",
+        "file": "components/drawer.html",
+        "line": 1
+      },
+      {
+        "id": "field",
+        "file": "components/field.html",
+        "line": 1
+      },
+      {
+        "id": "media-card",
+        "file": "components/media-card.html",
+        "line": 1
+      },
+      {
+        "id": "menu-row",
+        "file": "components/menu-row.html",
+        "line": 1
+      },
+      {
+        "id": "modal",
+        "file": "components/modal.html",
+        "line": 1
+      },
+      {
+        "id": "pill",
+        "file": "components/pill.html",
+        "line": 1
+      },
+      {
+        "id": "tabs",
+        "file": "components/tabs.html",
+        "line": 1
+      },
+      {
+        "id": "toast",
+        "file": "components/toast.html",
+        "line": 1
+      }
+    ]
+  },
+  "deadContracts": {
+    "actionWithoutModule": [],
+    "missingScreenLinks": [],
+    "orphanPartials": [],
+    "divergentIcons": []
+  }
+}
