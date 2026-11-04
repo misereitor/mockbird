@@ -1,0 +1,3 @@
+# Relatórios de run real (pagos/opt-in) não são versionados.
+# dry-*.json é versionado (um por gitSHA) — ver benchmarks/README.md.
+real-*.json

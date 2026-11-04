@@ -20,6 +20,7 @@
     "check:i18n": "node scripts/i18n-check.mjs",
     "test:mock": "node scripts/mock-check.mjs",
     "test:ui": "node scripts/viewer-accept.mjs",
+    "bench:dry": "node benchmarks/run.mjs --dry-run",
     "ci": "npm test && npm run test:mock && npm run smoke && npm run validate && npm run qa && npm run security && npm run check:i18n"
   },
   "devDependencies": {

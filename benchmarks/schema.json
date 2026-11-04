@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mockbird://benchmarks/report.schema.json",
+  "title": "Benchmark run report",
+  "description": "Relatório de execução do benchmark com corpus fixo (plano todo 14, GAP-A5). Shape: {schemaVersion, mode, model, adapter, gitSHA, timestamp, platform, networkCalls, spend, briefings[8]} com 8 métricas por briefing (design, ux, a11y, functional, consistency, tokens-compliance, execution-time, token-usage). Anti-fake §5.6: gitSHA + contentHash por briefing + timestamp; determinismo: mesma entrada → mesmo conteúdo normalizado (só timestamp varia). Modo dry-run é stub determinístico com spend=0; runs pagos são opt-in (--model --budget-tokens) com teto por execução. As métricas de qualidade dos modelos (avaliar artefatos gerados com os instrumentos dos todos 11/12) entram pelo conector DesignAgent (todos 32/44); até lá os valores de qualidade vêm do stub determinístico do corpus, nomeado no campo source.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "mode",
+    "model",
+    "adapter",
+    "gitSHA",
+    "timestamp",
+    "platform",
+    "networkCalls",
+    "spend",
+    "briefings"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "description": "Versão do formato do relatório. Evolução aditiva preserva o número; incompatível sobe (§5.6)."
+    },
+    "mode": {
+      "enum": ["dry-run", "real"],
+      "description": "dry-run = stub determinístico sem custo; real = run opt-in com --model e --budget-tokens."
+    },
+    "model": {
+      "type": ["string", "null"],
+      "description": "Modelo requisitado via --model (null em dry-run). É o rótulo do run; o adaptador que executou de fato está em adapter/adapterModel."
+    },
+    "adapter": {
+      "type": ["string", "null"],
+      "description": "id do adaptador DesignAgent que executou o passe de modelo (null em dry-run). Hoje só o stub determinístico (agent-adapters/stub-deterministic.mjs); adaptadores reais são seam do todo 32."
+    },
+    "gitSHA": {
+      "type": "string",
+      "minLength": 1,
+      "description": "git rev-parse HEAD do checkout (ou \"unknown\" fora de um repositório)."
+    },
+    "timestamp": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Data/hora ISO-8601 da execução (único campo não determinístico)."
+    },
+    "platform": {
+      "type": "string",
+      "minLength": 1,
+      "description": "process.platform da execução (§5.6: ruído de plataforma é nomeado no payload)."
+    },
+    "networkCalls": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Contador de chamadas de rede do run. Em todo run deste checkout é 0: o harness bloqueia e conta qualquer fetch (garantia offline)."
+    },
+    "spend": {
+      "$ref": "#/$defs/spend"
+    },
+    "briefings": {
+      "type": "array",
+      "minItems": 8,
+      "description": "Os 8 briefings fixos do corpus, em ordem de id (01-08). Corpo com menos de 8 é rejeitado pelo check embutido (o corpus nunca roda parcial).",
+      "items": { "$ref": "#/$defs/briefing" }
+    }
+  },
+  "$defs": {
+    "metricScore": {
+      "type": "object",
+      "required": ["value", "unit", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "number", "minimum": 0, "maximum": 100 },
+        "unit": { "const": "score-0-100" },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Proveniência do valor (anti-fake): dry-stub | corpus-stub | critic | score | wall-clock | adapter-usage."
+        }
+      }
+    },
+    "metricTime": {
+      "type": "object",
+      "required": ["value", "unit", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "number", "minimum": 0 },
+        "unit": { "const": "ms" },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "dry-stub (não medido) | wall-clock (medido no run real)."
+        }
+      }
+    },
+    "metricTokens": {
+      "type": "object",
+      "required": ["value", "unit", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "integer", "minimum": 0 },
+        "unit": { "const": "tokens" },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "dry-stub (sempre 0) | adapter-usage (contabilidade do contrato DesignAgent — nominal no stub, real em adaptadores pagos)."
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "design",
+        "ux",
+        "a11y",
+        "functional",
+        "consistency",
+        "tokens-compliance",
+        "execution-time",
+        "token-usage"
+      ],
+      "additionalProperties": false,
+      "description": "As 8 métricas do benchmark. Qualidade (design/ux/a11y/functional/consistency/tokens-compliance) = instrumentos determinísticos (critic todo 11 → score todo 12) sobre o artefato do briefing; custo (execution-time/token-usage) = medido no run.",
+      "properties": {
+        "design": { "$ref": "#/$defs/metricScore" },
+        "ux": { "$ref": "#/$defs/metricScore" },
+        "a11y": { "$ref": "#/$defs/metricScore" },
+        "functional": { "$ref": "#/$defs/metricScore" },
+        "consistency": { "$ref": "#/$defs/metricScore" },
+        "tokens-compliance": { "$ref": "#/$defs/metricScore" },
+        "execution-time": { "$ref": "#/$defs/metricTime" },
+        "token-usage": { "$ref": "#/$defs/metricTokens" }
+      }
+    },
+    "briefing": {
+      "type": "object",
+      "required": ["id", "file", "contentHash", "metrics"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9]{2}$",
+          "description": "id estável do briefing no corpus (01-08)."
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Caminho do briefing relativo à raiz do repositório (separador '/')."
+        },
+        "contentHash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "sha256 dos bytes do briefing (§5.6 anti-fake: muda quando o corpus muda)."
+        },
+        "metrics": { "$ref": "#/$defs/metrics" }
+      }
+    },
+    "spend": {
+      "type": "object",
+      "required": ["budgetTokens", "usedTokens", "budgetRespected", "accounting"],
+      "additionalProperties": false,
+      "properties": {
+        "budgetTokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Teto de tokens do run (0 em dry-run). Run real exige teto >= 1; violação de teto aborta com exit≠0."
+        },
+        "usedTokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Gasto acumulado registrado pelo contrato DesignAgent (tokensUsed por briefing somado)."
+        },
+        "budgetRespected": {
+          "const": true,
+          "description": "Todo relatório gravado respeitou o teto; run que estoura o teto aborta e não grava relatório."
+        },
+        "accounting": {
+          "enum": ["none", "nominal", "real"],
+          "description": "none = dry-run sem passe de modelo; nominal = contabilidade determinística do stub; real = contabilidade de adaptador pago (todo 32)."
+        }
+      }
+    }
+  }
+}
