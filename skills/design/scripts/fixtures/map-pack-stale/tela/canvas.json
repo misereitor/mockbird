@@ -1,0 +1,6 @@
+{
+  "title": "Pack stale",
+  "screens": [
+    { "id": "vazia", "name": "Tela vazia", "file": "01-vazia.html", "device": "mobile", "width": 390, "height": 844 }
+  ]
+}

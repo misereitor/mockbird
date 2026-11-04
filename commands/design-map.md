@@ -16,8 +16,11 @@ existe para pegar). Alvo: $ARGUMENTS (padrão `design/`).
 2. Verificação de sincronia: rode `node skills/design/scripts/agent-map.mjs
    --check-verbs --target <alvo>` — precisa dar exit 0 (tabela de verbos ×
    código-fonte de mock.js).
-3. Pacotes por tela (quando o modo `--screen <tela> --pack` existir — plan
-   todo 7): regenere cada `<alvo>/.map/<tela>.md`.
+3. Pacotes por tela (todo 7): para cada tela do alvo, rode
+   `node skills/design/scripts/agent-map.mjs --target <alvo> --screen <tela> --pack`
+   → grava `<alvo>/.map/<tela>.md` com TUDO sobre a tela em um arquivo
+   (elementos, ações × módulos, componentes, ícones, tokens, DEC,
+   comentários 🎯, baselines/smoke e contratos mortos da tela).
 4. Índice de busca (quando o índice do find existir — plan todo 8): atualize
    `<alvo>/.map/index.json`.
 5. Relatório de diff: liste o que mudou por tela (contentHash antes/depois),
