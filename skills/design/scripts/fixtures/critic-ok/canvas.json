@@ -1,0 +1,7 @@
+{
+  "title": "Critic ok — tela limpa (baseline do Visual Critic)",
+  "screens": [
+    { "id": "painel", "name": "Painel de estoque", "file": "01-painel.html", "device": "desktop", "width": 1440, "height": 900 },
+    { "id": "form", "name": "Cadastro de item", "file": "02-form.html", "device": "desktop", "width": 1440, "height": 900 }
+  ]
+}

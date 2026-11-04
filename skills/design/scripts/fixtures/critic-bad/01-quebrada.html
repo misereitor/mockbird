@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recibo de doação</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { color: #0f172a; background-color: #f1f5f9; font-family: system-ui, sans-serif; }
+    body { padding: 24px; background-color: #f1f5f9; color: #0f172a; }
+    main { max-width: 720px; display: flex; flex-direction: column; gap: 16px; }
+    section { background-color: #ffffff; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+    h1 { font-size: 28px; line-height: 1.2; color: #0f172a; }
+    p { font-size: 16px; line-height: 1.5; color: #334155; }
+    /* PLANTA 1 (blocker/acessibilidade): legenda em cor clara demais (2.56:1). */
+    .legenda { color: #94a3b8; }
+    /* PLANTA 2 (blocker/tipografia): texto cortado sem reticências. */
+    .recibo-cortado { width: 280px; overflow: hidden; white-space: nowrap; font-size: 16px; color: #0f172a; }
+    button { min-height: 48px; padding: 12px 16px; font-size: 16px; color: #ffffff; background-color: #134e4a; border: 0; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <!-- state:default -->
+  <main>
+    <section>
+      <h1>Recibo de doação</h1>
+      <p>Doação registrada para a campanha de inverno.</p>
+      <p class="legenda">Emitido em 12/07 — via de captura duplicada.</p>
+      <div class="recibo-cortado">Recibo nº 2026-000472 — Doadora: Mariana Albuquerque Ferreira da Silva — Valor: R$ 1.250,00 — Chave PIX verificada</div>
+      <button type="button">Enviar recibo por e-mail</button>
+    </section>
+  </main>
+</body>
+</html>

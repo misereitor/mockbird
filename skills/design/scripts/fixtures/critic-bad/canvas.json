@@ -1,0 +1,6 @@
+{
+  "title": "Critic bad — defeitos plantados (contraste baixo + texto cortado)",
+  "screens": [
+    { "id": "quebrada", "name": "Tela propositalmente quebrada", "file": "01-quebrada.html", "device": "desktop", "width": 1440, "height": 900 }
+  ]
+}
