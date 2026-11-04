@@ -165,6 +165,38 @@ function isTraversal(value) {
   return value.includes('..') || value.includes('/') || value.includes('\\')
 }
 
+/** CSP for viewer/docs (todo 16): scripts only from this server, plus a sha256
+ * allow-list for each inline <script> — computed on the SERVED bytes, so the
+ * viewer token rewrite is covered. Inline <style>/style attrs stay allowed
+ * (viewer styles); images may be data: (export previews). */
+function cspFor(html) {
+  const hashes = []
+  const blocks = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+  let match
+  while ((match = blocks.exec(html)) !== null) {
+    if (/\bsrc\s*=/i.test(match[1])) continue
+    hashes.push(`'sha256-${createHash('sha256').update(match[2]).digest('base64')}'`)
+  }
+  const inline = hashes.length ? ` ${hashes.join(' ')}` : ''
+  return (
+    `script-src 'self'${inline}; style-src 'self' 'unsafe-inline'; ` +
+    `img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'none'`
+  )
+}
+
+/** Comment text sanitization (todo 16): strip HTML tags and inert-encode the
+ * angle brackets left over, so persisted comments can never form an executable
+ * tag in any consumer (the viewer renders text via textContent — plain text
+ * stays plain). Newlines/tabs survive; other control chars are dropped. */
+function sanitizeCommentText(value) {
+  let out = String(value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+  for (let prev = null; prev !== out; ) {
+    prev = out
+    out = out.replace(/<\/?[a-zA-Z][^<>]*>/g, '') // repeat: nested masks (<scr<script>ipt>)
+  }
+  return out.split('<').join('&lt;').split('>').join('&gt;')
+}
+
 function hostnameOf(header) {
   const host = String(header ?? '').trim().toLowerCase()
   if (!host) return ''
@@ -248,10 +280,10 @@ function saveComments(comments) {
 }
 
 /** Replies persist as {text, createdAt} (comments.json schema); legacy "at"
- * input is accepted and folded into createdAt. */
+ * input is accepted and folded into createdAt. Text is sanitized on write. */
 function normalizeReplies(list) {
   return list.map((reply) => ({
-    text: reply.text,
+    text: sanitizeCommentText(reply.text),
     createdAt:
       typeof reply.createdAt === 'string'
         ? reply.createdAt
@@ -1321,7 +1353,9 @@ async function handleApi(req, res, pathname) {
       // own strict check (historyRelPath) replaces the traversal sniff here
       for (const key of route === 'history-restore' ? ['canvas', 'label', 'id'] : ['canvas', 'label', 'id', 'file']) {
         const value = parsed[key]
-        if (typeof value === 'string' && isTraversal(value)) return fail(res, 403, 'traversal')
+        if (typeof value !== 'string') continue
+        if (value.includes('\0')) return fail(res, 400, 'invalid')
+        if (isTraversal(value)) return fail(res, 403, 'traversal')
       }
     }
 
@@ -1338,8 +1372,21 @@ async function handleApi(req, res, pathname) {
 }
 
 const server = createServer(async (req, res) => {
+  // basic hardening on EVERY response (api, static, errors)
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('Referrer-Policy', 'no-referrer')
+  let pathname
   try {
-    const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname)
+    pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname)
+  } catch {
+    res.writeHead(400, { 'content-type': 'text/plain' })
+    return res.end('bad request')
+  }
+  if (pathname.includes('\0')) {
+    res.writeHead(400, { 'content-type': 'text/plain' })
+    return res.end('bad request')
+  }
+  try {
     if (pathname === '/api' || pathname.startsWith('/api/')) {
       return await handleApi(req, res, pathname)
     }
@@ -1357,13 +1404,23 @@ const server = createServer(async (req, res) => {
 
     if (st?.isFile()) {
       const type = TYPES[extname(file).toLowerCase()] ?? 'application/octet-stream'
-      if (basename(file) === 'viewer.html') {
-        // in-memory rewrite: the disk file keeps window.__DESIGN_TOKEN__ = null
+      const name = basename(file)
+      if (name === 'viewer.html' || name === 'docs.html') {
+        // in-memory rewrite (viewer): the disk file keeps window.__DESIGN_TOKEN__ = null
         // and window.__DESIGN_READONLY = false; share flips the readonly flag.
-        const html = readFileSync(file, 'utf8')
-          .split(TOKEN_PLACEHOLDER).join(share ? TOKEN_SHARE : TOKEN_INJECTED)
-          .split(READONLY_PLACEHOLDER).join(share ? READONLY_INJECTED : READONLY_PLACEHOLDER)
-        res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store', 'last-modified': st.mtime.toUTCString() })
+        // CSP hashes the inline scripts of the SERVED bytes (post-rewrite).
+        let html = readFileSync(file, 'utf8')
+        if (name === 'viewer.html') {
+          html = html
+            .split(TOKEN_PLACEHOLDER).join(share ? TOKEN_SHARE : TOKEN_INJECTED)
+            .split(READONLY_PLACEHOLDER).join(share ? READONLY_INJECTED : READONLY_PLACEHOLDER)
+        }
+        res.writeHead(200, {
+          'content-type': type,
+          'cache-control': 'no-store',
+          'last-modified': st.mtime.toUTCString(),
+          'content-security-policy': cspFor(html),
+        })
         if (req.method === 'HEAD') return res.end()
         return res.end(html)
       }

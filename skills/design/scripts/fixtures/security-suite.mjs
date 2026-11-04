@@ -43,6 +43,16 @@
  *   7 static route /viewer.html with a weird Host header -> 200 (static
  *     routes are NEVER intercepted; raw node:http because fetch/undici
  *     forbids a custom Host header)
+ *   10 xss-comment-sanitized: XSS payloads in comment text (<script>,
+ *     <img onerror>, javascript: href) are SANITIZED on write (POST still
+ *     answers 200) — the served comment (GET /api/comments) and the served
+ *     viewer never carry them as an executable tag
+ *   11 traversal-hardening: route params — encoded traversal, null bytes and
+ *     broken percent-encoding never disclose files (403/400), on static AND
+ *     /api routes
+ *   12 csp-headers: /viewer.html and /docs.html carry Content-Security-Policy
+ *     (script-src 'self' + sha256 inline hashes) plus X-Content-Type-Options
+ *     and Referrer-Policy
  *
  * Output ends with `SECURITY-SUITE: PASS (N/N)` or `SECURITY-SUITE: FAIL
  * (k/N)`. Exit codes: 0 all asserts pass | 1 any failure | 2 bad usage.
@@ -441,6 +451,140 @@ async function historyGuard(base, token, shareBase, shareToken) {
   )
 }
 
+/** assert 10: comment text XSS payloads are sanitized on write — the served
+ *  comment (GET /api/comments) and the served viewer never carry them as an
+ *  executable tag. The write itself is accepted (200): sanitization is not
+ *  rejection. With sanitization removed this assert FAILS (mutation proof). */
+async function xssCommentSanitized(base, token) {
+  const payloads = [
+    '<script>alert(1)</script>xsscanary',
+    '<img src=x onerror=alert(2)>xsscanary2',
+    '<a href="javascript:alert(3)">xsscanary3</a>',
+  ]
+  const created = await api(base, '/api/comments', {
+    method: 'POST',
+    token,
+    body: {
+      canvas: 'login',
+      file: '01-login.html',
+      replies: [{ text: payloads[0], createdAt: '2026-01-01T00:00:00.000Z' }],
+    },
+  })
+  const createdText = await created.text()
+  let pinId = ''
+  try {
+    const pin = (JSON.parse(createdText).comments ?? []).at(-1)
+    if (typeof pin?.id === 'string') pinId = pin.id
+  } catch { /* pinId stays empty -> the assert fails below */ }
+  let updatedStatus = '(sem update)'
+  if (pinId) {
+    const updated = await api(base, '/api/comments', {
+      method: 'POST',
+      token,
+      body: {
+        id: pinId,
+        replies: [
+          { text: payloads[1], createdAt: '2026-01-01T00:00:00.000Z' },
+          { text: payloads[2], createdAt: '2026-01-01T00:00:00.000Z' },
+        ],
+      },
+    })
+    await updated.text()
+    updatedStatus = String(updated.status)
+  }
+  const get = await api(base, '/api/comments', { token })
+  const getText = await get.text()
+  const viewer = await fetch(base + '/viewer.html')
+  const viewerText = await viewer.text()
+  // no tag shape at all may survive in the served comment; the viewer must not
+  // echo the payloads either (served HTML never contains them as executable)
+  const executable = /<script|<img|<svg|<iframe|<a\s|onerror|javascript:/i
+  const cleanComment = !executable.test(getText)
+  const cleanViewer = !payloads.some((p) => viewerText.includes(p)) && !viewerText.includes('xsscanary')
+  const canaryKept = ['xsscanary', 'xsscanary2', 'xsscanary3'].every((c) => getText.includes(c))
+  record(
+    10,
+    'xss-comment-sanitized',
+    created.status === 200 && pinId !== '' && updatedStatus === '200' && get.status === 200 && cleanComment && cleanViewer && canaryKept,
+    `got POST ${created.status} + update ${updatedStatus} + GET ${get.status}, tag-no-comment=${cleanComment} tag-no-viewer=${cleanViewer} canary=${canaryKept} | want 200/200/200 e payload nunca como tag executavel`,
+  )
+}
+
+/** assert 11: route params — encoded traversal, null bytes and broken
+ *  percent-encoding never disclose files (403/400), on static AND /api. */
+async function traversalHardening(port, base, token) {
+  const probes = []
+  try {
+    const encoded = await rawGet('127.0.0.1', port, '/..%2f..%2f..%2fetc/passwd')
+    probes.push({ name: 'encoded-traversal', ok: encoded.status === 403 && !encoded.body.includes('root:'), got: String(encoded.status) })
+    const nullByte = await rawGet('127.0.0.1', port, '/%00secret')
+    probes.push({ name: 'null-byte-static', ok: nullByte.status === 400 && !nullByte.body.includes('root:'), got: String(nullByte.status) })
+    const broken = await rawGet('127.0.0.1', port, '/%zz')
+    probes.push({ name: 'broken-percent', ok: broken.status === 400, got: String(broken.status) })
+    const apiNull = await api(base, '/api/comments', {
+      method: 'POST',
+      token,
+      body: { canvas: 'login', file: '01-login.html\u0000', replies: [] },
+    })
+    const apiNullText = await apiNull.text()
+    probes.push({
+      name: 'null-byte-api',
+      ok: apiNull.status === 400 && safeError(apiNullText) === 'invalid',
+      got: `${apiNull.status} ${safeError(apiNullText)}`,
+    })
+    const history = await api(base, '/api/history?file=../../../etc/passwd', { token })
+    const historyText = await history.text()
+    probes.push({
+      name: 'history-traversal',
+      ok: history.status === 400 && safeError(historyText) === 'invalid',
+      got: `${history.status} ${safeError(historyText)}`,
+    })
+  } catch (error) {
+    return recordFail(11, 'traversal-hardening', `probe failed: ${error.message}`)
+  }
+  const bad = probes.filter((p) => !p.ok)
+  record(
+    11,
+    'traversal-hardening',
+    bad.length === 0,
+    `${probes.map((p) => `${p.name} ${p.got}${p.ok ? '' : ' (!)'}`).join(' + ')} | want 403/400/400/400/400 sem vazamento de arquivo`,
+  )
+}
+
+/** assert 12: viewer/docs carry the hardening headers — CSP (script-src
+ *  'self' + sha256 hashes for the inline runtime), nosniff, no-referrer. */
+async function cspHeaders(base) {
+  const checks = []
+  for (const path of ['/viewer.html', '/docs.html']) {
+    const res = await fetch(base + path)
+    const csp = res.headers.get('content-security-policy') ?? ''
+    const nosniff = res.headers.get('x-content-type-options') ?? ''
+    const referrer = res.headers.get('referrer-policy') ?? ''
+    checks.push({
+      name: path,
+      ok:
+        res.status === 200 &&
+        csp.includes("script-src 'self'") &&
+        csp.includes("'sha256-") &&
+        csp.includes("style-src 'self' 'unsafe-inline'") &&
+        csp.includes("img-src 'self' data:") &&
+        csp.includes("frame-src 'self'") &&
+        csp.includes("object-src 'none'") &&
+        csp.includes("base-uri 'none'") &&
+        nosniff === 'nosniff' &&
+        referrer === 'no-referrer',
+      got: `${res.status} csp=${JSON.stringify(csp.slice(0, 120))} nosniff=${nosniff} referrer=${referrer}`,
+    })
+  }
+  const bad = checks.filter((c) => !c.ok)
+  record(
+    12,
+    'csp-headers',
+    bad.length === 0,
+    `${checks.map((c) => `${c.name} ${c.ok ? 'ok' : c.got}`).join(' | ')} | want CSP+nosniff+no-referrer em viewer e docs`,
+  )
+}
+
 // ---------- main ----------
 
 async function main() {
@@ -485,6 +629,7 @@ async function main() {
     await battery(externalUrl, externalToken)
     console.log('SKIP #6 share: modo externo — o assert roda so no auto-spawn (segundo spawn --share)')
     await staticWeirdHost(extPort)
+    console.log('SKIP #10/#11/#12: modo externo — os asserts novos (XSS/traversal/CSP) rodam so no auto-spawn')
     process.exitCode = summary() ? 0 : 1
     return
   }
@@ -509,6 +654,9 @@ async function main() {
     await agentSendGuard(mainServer.base, mainServer.token, shareServer.base, shareServer.token)
     await historyGuard(mainServer.base, mainServer.token, shareServer.base, shareServer.token)
     await staticWeirdHost(port1)
+    await xssCommentSanitized(mainServer.base, mainServer.token)
+    await traversalHardening(port1, mainServer.base, mainServer.token)
+    await cspHeaders(mainServer.base)
   } catch (error) {
     recordFail(0, 'harness', `infra error: ${error.message}`)
   } finally {
