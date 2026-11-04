@@ -1,0 +1,3914 @@
+{
+  "schemaVersion": 1,
+  "audit": "auditoria-tecnica-mockbird",
+  "gitSHA": "05131bec8813f3e06348e8772c8967fd83bda00b",
+  "generatedAt": "2026-11-04T19:56:34Z",
+  "roots": [
+    "plugin",
+    "scripts",
+    "skills",
+    "commands",
+    "docs",
+    ".github"
+  ],
+  "taxonomy": {
+    "layers": [
+      "Core",
+      "Skills",
+      "Adapters"
+    ],
+    "classes": [
+      "existe",
+      "parcial",
+      "refatorar",
+      "construir"
+    ],
+    "subsystems": {
+      "1": "Design Intelligence",
+      "2": "Prototype Engine",
+      "3": "Design System",
+      "4": "Visual QA",
+      "5": "Review Engine",
+      "6": "Implementation QA",
+      "7": "Design Memory",
+      "8": "Agent Orchestration & Quality Gates"
+    },
+    "layerRule": "Core = código executável determinístico + dados/contratos que os motores consomem ou geram (inclui corpus de exemplo, config e fixtures); Skills = instrução/documentação escrita à mão para humanos/LLMs (SKILL.md, craft.md, reference/, README, guias, LICENSE); Adapters = superfícies de integração/entrega (plugin, commands registrados pelo plugin, .github, launchers, bundles vendorizados de terceiros).",
+    "classRule": "existe = capacidade implementada e coerente com o código; parcial = existe mas escopo/validação/fiação incompletos (nota diz o quê); refatorar = existe mas contém contradição, drift ou caminho inválido que exige reescrita; construir = capacidade inexistente citada pelo arquivo (reservado a placeholders; capacidades a construir estão no documento narrativo)."
+  },
+  "totals": {
+    "filesInFind": 555,
+    "fileEntries": 188,
+    "fixtureGroupEntries": 11,
+    "fixtureMembers": 356,
+    "exclusions": 16
+  },
+  "exclusions": [
+    {
+      "path": "plugin/package-lock.json",
+      "reason": "lockfile gerado pelo npm — não é código/doc auditável"
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/dashboard-01-overview-768x1024.png",
+      "reason": "binário PNG (baseline de pixels do smoke) — artefato, não código/doc"
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login-01-login-375x667.png",
+      "reason": "binário PNG (baseline de pixels do smoke) — artefato, não código/doc"
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login-01-login-390x844.png",
+      "reason": "binário PNG (baseline de pixels do smoke) — artefato, não código/doc"
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login-02-cadastro-375x667.png",
+      "reason": "binário PNG (baseline de pixels do smoke) — artefato, não código/doc"
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login-02-cadastro-390x844.png",
+      "reason": "binário PNG (baseline de pixels do smoke) — artefato, não código/doc"
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login-03-modal-375x667.png",
+      "reason": "binário PNG (baseline de pixels do smoke) — artefato, não código/doc"
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login-03-modal-390x844.png",
+      "reason": "binário PNG (baseline de pixels do smoke) — artefato, não código/doc"
+    },
+    {
+      "path": "docs/auditoria-tecnica.md",
+      "reason": "auto-referência: documento gerado por esta própria auditoria (todo 1)"
+    },
+    {
+      "path": "docs/auditoria.json",
+      "reason": "auto-referência: saída gerada por esta própria auditoria (todo 1)"
+    },
+    {
+      "path": "docs/auditoria.json.check.mjs",
+      "reason": "auto-referência: verificador gerado por esta própria auditoria (todo 1)"
+    },
+    {
+      "path": "docs/arquitetura-evolutiva.md",
+      "reason": "criado pelo todo 2 desta onda (Wave 0); escopo de auditoria do F1 — declaração prospectiva"
+    },
+    {
+      "path": "docs/arquitetura-evolutiva.check.mjs",
+      "reason": "verificador do todo 2 desta onda (Wave 0); escopo de auditoria do F1 — declaração prospectiva"
+    },
+    {
+      "path": "docs/camadas.md",
+      "reason": "criado pelo todo 3 desta onda (Wave 0); escopo de auditoria do F1 — declaração prospectiva"
+    },
+    {
+      "path": "docs/camadas.check.mjs",
+      "reason": "verificador do todo 3 desta onda (Wave 0); escopo de auditoria do F1 — declaração prospectiva"
+    },
+    {
+      "path": "docs/adr/",
+      "reason": "ADRs criados pelos todos 2-4 desta onda (Wave 0); escopo de auditoria do F1 — prefixo prospectivo"
+    }
+  ],
+  "entries": [
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": ".github/ISSUE_TEMPLATE/bug_report.yml:2",
+          "text": "description: Something is broken or misbehaving"
+        }
+      ],
+      "note": "template de bug report completo (what/steps/expected)",
+      "lines": 48
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature_request.yml",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": ".github/ISSUE_TEMPLATE/feature_request.yml:2",
+          "text": "description: An idea to make Mockbird better"
+        }
+      ],
+      "note": "template de feature request completo (problem/proposal/alternatives)",
+      "lines": 26
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "refatorar",
+      "evidence": [
+        {
+          "ref": ".github/PULL_REQUEST_TEMPLATE.md:8",
+          "text": "- [ ] Mirror lists kept in sync (`plugin/core.mjs` ↔ `skills/design/SKILL.md` copy list)"
+        },
+        {
+          "ref": "skills/design/scripts/copy-list.json:2",
+          "text": "  \"version\": 1,"
+        }
+      ],
+      "note": "checklist de PR manda sincronizar MIRROR com a \"copy list\" do SKILL.md (:8) enquanto a fonte única declarada é scripts/copy-list.json (setup-design.mjs:41) — gate manual de sincronização entre os dois mecanismos de entrega",
+      "lines": 12
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "refatorar",
+      "evidence": [
+        {
+          "ref": ".github/workflows/ci.yml:24",
+          "text": "      - name: Unit tests (plugin core)"
+        },
+        {
+          "ref": ".github/workflows/ci.yml:37",
+          "text": "        run: node skills/design/scripts/fixtures/security-suite.mjs"
+        },
+        {
+          "ref": "package.json:21",
+          "text": "    \"ci\": \"npm test && npm run test:mock && npm run smoke && npm run validate && npm run qa && npm run security && npm run check:i18n\""
+        }
+      ],
+      "note": "workflow roda 5 dos 7 passos de `npm run ci` (faltam test:mock e check:i18n) e nenhum teste com navegador (test:ui e o design smoke nunca rodam em CI); i18n-check.mjs:3 se auto-declara \"(CI)\" sem estar no workflow",
+      "lines": 37
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": ".github/workflows/release.yml:19",
+          "text": "        run: gh release create \"$GITHUB_REF_NAME\" --verify-tag --generate-notes --title \"Mockbird $GITHUB_REF_NAME\""
+        }
+      ],
+      "note": "release automático por tag via gh release create",
+      "lines": 19
+    },
+    {
+      "path": "commands/design.md",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "commands/design.md:5",
+          "text": "Load the `design` skill with the skill tool and follow its workflow exactly for this request:"
+        }
+      ],
+      "note": "template de comando $ARGUMENTS que carrega a skill design; registrado por plugin/core.mjs:125 (loadCommands)",
+      "lines": 7
+    },
+    {
+      "path": "commands/emil-design-eng.md",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "commands/emil-design-eng.md:5",
+          "text": "Load the `emil-design-eng` skill with the skill tool and follow its workflow exactly for this request:"
+        }
+      ],
+      "note": "template de comando $ARGUMENTS que carrega a skill emil-design-eng; registrado por plugin/core.mjs:125 (loadCommands)",
+      "lines": 7
+    },
+    {
+      "path": "commands/impeccable.md",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "commands/impeccable.md:5",
+          "text": "Load the `impeccable` skill with the skill tool and follow its workflow exactly for this request:"
+        }
+      ],
+      "note": "template de comando $ARGUMENTS que carrega a skill impeccable; registrado por plugin/core.mjs:125 (loadCommands)",
+      "lines": 7
+    },
+    {
+      "path": "commands/taste.md",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "commands/taste.md:5",
+          "text": "Load the `taste` skill with the skill tool and follow its workflow exactly for this request:"
+        }
+      ],
+      "note": "template de comando $ARGUMENTS que carrega a skill taste; registrado por plugin/core.mjs:125 (loadCommands)",
+      "lines": 7
+    },
+    {
+      "path": "commands/design-map.md",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "commands/design-map.md:5",
+          "text": "# /design-map"
+        }
+      ],
+      "note": "comando /design-map (faixa paralela do todo 6): regenera agent-map + pacotes por tela + índice .map numa chamada e reporta o diff",
+      "lines": 31
+    },
+    {
+      "path": "docs/migration-guide.md",
+      "layer": "Skills",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "docs/migration-guide.md:1",
+          "text": "# Guia de migração do cliente — update path + migração do corpus (§15)"
+        },
+        {
+          "ref": "docs/migration-guide.md:13",
+          "text": "> **Baseline client-run.** Os números de corpus citados abaixo (204 handlers,"
+        }
+      ],
+      "note": "guia de update path + migração de corpus (client-run) + migração de payloads (§3) + mapa de cobertura WP (§4); números de baseline auto-declarados como medição datada do corpus de referência (:13, :283, :640)",
+      "lines": 997
+    },
+    {
+      "path": "plugin/core.mjs",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "plugin/core.mjs:50",
+          "text": "export const MIRROR = ["
+        },
+        {
+          "ref": "plugin/core.mjs:65",
+          "text": "export const SEED = ["
+        },
+        {
+          "ref": "plugin/core.mjs:174",
+          "text": "const STAMP_FILE = \".mockbird-version\""
+        }
+      ],
+      "note": "núcleo do plugin (MIRROR/SEED, frontmatter, pull, sync) + carimbo design/.mockbird-version com hash do conjunto espelhado (todo 5, :174-227). Achado: MIRROR (:50-62) não embarca rules/ — projetos sincronizados só pelo plugin perdem as 10 regras (validate.mjs:1366 descobre rules/ ao lado ou em scripts/rules/)",
+      "lines": 281
+    },
+    {
+      "path": "plugin/index.ts",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "plugin/index.ts:55",
+          "text": "export default Plugin.define({"
+        }
+      ],
+      "note": "adaptador tipado OpenCode v2 (setup: pull, skill.transform, sync, command.transform)",
+      "lines": 148
+    },
+    {
+      "path": "plugin/core.test.mjs",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "plugin/core.test.mjs:2",
+          "text": " * Unit tests for plugin/core.mjs (plain JS, stock Node 18+ via node:test)."
+        }
+      ],
+      "note": "testes unitários do core (node:test) — frontmatter, loadSkills, MIRROR/SEED, syncProject, carimbo .mockbird-version",
+      "lines": 274
+    },
+    {
+      "path": "plugin/package.json",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "plugin/package.json:13",
+          "text": "  \"exports\": {"
+        }
+      ],
+      "note": "pacote do plugin (@opencode/plugin ^2.1.4)",
+      "lines": 19
+    },
+    {
+      "path": "plugin/smoke.mjs",
+      "layer": "Adapters",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "plugin/smoke.mjs:1",
+          "text": "// Plugin smoke test: exercises frontmatter, loadSkills and syncProject for real."
+        }
+      ],
+      "note": "smoke do plugin (frontmatter, loadSkills, syncProject) — é o `npm run smoke` do repo, NÃO o design smoke",
+      "lines": 17
+    },
+    {
+      "path": "scripts/mock-check.mjs",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "scripts/mock-check.mjs:2",
+          "text": " * Behavior checks for design/mock.js runtime contracts (vm harness — the same"
+        },
+        {
+          "ref": "scripts/mock-check.mjs:591",
+          "text": "const FIXTURE_DIR = join(ROOT, 'skills/design/scripts/fixtures/ok/action-module')"
+        }
+      ],
+      "note": "suíte vm dos contratos do runtime mock.js (nav/overlay, a11y, data-action, action-module, $ref); único consumidor automático de fixtures (ok/action-module)",
+      "lines": 1039
+    },
+    {
+      "path": "scripts/viewer-accept.mjs",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "scripts/viewer-accept.mjs:2",
+          "text": " * Real-browser acceptance test for the viewer (Edge/Chrome + playwright-core)."
+        }
+      ],
+      "note": "aceitação em navegador real do viewer (playwright-core): seleção, comentário, menu, box select, modo fluxo, self-reload; roda manualmente (npm run test:ui), fora do CI",
+      "lines": 488
+    },
+    {
+      "path": "scripts/i18n-check.mjs",
+      "layer": "Core",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "scripts/i18n-check.mjs:2",
+          "text": " * i18n consistency check (CI): the viewer's I18N dictionary must stay in sync"
+        }
+      ],
+      "note": "consistência i18n do viewer (dicionário en/pt, chaves usadas, {vars}) + blocos bilíngues do docs.html; auto-declarado \"(CI)\" mas o workflow não o executa",
+      "lines": 90
+    },
+    {
+      "path": "skills/design/README.md",
+      "layer": "Skills",
+      "subsystem": 2,
+      "class": "parcial",
+      "evidence": [
+        {
+          "ref": "skills/design/README.md:46",
+          "text": "## Comandos (instalado)"
+        },
+        {
+          "ref": "skills/design/scripts/copy-list.json:16",
+          "text": "    { \"from\": \"scripts/export-tokens.mjs\", \"to\": \"scripts/export-tokens.mjs\" },"
+        }
+      ],
+      "note": "a seção \"Comandos (instalado)\" (:46) lista só 5 ferramentas; o copy-list instala também export-spec/codegen/qa/smoke/setup-design/rules/lib (copy-list.json:14-38) sem menção no README",
+      "lines": 64
+    },
+    {
+      "path": "skills/design/SKILL.md",
+      "layer": "Skills",
+      "subsystem": 2,
+      "class": "refatorar",
+      "evidence": [
+        {
+          "ref": "skills/design/SKILL.md:320",
+          "text": "      arbitrary values like `text-[13px]`."
+        },
+        {
+          "ref": "skills/design/SKILL.md:394",
+          "text": "   `node design/validate.mjs design/<canvas>`. Fix every issue it lists and run"
+        },
+        {
+          "ref": "skills/design/SKILL.md:414",
+          "text": "   citing the class and the file). `classes.allow` is transitional: it exists"
+        },
+        {
+          "ref": "skills/design/SKILL.md:534",
+          "text": "2. **Allowlist policy (transitional).** Flat `data-action` names (no dot) fail"
+        },
+        {
+          "ref": "skills/design/assets/craft.md:20",
+          "text": "- `DESIGN_VARIANCE` (1–10, default 7): 1–3 symmetric and equal, 4–7 offset"
+        }
+      ],
+      "note": "contradições de regra entre skills (todo 4): ban de valores arbitrários (:320) vs taste:929 (leading-[1.1]); QA loop \"até limpar\" (:394) vs craft.md:98-100/impeccable:15 (passes limitados); allowlists \"transicionais\" (:414, :534) já vazias em validate.config.json:10,37; dials divergentes de taste:51",
+      "lines": 621
+    },
+    {
+      "path": "skills/design/assets/viewer.html",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/viewer.html:7",
+          "text": "<script src=\"vendor/html-to-image.js\"></script>"
+        }
+      ],
+      "note": "canvas do visualizador (5133 ln): telas lado a lado, dispositivo/tema, PNG export, comentários por elemento, modo fluxo; dicionário I18N verificado por scripts/i18n-check.mjs",
+      "lines": 5133
+    },
+    {
+      "path": "skills/design/assets/mock.js",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/mock.js:2",
+          "text": "/**"
+        }
+      ],
+      "note": "runtime mock offline (838 ln): Mock.data/state/go/overlay/toast, dispatch de data-action, action modules, resolver $ref (contratos verificados por scripts/mock-check.mjs)",
+      "lines": 838
+    },
+    {
+      "path": "skills/design/assets/mock.css",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/mock.css:2",
+          "text": " * Design canvas mock styles - static companion of mock.js (Setup tool, sits"
+        }
+      ],
+      "note": "estilos estáticos das classes do runtime (toast/overlay/transição); mock.js só alterna classes, nunca injeta CSS",
+      "lines": 123
+    },
+    {
+      "path": "skills/design/assets/serve.mjs",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/serve.mjs:25",
+          "text": " *   GET  /api/comments   -> { comments: [...] }"
+        }
+      ],
+      "note": "servidor zero-dep do design/ (1505 ln): viewer + API de comentários/snapshots/revert com token, --share read-only; coberto pela security-suite (ci.yml:37)",
+      "lines": 1505
+    },
+    {
+      "path": "skills/design/assets/docs.html",
+      "layer": "Skills",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/docs.html:6",
+          "text": "<title>Design canvas — documentação de utilização</title>"
+        }
+      ],
+      "note": "guia de utilização do canvas (controles, ciclo de revisão, API do mock, troubleshooting); blocos bilíngues verificados por i18n-check",
+      "lines": 775
+    },
+    {
+      "path": "skills/design/assets/craft.md",
+      "layer": "Skills",
+      "subsystem": 1,
+      "class": "refatorar",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/craft.md:20",
+          "text": "- `DESIGN_VARIANCE` (1–10, default 7): 1–3 symmetric and equal, 4–7 offset"
+        },
+        {
+          "ref": "skills/design/assets/craft.md:98",
+          "text": "Build every screen fully first — no half-built screens. Then exactly one"
+        },
+        {
+          "ref": "skills/taste/SKILL.md:51",
+          "text": "**Baseline:** `8 / 6 / 4`. Use these unless the design read overrides them. Do not ask the user to edit this file - overrides happen conversationally."
+        }
+      ],
+      "note": "camada de craft fundida (taste+emil+impeccable): dials 7/4 produto (:20-26) conflitam com o baseline 8/6/4 da taste:51 sem declaração de escopo; loop de verificação (:98-101) vs \"até limpar\" do design SKILL.md:394 — reconciliação é o todo 4",
+      "lines": 162
+    },
+    {
+      "path": "skills/design/assets/tokens.contract.md",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/tokens.contract.md:1",
+          "text": "<!-- GENERATED by gen-tokens.mjs --contract — do not edit; source: tokens.json -->"
+        }
+      ],
+      "note": "tabela de tokens GERADA (gen-tokens.mjs --contract); drift é falha via rules/contract-doc-sync.mjs",
+      "lines": 59
+    },
+    {
+      "path": "skills/design/assets/validate.config.json",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/validate.config.json:2",
+          "text": "  \"exemptDirs\": [\"vendor\", \"scripts\", \"snapshots\", \".history\"],"
+        }
+      ],
+      "note": "config v2 do toolchain (exempt lists, variant keys, toolchainScripts, actions/classes allowlists vazias, breakpoints 640/900, smoke.viewports/threshold)",
+      "lines": 40
+    },
+    {
+      "path": "skills/design/assets/vendor/html-to-image.js",
+      "layer": "Adapters",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/vendor/html-to-image.js:1",
+          "text": "!function(t,e){\"object\"==typeof exports&&\"undefined\"!=typeof module?e(exports):\"function\"==typeof define&&define.amd?define([\"exports\"],e):e((t=\"undefined\"!=typeof globalThis?globalThis:t||self).htmlT…"
+        }
+      ],
+      "note": "bundle UMD vendado (html-to-image) para export PNG — dependência externa embarcada, sem CDN",
+      "lines": 2
+    },
+    {
+      "path": "skills/design/assets/components/avatar.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/avatar.html:1",
+          "text": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente avatar (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 4
+    },
+    {
+      "path": "skills/design/assets/components/banner.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/banner.html:1",
+          "text": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">"
+        }
+      ],
+      "note": "partial do componente banner (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/components/bubble.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/bubble.html:1",
+          "text": "<div data-component=\"bubble\" data-size=\"md\" data-tone=\"in\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente bubble (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 4
+    },
+    {
+      "path": "skills/design/assets/components/button.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/button.html:1",
+          "text": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\"><!-- slot:label -->Ação<!-- /slot:lab…"
+        }
+      ],
+      "note": "partial do componente button (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 1
+    },
+    {
+      "path": "skills/design/assets/components/card.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/card.html:1",
+          "text": "<div data-component=\"card\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente card (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 4
+    },
+    {
+      "path": "skills/design/assets/components/chip.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/chip.html:1",
+          "text": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente chip (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 4
+    },
+    {
+      "path": "skills/design/assets/components/drawer.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/drawer.html:1",
+          "text": "<div data-component=\"drawer\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo…"
+        }
+      ],
+      "note": "partial do componente drawer (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/components/field.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/field.html:1",
+          "text": "<div data-component=\"field\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente field (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 6
+    },
+    {
+      "path": "skills/design/assets/components/media-card.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/media-card.html:1",
+          "text": "<div data-component=\"media-card\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente media-card (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 6
+    },
+    {
+      "path": "skills/design/assets/components/menu-row.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/menu-row.html:1",
+          "text": "<div data-component=\"menu-row\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"menuitem\">"
+        }
+      ],
+      "note": "partial do componente menu-row (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/components/modal.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/modal.html:1",
+          "text": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"mod…"
+        }
+      ],
+      "note": "partial do componente modal (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/components/pill.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/pill.html:1",
+          "text": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente pill (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 3
+    },
+    {
+      "path": "skills/design/assets/components/tabs.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/tabs.html:1",
+          "text": "<div data-component=\"tabs\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente tabs (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 4
+    },
+    {
+      "path": "skills/design/assets/components/toast.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/toast.html:1",
+          "text": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">"
+        }
+      ],
+      "note": "partial do componente toast (raiz com data-component/data-size/data-tone/data-state) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/components/components.json",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/components/components.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "registry schema v2 (name/template/variants/slots/realComponent/dataProps) — registry semeado pelo plugin (SEED, plugin/core.mjs:61)",
+      "lines": 184
+    },
+    {
+      "path": "skills/design/assets/example/components/avatar.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/avatar.html:1",
+          "text": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente avatar (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 4
+    },
+    {
+      "path": "skills/design/assets/example/components/banner.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/banner.html:1",
+          "text": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">"
+        }
+      ],
+      "note": "partial do componente banner (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/example/components/bubble.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/bubble.html:1",
+          "text": "<div data-component=\"bubble\" data-size=\"md\" data-tone=\"in\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente bubble (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 4
+    },
+    {
+      "path": "skills/design/assets/example/components/button.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/button.html:1",
+          "text": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\"><!-- slot:label -->Ação<!-- /slot:lab…"
+        }
+      ],
+      "note": "partial do componente button (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 1
+    },
+    {
+      "path": "skills/design/assets/example/components/card.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/card.html:1",
+          "text": "<div data-component=\"card\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente card (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 4
+    },
+    {
+      "path": "skills/design/assets/example/components/chip.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/chip.html:1",
+          "text": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente chip (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 4
+    },
+    {
+      "path": "skills/design/assets/example/components/drawer.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/drawer.html:1",
+          "text": "<div data-component=\"drawer\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo…"
+        }
+      ],
+      "note": "partial do componente drawer (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/example/components/field.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/field.html:1",
+          "text": "<div data-component=\"field\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente field (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 6
+    },
+    {
+      "path": "skills/design/assets/example/components/media-card.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/media-card.html:1",
+          "text": "<div data-component=\"media-card\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente media-card (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 6
+    },
+    {
+      "path": "skills/design/assets/example/components/menu-row.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/menu-row.html:1",
+          "text": "<div data-component=\"menu-row\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"menuitem\">"
+        }
+      ],
+      "note": "partial do componente menu-row (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/example/components/modal.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/modal.html:1",
+          "text": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"mod…"
+        }
+      ],
+      "note": "partial do componente modal (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/example/components/pill.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/pill.html:1",
+          "text": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente pill (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 3
+    },
+    {
+      "path": "skills/design/assets/example/components/tabs.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/tabs.html:1",
+          "text": "<div data-component=\"tabs\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">"
+        }
+      ],
+      "note": "partial do componente tabs (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 4
+    },
+    {
+      "path": "skills/design/assets/example/components/toast.html",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/toast.html:1",
+          "text": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">"
+        }
+      ],
+      "note": "partial do componente toast (raiz com data-component/data-size/data-tone/data-state) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/example/components/components.json",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/components/components.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "registry schema v2 (name/template/variants/slots/realComponent/dataProps) — cópia do registry dentro do example (corpus auto-contido)",
+      "lines": 184
+    },
+    {
+      "path": "skills/design/assets/example/comments.json",
+      "layer": "Core",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/comments.json:2",
+          "text": "  \"comments\": ["
+        }
+      ],
+      "note": "pins de demonstração do fluxo de comentários (open+resolved, \"_demo\": true) — contrato do --example-inventory",
+      "lines": 42
+    },
+    {
+      "path": "skills/design/assets/example/inventory.json",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "parcial",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/inventory.json:2",
+          "text": "  \"files\": ["
+        },
+        {
+          "ref": "skills/design/assets/example/agent-map.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "lista EXATA de arquivos do example conferida por validate.mjs --example-inventory (tokens.w3c.json isento por nome). Divergente na auditoria: o modo saiu exit 1 com inventory-extra para agent-map.json e agent-map.md (artefatos do todo 6 ainda não listados aqui) — atualizar a lista fecha o gap",
+      "lines": 66
+    },
+    {
+      "path": "skills/design/assets/example/metrics.json",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/metrics.json:2",
+          "text": "  \"_method\": \"Per-screen inline-handler census generated by skills/design/scripts/rules/metrics.mjs (validate.mjs rule \\\"metrics-regression\\\"). Scope: the screen html files listed by every canvas.json…"
+        }
+      ],
+      "note": "baseline congelado do censo de handlers inline (metrics-regression revalida a cada run; --update-metrics é o único caminho de atualização)",
+      "lines": 75
+    },
+    {
+      "path": "skills/design/assets/example/tokens.json",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/tokens.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "fonte de tokens DTCG-ish do example (light/dark + contract groups via lib/token-groups.mjs)",
+      "lines": 563
+    },
+    {
+      "path": "skills/design/assets/example/design-system.css",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/design-system.css:1",
+          "text": "/* GENERATED by gen-tokens.mjs — do not edit; tokens-hash: df74a7b19035e364c9004851eeeebfa1e2395040b442a5628764f8bcdc7cd5e4 */"
+        }
+      ],
+      "note": "GERADO por gen-tokens.mjs (banner tokens-hash); staleness checada por validate.mjs",
+      "lines": 131
+    },
+    {
+      "path": "skills/design/assets/example/utilities.css",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/utilities.css:1",
+          "text": "/* GENERATED by gen-tokens.mjs — do not edit; tokens-hash: df74a7b19035e364c9004851eeeebfa1e2395040b442a5628764f8bcdc7cd5e4 */"
+        }
+      ],
+      "note": "GERADO por gen-tokens.mjs: matriz fechada de utilities (~140 entradas) com o mesmo tokens-hash",
+      "lines": 583
+    },
+    {
+      "path": "skills/design/assets/example/login/canvas.json",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/login/canvas.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "manifesto de canvas (screens com id/file/device/width/height/group) — consumido por validate/smoke/viewport",
+      "lines": 8
+    },
+    {
+      "path": "skills/design/assets/example/dashboard/canvas.json",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/dashboard/canvas.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "manifesto de canvas (screens com id/file/device/width/height/group) — consumido por validate/smoke/viewport",
+      "lines": 6
+    },
+    {
+      "path": "skills/design/assets/example/login/data.json",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/login/data.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "dataset do runtime mock (cenários e $ref data/ resolvidos por mock.js e rules/data-ref)",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/example/dashboard/data.json",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/dashboard/data.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "dataset do runtime mock (cenários e $ref data/ resolvidos por mock.js e rules/data-ref)",
+      "lines": 28
+    },
+    {
+      "path": "skills/design/assets/example/data/estoque.json",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/data/estoque.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "dataset do runtime mock (cenários e $ref data/ resolvidos por mock.js e rules/data-ref)",
+      "lines": 116
+    },
+    {
+      "path": "skills/design/assets/example/data/usuarios.json",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/data/usuarios.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "dataset do runtime mock (cenários e $ref data/ resolvidos por mock.js e rules/data-ref)",
+      "lines": 9
+    },
+    {
+      "path": "skills/design/assets/example/login/01-login.html",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/login/01-login.html:1",
+          "text": "<!doctype html>"
+        }
+      ],
+      "note": "tela de exemplo (corpus verde do validador; instâncias via marcadores de componente)",
+      "lines": 63
+    },
+    {
+      "path": "skills/design/assets/example/login/02-cadastro.html",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/login/02-cadastro.html:1",
+          "text": "<!doctype html>"
+        }
+      ],
+      "note": "tela de exemplo (corpus verde do validador; instâncias via marcadores de componente)",
+      "lines": 52
+    },
+    {
+      "path": "skills/design/assets/example/login/03-modal.html",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/login/03-modal.html:1",
+          "text": "<!doctype html>"
+        }
+      ],
+      "note": "tela de exemplo (corpus verde do validador; instâncias via marcadores de componente)",
+      "lines": 40
+    },
+    {
+      "path": "skills/design/assets/example/dashboard/01-overview.html",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/dashboard/01-overview.html:1",
+          "text": "<!doctype html>"
+        }
+      ],
+      "note": "tela de exemplo (corpus verde do validador; instâncias via marcadores de componente)",
+      "lines": 117
+    },
+    {
+      "path": "skills/design/assets/example/spec/cadastro.json",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/spec/cadastro.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "spec exportado por export-spec.mjs (5 chaves: states/flows/texts/rules/parity) — contrato de handoff D9",
+      "lines": 45
+    },
+    {
+      "path": "skills/design/assets/example/spec/excluir.json",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/spec/excluir.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "spec exportado por export-spec.mjs (5 chaves: states/flows/texts/rules/parity) — contrato de handoff D9",
+      "lines": 38
+    },
+    {
+      "path": "skills/design/assets/example/spec/login.json",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/spec/login.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "spec exportado por export-spec.mjs (5 chaves: states/flows/texts/rules/parity) — contrato de handoff D9",
+      "lines": 54
+    },
+    {
+      "path": "skills/design/assets/example/spec/overview.json",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/spec/overview.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "spec exportado por export-spec.mjs (5 chaves: states/flows/texts/rules/parity) — contrato de handoff D9",
+      "lines": 79
+    },
+    {
+      "path": "skills/design/assets/example/spec/cadastro.md",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/spec/cadastro.md:1",
+          "text": "# Cadastro"
+        }
+      ],
+      "note": "spec legível GERADO por export-spec.mjs (determinístico, sem timestamps)",
+      "lines": 41
+    },
+    {
+      "path": "skills/design/assets/example/spec/excluir.md",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/spec/excluir.md:1",
+          "text": "# Excluir conta"
+        }
+      ],
+      "note": "spec legível GERADO por export-spec.mjs (determinístico, sem timestamps)",
+      "lines": 33
+    },
+    {
+      "path": "skills/design/assets/example/spec/login.md",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/spec/login.md:1",
+          "text": "# Login"
+        }
+      ],
+      "note": "spec legível GERADO por export-spec.mjs (determinístico, sem timestamps)",
+      "lines": 41
+    },
+    {
+      "path": "skills/design/assets/example/spec/overview.md",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/spec/overview.md:1",
+          "text": "# Visão geral"
+        }
+      ],
+      "note": "spec legível GERADO por export-spec.mjs (determinístico, sem timestamps)",
+      "lines": 45
+    },
+    {
+      "path": "skills/design/assets/example/spec/parity.md",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/spec/parity.md:26",
+          "text": "| nenhum (registry sem entrada de painel de tickets; `TICKETS` só como dado embutido, §A8) | `/opt/chat_bot_ia/frontend/src/components/chat/ConversationTicketPanel.tsx:111` (`ConversationTicketPanel`)…"
+        }
+      ],
+      "note": "checklist de paridade D8 preenchido (status coberto/parcial/gap-cliente por componente real); linhas gap-cliente nunca falham o repo (:28-31) e o mapeamento de breakpoints vs Tailwind do real segue como lacuna global (:35)",
+      "lines": 36
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/manifest.json",
+      "layer": "Core",
+      "subsystem": 4,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/manifest.json:2",
+          "text": "  \"screens\": ["
+        }
+      ],
+      "note": "manifesto determinístico do smoke v2 (asserts por tela×viewport, merge não-regressivo)",
+      "lines": 161
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/threshold.json",
+      "layer": "Core",
+      "subsystem": 4,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/threshold.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "limiar de comparação de pixels do smoke (config.smoke.snapshotThreshold)",
+      "lines": 3
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/manifest.json",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/manifest.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 59
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/render/01-login.html",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/render/01-login.html:1",
+          "text": "<!doctype html>"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 1220
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/render/02-cadastro.html",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/render/02-cadastro.html:1",
+          "text": "<!doctype html>"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 1219
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/render/03-modal.html",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/render/03-modal.html:1",
+          "text": "<!doctype html>"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 1207
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/src/01-login.html",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/src/01-login.html:1",
+          "text": "<!doctype html>"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 51
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/src/02-cadastro.html",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/src/02-cadastro.html:1",
+          "text": "<!doctype html>"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 50
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/src/03-modal.html",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/src/03-modal.html:1",
+          "text": "<!doctype html>"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 38
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/src/canvas.json",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/src/canvas.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 8
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/src/components/button.html",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/src/components/button.html:1",
+          "text": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\"><!-- slot:label -->Ação<!-- /slot:lab…"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 1
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/src/components/card.html",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/src/components/card.html:1",
+          "text": "<div data-component=\"card\" data-size=\"md\" data-tone=\"primary\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\">"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 4
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/src/components/components.json",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/src/components/components.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 22
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/src/data.json",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/src/data.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 5
+    },
+    {
+      "path": "skills/design/assets/example/snapshots/login/v1/src/tokens.json",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/snapshots/login/v1/src/tokens.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "snapshot versionado v1 gravado via serve POST /api/snapshot (src/ = canvas completo; render/ = HTML flat auto-contido) — memória de versão do design",
+      "lines": 183
+    },
+    {
+      "path": "skills/design/scripts/validate.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/validate.mjs:3",
+          "text": "/**"
+        },
+        {
+          "ref": "skills/design/scripts/validate.mjs:1366",
+          "text": "// Layout: rules/ next to this file (pack source) or under scripts/ (installed)."
+        }
+      ],
+      "note": "validador determinístico (1429 ln): bans + estrutura + transições + staleness + components + comments + contraste; loadRules append-only (:1366) carrega rules/ de ./rules/ ou ./scripts/rules/",
+      "lines": 1429
+    },
+    {
+      "path": "skills/design/scripts/qa.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/qa.mjs:3",
+          "text": "/**"
+        }
+      ],
+      "note": "rig de QA R1-R4 sobre o validador (marker de config, integridade toolchainScripts, selftest A/B de config, estabilidade 10x)",
+      "lines": 291
+    },
+    {
+      "path": "skills/design/scripts/smoke.mjs",
+      "layer": "Core",
+      "subsystem": 4,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/smoke.mjs:3",
+          "text": " * Smoke v2 for the design skill (plan todo 17, GAP-6): renders every screen"
+        }
+      ],
+      "note": "smoke v2 de telas (playwright-core, viewports derivados por lib/viewport.mjs, snapshot pixel a pixel); fora de npm scripts e CI — executa em projeto com --with-smoke",
+      "lines": 771
+    },
+    {
+      "path": "skills/design/scripts/codegen.mjs",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/codegen.mjs:4",
+          "text": " * GAP-8 bridge half). For every registry entry it emits ONE `<realComponent>.tsx`"
+        },
+        {
+          "ref": "skills/design/scripts/codegen.mjs:282",
+          "text": "export function runCodegen({ rootDir, configPath, only = null, outDir = null }) {"
+        }
+      ],
+      "note": "gerador TSX tipado a partir do registry (contrato declarado completo: props/variants/dataProps/slots + banner tokens-hash; \"bridge half\" do GAP-8 é divisão de escopo completada pela spec half do export-spec.mjs:3 — classe decidida pelo código, não pelo comentário)",
+      "lines": 402
+    },
+    {
+      "path": "skills/design/scripts/export-spec.mjs",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/export-spec.mjs:3",
+          "text": " * export-spec.mjs - per-screen spec export (plan todo 18, GAP-8 spec half)."
+        },
+        {
+          "ref": "skills/design/scripts/export-spec.mjs:33",
+          "text": " *            declared (the check against the real frontend is todo 23);"
+        }
+      ],
+      "note": "exporta spec por tela (states/flows/texts/rules/parity) determinístico; detectScreenStates é a implementação única reusada por rules/spec-undeclared.mjs",
+      "lines": 580
+    },
+    {
+      "path": "skills/design/scripts/export-tokens.mjs",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/export-tokens.mjs:4",
+          "text": " * export-tokens.mjs - W3C/DTCG interchange export (todo 26)."
+        }
+      ],
+      "note": "export W3C/DTCG puro (tokens.w3c.json derivado, isento por nome em inventory/staleness)",
+      "lines": 131
+    },
+    {
+      "path": "skills/design/scripts/gen-tokens.mjs",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/gen-tokens.mjs:4",
+          "text": " * gen-tokens.mjs — generate design-system.css from tokens.json (DTCG-ish)."
+        }
+      ],
+      "note": "gera tokens.json + design-system.css + utilities.css (+ tokens.contract.md com --contract); determinístico, banner tokens-hash",
+      "lines": 454
+    },
+    {
+      "path": "skills/design/scripts/marker-parser.mjs",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/marker-parser.mjs:3",
+          "text": " * marker-parser.mjs — parser for the component marker grammar (w2-7)."
+        }
+      ],
+      "note": "parser puro da gramática de marcadores (component:/slot:, marker-args-win, VARIANT_CLASSES fechado)",
+      "lines": 522
+    },
+    {
+      "path": "skills/design/scripts/sync-components.mjs",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/sync-components.mjs:4",
+          "text": " * sync-components.mjs — marker-based component rematerializer (w2-8)."
+        }
+      ],
+      "note": "rematerializador de regiões marcadas (preserva slots/data-* extras, registry schema v2, --check dry-run, --codegen delega a codegen.mjs)",
+      "lines": 844
+    },
+    {
+      "path": "skills/design/scripts/setup-design.mjs",
+      "layer": "Core",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/setup-design.mjs:3",
+          "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+        },
+        {
+          "ref": "skills/design/scripts/setup-design.mjs:41",
+          "text": " * Copy list — single source `skills/design/scripts/copy-list.json` (todo 25)."
+        }
+      ],
+      "note": "setup/update por projeto (nunca brick, .bak/.new, merge de config, Windows-safe); copy list = copy-list.json com fallback embutido",
+      "lines": 554
+    },
+    {
+      "path": "skills/design/scripts/setup-design.test.mjs",
+      "layer": "Core",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/setup-design.test.mjs:2",
+          "text": " * Unit tests for the setup-design.mjs path/case helpers (plan todo 24 (e))."
+        }
+      ],
+      "note": "testes node:test dos helpers de path/case + CLI subprocess (exit 3 guiado); NÃO roda em npm test nem no CI",
+      "lines": 75
+    },
+    {
+      "path": "skills/design/scripts/copy-list.json",
+      "layer": "Core",
+      "subsystem": 8,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/copy-list.json:2",
+          "text": "  \"version\": 1,"
+        }
+      ],
+      "note": "fonte única da copy list do setup-design (33 entradas: runtime, scripts, rules, lib, fixtures/ok/config-driven); diverge do MIRROR do plugin (que não leva rules/) — ver achados",
+      "lines": 38
+    },
+    {
+      "path": "skills/design/scripts/lib/viewport.mjs",
+      "layer": "Core",
+      "subsystem": 4,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/lib/viewport.mjs:2",
+          "text": " * viewport.mjs — the SINGLE viewport truth (todo 16, GAP-6): a pure lib that"
+        }
+      ],
+      "note": "verdade única de viewport (deriveViewport puro, breakpoints do config, erro guiado sem viewport inventado)",
+      "lines": 67
+    },
+    {
+      "path": "skills/design/scripts/lib/token-groups.mjs",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/lib/token-groups.mjs:2",
+          "text": " * token-groups.mjs — the contract token groups (todo 19, GAP-7): motion,"
+        }
+      ],
+      "note": "grupos de contrato (motion/density/breakpoints/layers) — fonte única emitida em tokens.json e tokens.w3c.json",
+      "lines": 121
+    },
+    {
+      "path": "skills/design/scripts/rules/a11y.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/rules/a11y.mjs:3",
+          "text": " * a11y (todo 9, GAP-9) — template-level accessibility contract for the"
+        }
+      ],
+      "note": "regra carregada por loadRules (append-only) — contrato a11y de templates overlay/toast (a11y-no-autofocus, a11y-toast-no-live)",
+      "lines": 106
+    },
+    {
+      "path": "skills/design/scripts/rules/action-contract.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/rules/action-contract.mjs:3",
+          "text": " * action-contract (todo 7, GAP-4) — the data-action contract detector"
+        }
+      ],
+      "note": "regra carregada por loadRules (append-only) — detector do contrato data-action (action-both, action-flat, action-allowlist-nojust; config-driven)",
+      "lines": 194
+    },
+    {
+      "path": "skills/design/scripts/rules/action-module.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/rules/action-module.mjs:3",
+          "text": " * action-module (todo 8, GAP-4) — the per-screen action module contract"
+        }
+      ],
+      "note": "regra carregada por loadRules (append-only) — contrato do módulo de ações por tela (Mock.registerActions id == file stem, scan mascarado)",
+      "lines": 234
+    },
+    {
+      "path": "skills/design/scripts/rules/canvas-meta.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/rules/canvas-meta.mjs:3",
+          "text": " * canvas-meta (todo 3, GAP-3) — device × width coherence for every screen of"
+        }
+      ],
+      "note": "regra carregada por loadRules (append-only) — coerência device×width por tela de cada canvas.json (breakpoints do config)",
+      "lines": 103
+    },
+    {
+      "path": "skills/design/scripts/rules/contract-doc-sync.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/rules/contract-doc-sync.mjs:3",
+          "text": " * contract-doc-sync (todo 20, GAP-7) — the generated token contract must match"
+        }
+      ],
+      "note": "regra carregada por loadRules (append-only) — tokens.contract.md e o embed do SKILL.md devem casar com tokens.json (renderer byte-a-byte do gen-tokens)",
+      "lines": 183
+    },
+    {
+      "path": "skills/design/scripts/rules/data-ref.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/rules/data-ref.mjs:3",
+          "text": " * data-ref (todo 21, GAP-7) — the $ref binder of the shared mock datasets:"
+        }
+      ],
+      "note": "regra carregada por loadRules (append-only) — binder $ref de datasets (shape/missing/key/cycle; alcance = refs vindas de data.json de canvases)",
+      "lines": 159
+    },
+    {
+      "path": "skills/design/scripts/rules/encoding.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/rules/encoding.mjs:3",
+          "text": " * encoding check v2 (todo 2, GAP-2) — mojibake/corruption detector over TEXT"
+        }
+      ],
+      "note": "regra carregada por loadRules (append-only) — detector de mojibake/corrupção (fffd, double, c1) em arquivos de texto com allowlist",
+      "lines": 225
+    },
+    {
+      "path": "skills/design/scripts/rules/instance-divergence.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/rules/instance-divergence.mjs:3",
+          "text": " * instance-divergence (todo 15, GAP-5) — the zero-unknown `.m-*` gate"
+        }
+      ],
+      "note": "regra carregada por loadRules (append-only) — gate zero-unknown .m-* (classes só dos templates do registry; allowlist justificada)",
+      "lines": 218
+    },
+    {
+      "path": "skills/design/scripts/rules/metrics.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/rules/metrics.mjs:3",
+          "text": " * metrics (todo 3, GAP-3) — per-screen inline-handler census + frozen"
+        }
+      ],
+      "note": "regra carregada por loadRules (append-only) — censo de handlers inline + baseline congelada + metrics-regression (flags próprias --metrics/--update-metrics)",
+      "lines": 317
+    },
+    {
+      "path": "skills/design/scripts/rules/spec-undeclared.mjs",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/rules/spec-undeclared.mjs:3",
+          "text": " * spec-undeclared (todo 18, GAP-8) — every screen must DECLARE at least one"
+        }
+      ],
+      "note": "regra carregada por loadRules (append-only) — toda tela declara >=1 state (detectScreenStates importado do export-spec — implementação única)",
+      "lines": 120
+    },
+    {
+      "path": "skills/design/scripts/agent-map.mjs",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/agent-map.mjs:3",
+          "text": " * agent-map.mjs — the agent map generator (plan todo 6, GAP-J1/J2)."
+        }
+      ],
+      "note": "gerador do agent map (todo 6, GAP-J1/J2): agent-map.json + agent-map.md com inventário por tela citado file:line, tabela de verbos derivada do mock.js e verificada bidirecionalmente (--check-verbs), índice de contratos e contratos mortos; saída determinística com gitSHA+contentHash. Sem testes unitários próprios no repo (a verificação é o corpus fixtures/map-* + verbs-divergent)",
+      "lines": 944
+    },
+    {
+      "path": "skills/design/scripts/find.mjs",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/find.mjs:2",
+          "text": " * find.mjs — busca direta no alvo de design: \"onde está <termo>?\" em uma consulta."
+        }
+      ],
+      "note": "busca direta arquivo:linha por campo (texto/classe/token/data/icone/arquivo), literal nunca regex (:16-18), índice .map/index.json opcional com fallback de varredura, saída determinística; todo 8 (GAP-J3)",
+      "lines": 387
+    },
+    {
+      "path": "skills/design/scripts/find.test.mjs",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/find.test.mjs:2",
+          "text": " * Unit + CLI tests for find.mjs (plan todo 8 — busca direta find)."
+        }
+      ],
+      "note": "testes node:test do find.mjs (happy/regex literal/campos/CLI) sobre a fixture fixtures/find-target; não roda em npm test nem no CI (mesma lacuna do setup-design.test.mjs)",
+      "lines": 212
+    },
+    {
+      "path": "skills/design/assets/example/agent-map.json",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/agent-map.json:2",
+          "text": "  \"schemaVersion\": 1,"
+        }
+      ],
+      "note": "mapa do example GERADO por agent-map.mjs (schemaVersion 1 + gitSHA + contentHash + timestamp; inventário por tela, verbos, contratos, contratos mortos)",
+      "lines": 372
+    },
+    {
+      "path": "skills/design/assets/example/agent-map.md",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/agent-map.md:3",
+          "text": "> GERADO por `skills/design/scripts/agent-map.mjs` — não editar à mão; regenere com `/design-map`."
+        }
+      ],
+      "note": "render legível GERADO do agent map do example (não editar à mão; regenerar com /design-map)",
+      "lines": 69
+    },
+    {
+      "path": "skills/taste/LICENSE",
+      "layer": "Skills",
+      "subsystem": 1,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/taste/LICENSE:1",
+          "text": "MIT License"
+        }
+      ],
+      "note": "licença MIT do pacote taste (vendado)",
+      "lines": 21
+    },
+    {
+      "path": "skills/taste/SKILL.md",
+      "layer": "Skills",
+      "subsystem": 1,
+      "class": "refatorar",
+      "evidence": [
+        {
+          "ref": "skills/taste/SKILL.md:51",
+          "text": "**Baseline:** `8 / 6 / 4`. Use these unless the design read overrides them. Do not ask the user to edit this file - overrides happen conversationally."
+        },
+        {
+          "ref": "skills/taste/SKILL.md:843",
+          "text": "skills/taste-skill/blocks/"
+        },
+        {
+          "ref": "skills/taste/SKILL.md:929",
+          "text": "- [ ] **Italic descender clearance**: every italic word with `y g j p q` has `leading-[1.1]` min + `pb-1` reserve?"
+        }
+      ],
+      "note": "skill anti-slop de landing/portfolio: baseline de dials 8/6/4 (:51) sem escopo declarado vs craft.md:20-26; caminho skills/taste-skill/blocks/ inexistente no repo (:843); valores arbitrários de Tailwind (:929) vs o ban do design SKILL.md:320",
+      "lines": 1206
+    },
+    {
+      "path": "skills/emil-design-eng/LICENSE",
+      "layer": "Skills",
+      "subsystem": 1,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/emil-design-eng/LICENSE:1",
+          "text": "MIT License"
+        }
+      ],
+      "note": "licença MIT do pacote emil-design-eng (vendado)",
+      "lines": 21
+    },
+    {
+      "path": "skills/emil-design-eng/SKILL.md",
+      "layer": "Skills",
+      "subsystem": 1,
+      "class": "refatorar",
+      "evidence": [
+        {
+          "ref": "skills/emil-design-eng/SKILL.md:10",
+          "text": "When this skill is first invoked without a specific question, respond only with:"
+        },
+        {
+          "ref": "skills/emil-design-eng/SKILL.md:269",
+          "text": "### Use CSS transitions over keyframes for interruptible UI"
+        }
+      ],
+      "note": "filosofia de design engineering (motion/polish): resposta inicial engessada (:10) conflita com workflows que agem imediatamente; CSS-first (:269) vs seções GSAP/Motion da taste:509-517",
+      "lines": 674
+    },
+    {
+      "path": "skills/impeccable/LICENSE",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/LICENSE:1",
+          "text": "                                 Apache License"
+        }
+      ],
+      "note": "licença Apache 2.0 do pacote impeccable (vendado, v4.4.0)",
+      "lines": 190
+    },
+    {
+      "path": "skills/impeccable/SKILL.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "refatorar",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/SKILL.md:15",
+          "text": "- Verify in bounded passes, not a loop, and the ceiling covers the whole cycle: screenshots, defect scans, micro-edits, and rebuilds alike. Build fully, inspect once with a batched round (desktop and …"
+        },
+        {
+          "ref": "skills/design/SKILL.md:394",
+          "text": "   `node design/validate.mjs design/<canvas>`. Fix every issue it lists and run"
+        }
+      ],
+      "note": "skill de revisão/auditoria/polish: regra de passes limitados (:15) contradiz o \"rode até limpar\" do design SKILL.md:394 (todo 4d define teto + saída por pendências)",
+      "lines": 87
+    },
+    {
+      "path": "skills/impeccable/reference/adapt.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/adapt.md:1",
+          "text": "> **Additional context needed**: target platforms/devices and usage contexts."
+        }
+      ],
+      "note": "playbook de referência do impeccable (adapt)",
+      "lines": 318
+    },
+    {
+      "path": "skills/impeccable/reference/adapt.native.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/adapt.native.md:1",
+          "text": "> **Additional context needed**: target platforms/devices and usage contexts."
+        }
+      ],
+      "note": "playbook de referência do impeccable (adapt.native)",
+      "lines": 58
+    },
+    {
+      "path": "skills/impeccable/reference/android.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/android.md:1",
+          "text": "# Android platform"
+        }
+      ],
+      "note": "playbook de referência do impeccable (android)",
+      "lines": 46
+    },
+    {
+      "path": "skills/impeccable/reference/animate.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/animate.md:1",
+          "text": "> **Additional context needed**: performance constraints."
+        }
+      ],
+      "note": "playbook de referência do impeccable (animate)",
+      "lines": 89
+    },
+    {
+      "path": "skills/impeccable/reference/audit.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/audit.md:1",
+          "text": "Run systematic **technical** quality checks and generate a comprehensive report. Don't fix issues; document them for other commands to address."
+        }
+      ],
+      "note": "playbook de referência do impeccable (audit)",
+      "lines": 137
+    },
+    {
+      "path": "skills/impeccable/reference/audit.native.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/audit.native.md:1",
+          "text": "Run systematic **technical** quality checks on a native app (`ios` / `android` / `adaptive`) and generate a comprehensive report. Don't fix issues; document them for other commands to address."
+        }
+      ],
+      "note": "playbook de referência do impeccable (audit.native)",
+      "lines": 139
+    },
+    {
+      "path": "skills/impeccable/reference/bolder.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/bolder.md:1",
+          "text": "> **Additional context needed**: which section is the target, and what must stay untouched."
+        }
+      ],
+      "note": "playbook de referência do impeccable (bolder)",
+      "lines": 33
+    },
+    {
+      "path": "skills/impeccable/reference/clarify.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/clarify.md:1",
+          "text": "> **Additional context needed**: audience knowledge and emotional state."
+        }
+      ],
+      "note": "playbook de referência do impeccable (clarify)",
+      "lines": 94
+    },
+    {
+      "path": "skills/impeccable/reference/colorize.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/colorize.md:1",
+          "text": "> **Additional context needed**: existing brand colors."
+        }
+      ],
+      "note": "playbook de referência do impeccable (colorize)",
+      "lines": 86
+    },
+    {
+      "path": "skills/impeccable/reference/component-review.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/component-review.md:1",
+          "text": "# Plan and asset review"
+        }
+      ],
+      "note": "playbook de referência do impeccable (component-review)",
+      "lines": 36
+    },
+    {
+      "path": "skills/impeccable/reference/craft-floor.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/craft-floor.md:1",
+          "text": "# Craft floor"
+        }
+      ],
+      "note": "playbook de referência do impeccable (craft-floor)",
+      "lines": 44
+    },
+    {
+      "path": "skills/impeccable/reference/critique.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/critique.md:1",
+          "text": "### Purpose"
+        }
+      ],
+      "note": "playbook de referência do impeccable (critique)",
+      "lines": 806
+    },
+    {
+      "path": "skills/impeccable/reference/delight.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/delight.md:1",
+          "text": "> **Additional context needed**: the brand's emotional range."
+        }
+      ],
+      "note": "playbook de referência do impeccable (delight)",
+      "lines": 70
+    },
+    {
+      "path": "skills/impeccable/reference/distill.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/distill.md:1",
+          "text": "Strip a design to its essence. Remove anything that doesn't earn its place: redundant elements, repeated information, decorative noise, cosmetic complexity."
+        }
+      ],
+      "note": "playbook de referência do impeccable (distill)",
+      "lines": 111
+    },
+    {
+      "path": "skills/impeccable/reference/doctor.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/doctor.md:1",
+          "text": "Report and repair drift between this project's Impeccable artifacts and what the installed version reads: PRODUCT.md, DESIGN.md and its `.impeccable/design.json` sidecar, `.impeccable/config.json`, pe…"
+        }
+      ],
+      "note": "playbook de referência do impeccable (doctor)",
+      "lines": 54
+    },
+    {
+      "path": "skills/impeccable/reference/document.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/document.md:1",
+          "text": "Generate a `DESIGN.md` file at the project root that captures the current visual design system, so AI agents generating new screens stay on-brand."
+        }
+      ],
+      "note": "playbook de referência do impeccable (document)",
+      "lines": 416
+    },
+    {
+      "path": "skills/impeccable/reference/extract.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/extract.md:1",
+          "text": "# Extract Flow"
+        }
+      ],
+      "note": "playbook de referência do impeccable (extract)",
+      "lines": 69
+    },
+    {
+      "path": "skills/impeccable/reference/generate.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/generate.md:1",
+          "text": "> **Additional context needed**: only the target element, when the request does not name one that resolves uniquely on the page."
+        }
+      ],
+      "note": "playbook de referência do impeccable (generate)",
+      "lines": 101
+    },
+    {
+      "path": "skills/impeccable/reference/harden.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/harden.md:1",
+          "text": "Designs that only work with perfect data aren't production-ready. Harden the interface against the inputs, errors, languages, and network conditions that real users will throw at it."
+        }
+      ],
+      "note": "playbook de referência do impeccable (harden)",
+      "lines": 345
+    },
+    {
+      "path": "skills/impeccable/reference/hooks.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/hooks.md:1",
+          "text": "# /impeccable hooks"
+        }
+      ],
+      "note": "playbook de referência do impeccable (hooks)",
+      "lines": 113
+    },
+    {
+      "path": "skills/impeccable/reference/init.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/init.md:1",
+          "text": "# Init flow"
+        }
+      ],
+      "note": "playbook de referência do impeccable (init)",
+      "lines": 131
+    },
+    {
+      "path": "skills/impeccable/reference/ios.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/ios.md:1",
+          "text": "# iOS platform"
+        }
+      ],
+      "note": "playbook de referência do impeccable (ios)",
+      "lines": 51
+    },
+    {
+      "path": "skills/impeccable/reference/layout.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/layout.md:1",
+          "text": "Layout turns product priority into reading order, grouping, rhythm, and usable space. Diagnose the structural problem before moving boxes."
+        }
+      ],
+      "note": "playbook de referência do impeccable (layout)",
+      "lines": 84
+    },
+    {
+      "path": "skills/impeccable/reference/live-setup.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/live-setup.md:1",
+          "text": "One-time live-mode project setup. Loaded from [live.md](live.md) only when `impeccable live` reports `config_missing` / `config_invalid`, when `configDrift` needs handling, or when the config lacks `c…"
+        }
+      ],
+      "note": "playbook de referência do impeccable (live-setup)",
+      "lines": 104
+    },
+    {
+      "path": "skills/impeccable/reference/live.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/live.md:1",
+          "text": "Interactive live variant mode: select elements in the browser, pick a design action, and get AI-generated HTML+CSS variants hot-swapped via the dev server's HMR."
+        }
+      ],
+      "note": "playbook de referência do impeccable (live)",
+      "lines": 325
+    },
+    {
+      "path": "skills/impeccable/reference/new-work.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/new-work.md:1",
+          "text": "# New visual work"
+        }
+      ],
+      "note": "playbook de referência do impeccable (new-work)",
+      "lines": 154
+    },
+    {
+      "path": "skills/impeccable/reference/onboard.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/onboard.md:1",
+          "text": "> **Additional context needed**: the \"aha moment\" you want users to reach, and users' experience level."
+        }
+      ],
+      "note": "playbook de referência do impeccable (onboard)",
+      "lines": 234
+    },
+    {
+      "path": "skills/impeccable/reference/operate.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/operate.md:1",
+          "text": "# Operate mode depth (and Read notes)"
+        }
+      ],
+      "note": "playbook de referência do impeccable (operate)",
+      "lines": 61
+    },
+    {
+      "path": "skills/impeccable/reference/optimize.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/optimize.md:1",
+          "text": "Performance is a feature. Identify the actual bottleneck for THIS interface, fix it, then measure. Don't optimize what isn't slow."
+        }
+      ],
+      "note": "playbook de referência do impeccable (optimize)",
+      "lines": 258
+    },
+    {
+      "path": "skills/impeccable/reference/overdrive.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/overdrive.md:1",
+          "text": "Start your response with:"
+        }
+      ],
+      "note": "playbook de referência do impeccable (overdrive)",
+      "lines": 127
+    },
+    {
+      "path": "skills/impeccable/reference/polish.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/polish.md:1",
+          "text": "> **Additional context needed**: quality bar and shipping constraints."
+        }
+      ],
+      "note": "playbook de referência do impeccable (polish)",
+      "lines": 105
+    },
+    {
+      "path": "skills/impeccable/reference/quieter.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/quieter.md:1",
+          "text": "Quiet design is harder than bold design. Subtlety needs precision. Reduce visual intensity in designs that are too loud, aggressive, or overstimulating without losing personality or making the result …"
+        }
+      ],
+      "note": "playbook de referência do impeccable (quieter)",
+      "lines": 99
+    },
+    {
+      "path": "skills/impeccable/reference/region-map.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/region-map.md:1",
+          "text": "# Region map"
+        }
+      ],
+      "note": "playbook de referência do impeccable (region-map)",
+      "lines": 26
+    },
+    {
+      "path": "skills/impeccable/reference/routing.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/routing.md:1",
+          "text": "# Command guidance"
+        }
+      ],
+      "note": "playbook de referência do impeccable (routing)",
+      "lines": 24
+    },
+    {
+      "path": "skills/impeccable/reference/shape.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/shape.md:1",
+          "text": "# Shape"
+        }
+      ],
+      "note": "playbook de referência do impeccable (shape)",
+      "lines": 59
+    },
+    {
+      "path": "skills/impeccable/reference/typeset.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/typeset.md:1",
+          "text": "Typography carries information, hierarchy, and voice. Improve it inside the established visual world; do not replace the identity unless the user asked to."
+        }
+      ],
+      "note": "playbook de referência do impeccable (typeset)",
+      "lines": 80
+    },
+    {
+      "path": "skills/impeccable/reference/visualize.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/visualize.md:1",
+          "text": "# Visualize: Direction Comps & Asset Production"
+        }
+      ],
+      "note": "playbook de referência do impeccable (visualize)",
+      "lines": 47
+    },
+    {
+      "path": "skills/impeccable/reference/craft.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "refatorar",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/craft.md:1",
+          "text": "# Craft (deprecated alias)"
+        },
+        {
+          "ref": "skills/design/assets/craft.md:1",
+          "text": "# Craft layer — fused from taste, emil-design-eng and impeccable"
+        }
+      ],
+      "note": "alias depreciado \"Craft\" com nome colidido com skills/design/assets/craft.md (arquivos diferentes, mesmo basename) — remover/renomear na reconciliação",
+      "lines": 5
+    },
+    {
+      "path": "skills/impeccable/reference/degraded/asset-producer.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/degraded/asset-producer.md:1",
+          "text": "<!-- Generated from skill/agents/ at build time. Do not edit; edit the agent definition. -->"
+        }
+      ],
+      "note": "role gerado em build time para harnesses sem subagentes (asset-producer) — execução inline declarada",
+      "lines": 42
+    },
+    {
+      "path": "skills/impeccable/reference/degraded/documenter.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/degraded/documenter.md:1",
+          "text": "<!-- Generated from skill/agents/ at build time. Do not edit; edit the agent definition. -->"
+        }
+      ],
+      "note": "role gerado em build time para harnesses sem subagentes (documenter) — execução inline declarada",
+      "lines": 24
+    },
+    {
+      "path": "skills/impeccable/reference/degraded/finish-reviewer.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/degraded/finish-reviewer.md:1",
+          "text": "<!-- Generated from skill/agents/ at build time. Do not edit; edit the agent definition. -->"
+        }
+      ],
+      "note": "role gerado em build time para harnesses sem subagentes (finish-reviewer) — execução inline declarada",
+      "lines": 38
+    },
+    {
+      "path": "skills/impeccable/reference/degraded/manual-edit-applier.md",
+      "layer": "Skills",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/reference/degraded/manual-edit-applier.md:1",
+          "text": "<!-- Generated from skill/agents/ at build time. Do not edit; edit the agent definition. -->"
+        }
+      ],
+      "note": "role gerado em build time para harnesses sem subagentes (manual-edit-applier) — execução inline declarada",
+      "lines": 92
+    },
+    {
+      "path": "skills/impeccable/scripts/VERSION",
+      "layer": "Core",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/scripts/VERSION:1",
+          "text": "0.1.8"
+        }
+      ],
+      "note": "versão pinada do tool impeccable (0.1.8)",
+      "lines": 1
+    },
+    {
+      "path": "skills/impeccable/scripts/command-metadata.json",
+      "layer": "Core",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/scripts/command-metadata.json:2",
+          "text": "  \"craft\": {"
+        }
+      ],
+      "note": "descrições/argument-hints dos comandos do impeccable (inclui o alias craft depreciado)",
+      "lines": 98
+    },
+    {
+      "path": "skills/impeccable/scripts/data/font-index.json",
+      "layer": "Core",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/scripts/data/font-index.json:1",
+          "text": "{\"schema\":2,\"text\":\"The quick brown fox jumps over the lazy dog 0123456789 HAMBURGEVONS\",\"textCaps\":\"THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789 HAMBURGEVONS\",\"sizes\":[48,14,\"48c\"],\"feature…"
+        }
+      ],
+      "note": "índice de fontes (JSON de uma linha, ~1,1 MB) do tooling impeccable — par com font-index-failures.json",
+      "lines": 1
+    },
+    {
+      "path": "skills/impeccable/scripts/data/font-index-failures.json",
+      "layer": "Core",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/scripts/data/font-index-failures.json:2",
+          "text": " {"
+        }
+      ],
+      "note": "registro de famílias que falharam no indexing de fontes",
+      "lines": 121
+    },
+    {
+      "path": "skills/impeccable/scripts/impeccable",
+      "layer": "Adapters",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/scripts/impeccable:2",
+          "text": "# Impeccable launcher. Runs the platform binary shipped next to this script:"
+        }
+      ],
+      "note": "launcher sh do binário do impeccable (busca $IMPECCABLE_BIN, bin/ irmão, cache versionado, PATH com handshake)",
+      "lines": 206
+    },
+    {
+      "path": "skills/impeccable/scripts/impeccable.cmd",
+      "layer": "Adapters",
+      "subsystem": 5,
+      "class": "parcial",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/scripts/impeccable.cmd:7",
+          "text": "rem tests, not yet on a real Windows machine):"
+        }
+      ],
+      "note": "launcher Windows: auto-declarado testado só por dry parsing/string tests, \"not yet on a real Windows machine\" (:7)",
+      "lines": 214
+    },
+    {
+      "path": "skills/impeccable/scripts/live-browser.js",
+      "layer": "Core",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/scripts/live-browser.js:2",
+          "text": " * Impeccable Live Variant Mode - Browser Script"
+        }
+      ],
+      "note": "overlay do live variant mode (13.5k linhas injetadas na página: configurar/gerar/ciclar variantes)",
+      "lines": 13510
+    },
+    {
+      "path": "skills/impeccable/scripts/live-browser-session.js",
+      "layer": "Core",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/scripts/live-browser-session.js:2",
+          "text": " * Browser-side durable session helpers for Impeccable live mode."
+        }
+      ],
+      "note": "helpers de sessão durável do live mode (testáveis sem o overlay)",
+      "lines": 144
+    },
+    {
+      "path": "skills/impeccable/scripts/live-browser-dom.js",
+      "layer": "Core",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/scripts/live-browser-dom.js:2",
+          "text": " * Browser-side DOM helpers for Impeccable live mode."
+        }
+      ],
+      "note": "helpers DOM do live mode (chrome, lookup, focus, picker)",
+      "lines": 167
+    },
+    {
+      "path": "skills/impeccable/scripts/live-browser-ignores.js",
+      "layer": "Core",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/scripts/live-browser-ignores.js:2",
+          "text": " * Browser-side resolution of project detector waivers for Impeccable live mode."
+        }
+      ],
+      "note": "waivers de detector do projeto aplicados ao scan do live mode",
+      "lines": 242
+    },
+    {
+      "path": "skills/impeccable/scripts/modern-screenshot.umd.js",
+      "layer": "Adapters",
+      "subsystem": 5,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/impeccable/scripts/modern-screenshot.umd.js:1",
+          "text": "(function(y,v){typeof exports==\"object\"&&typeof module!=\"undefined\"?v(exports):typeof define==\"function\"&&define.amd?define([\"exports\"],v):(y=typeof globalThis!=\"undefined\"?globalThis:y||self,v(y.mode…"
+        }
+      ],
+      "note": "bundle UMD vendado (modern-screenshot) usado pelo live mode",
+      "lines": 14
+    }
+  ],
+  "fixtureGroups": [
+    {
+      "group": "fixtures-validador",
+      "layer": "Core",
+      "subsystem": 6,
+      "class": "parcial",
+      "members": [
+        "skills/design/scripts/fixtures/bad/a11y-no-autofocus/01-s.html",
+        "skills/design/scripts/fixtures/bad/a11y-no-autofocus/canvas.json",
+        "skills/design/scripts/fixtures/bad/a11y-no-autofocus/components/components.json",
+        "skills/design/scripts/fixtures/bad/a11y-no-autofocus/components/modal.html",
+        "skills/design/scripts/fixtures/bad/a11y-toast-no-live/01-s.html",
+        "skills/design/scripts/fixtures/bad/a11y-toast-no-live/canvas.json",
+        "skills/design/scripts/fixtures/bad/a11y-toast-no-live/components/components.json",
+        "skills/design/scripts/fixtures/bad/a11y-toast-no-live/components/toast.html",
+        "skills/design/scripts/fixtures/bad/action-allowlist-nojust/01-s.html",
+        "skills/design/scripts/fixtures/bad/action-allowlist-nojust/validate.config.json",
+        "skills/design/scripts/fixtures/bad/action-both/01-s.html",
+        "skills/design/scripts/fixtures/bad/action-flat/01-s.html",
+        "skills/design/scripts/fixtures/bad/action-js-line/01-s.html",
+        "skills/design/scripts/fixtures/bad/action-module-mismatch/actions/tela.js",
+        "skills/design/scripts/fixtures/bad/action-module-mismatch/tela.html",
+        "skills/design/scripts/fixtures/bad/alt/01-s.html",
+        "skills/design/scripts/fixtures/bad/alt/canvas.json",
+        "skills/design/scripts/fixtures/bad/alt/tokens.json",
+        "skills/design/scripts/fixtures/bad/arbitrary/01-s.html",
+        "skills/design/scripts/fixtures/bad/arbitrary/tokens.json",
+        "skills/design/scripts/fixtures/bad/canvas-meta/desktop-390.json/01-s.html",
+        "skills/design/scripts/fixtures/bad/canvas-meta/desktop-390.json/canvas.json",
+        "skills/design/scripts/fixtures/bad/canvas-meta/no-dims.json/01-s.html",
+        "skills/design/scripts/fixtures/bad/canvas-meta/no-dims.json/canvas.json",
+        "skills/design/scripts/fixtures/bad/component-divergence/01-s.html",
+        "skills/design/scripts/fixtures/bad/component-divergence/components/button.html",
+        "skills/design/scripts/fixtures/bad/component-divergence/components/card.html",
+        "skills/design/scripts/fixtures/bad/component-divergence/components/components.json",
+        "skills/design/scripts/fixtures/bad/component-divergence/tokens.json",
+        "skills/design/scripts/fixtures/bad/component-marker/01-s.html",
+        "skills/design/scripts/fixtures/bad/component-marker/components/button.html",
+        "skills/design/scripts/fixtures/bad/component-marker/components/card.html",
+        "skills/design/scripts/fixtures/bad/component-marker/components/components.json",
+        "skills/design/scripts/fixtures/bad/component-marker/tokens.json",
+        "skills/design/scripts/fixtures/bad/component-unknown/01-s.html",
+        "skills/design/scripts/fixtures/bad/component-unknown/components/button.html",
+        "skills/design/scripts/fixtures/bad/component-unknown/components/card.html",
+        "skills/design/scripts/fixtures/bad/component-unknown/components/components.json",
+        "skills/design/scripts/fixtures/bad/component-unknown/tokens.json",
+        "skills/design/scripts/fixtures/bad/component-variant/01-s.html",
+        "skills/design/scripts/fixtures/bad/component-variant/components/button.html",
+        "skills/design/scripts/fixtures/bad/component-variant/components/card.html",
+        "skills/design/scripts/fixtures/bad/component-variant/components/components.json",
+        "skills/design/scripts/fixtures/bad/component-variant/tokens.json",
+        "skills/design/scripts/fixtures/bad/config-driven/components/button.html",
+        "skills/design/scripts/fixtures/bad/config-driven/components/card.html",
+        "skills/design/scripts/fixtures/bad/config-driven/components/components.json",
+        "skills/design/scripts/fixtures/bad/config-driven/violation.html",
+        "skills/design/scripts/fixtures/bad/contract-drift/SKILL.md",
+        "skills/design/scripts/fixtures/bad/contract-drift/tokens.contract.md",
+        "skills/design/scripts/fixtures/bad/contract-drift/tokens.json",
+        "skills/design/scripts/fixtures/bad/contract-drift/validate.config.json",
+        "skills/design/scripts/fixtures/bad/contrast-token/tokens.json",
+        "skills/design/scripts/fixtures/bad/contrast/tokens.json",
+        "skills/design/scripts/fixtures/bad/data-ref-circular/data/a.json",
+        "skills/design/scripts/fixtures/bad/data-ref-circular/data/b.json",
+        "skills/design/scripts/fixtures/bad/data-ref-circular/tela/01-s.html",
+        "skills/design/scripts/fixtures/bad/data-ref-circular/tela/canvas.json",
+        "skills/design/scripts/fixtures/bad/data-ref-circular/tela/data.json",
+        "skills/design/scripts/fixtures/bad/data-ref-circular/validate.config.json",
+        "skills/design/scripts/fixtures/bad/data-ref-missing/data/usuarios.json",
+        "skills/design/scripts/fixtures/bad/data-ref-missing/tela/01-s.html",
+        "skills/design/scripts/fixtures/bad/data-ref-missing/tela/canvas.json",
+        "skills/design/scripts/fixtures/bad/data-ref-missing/tela/data.json",
+        "skills/design/scripts/fixtures/bad/data-ref-missing/validate.config.json",
+        "skills/design/scripts/fixtures/bad/encoding-c1/app.js",
+        "skills/design/scripts/fixtures/bad/encoding-double/tela.html",
+        "skills/design/scripts/fixtures/bad/encoding-fffd/relatorio.md",
+        "skills/design/scripts/fixtures/bad/encoding-pair-hi/tela.html",
+        "skills/design/scripts/fixtures/bad/hex-attr/01-s.html",
+        "skills/design/scripts/fixtures/bad/hex-attr/tokens.json",
+        "skills/design/scripts/fixtures/bad/hex/01-s.html",
+        "skills/design/scripts/fixtures/bad/hex/tokens.json",
+        "skills/design/scripts/fixtures/bad/input-label/01-s.html",
+        "skills/design/scripts/fixtures/bad/input-label/canvas.json",
+        "skills/design/scripts/fixtures/bad/input-label/tokens.json",
+        "skills/design/scripts/fixtures/bad/m-allowlist-nojust/01-s.html",
+        "skills/design/scripts/fixtures/bad/m-allowlist-nojust/components/components.json",
+        "skills/design/scripts/fixtures/bad/m-allowlist-nojust/components/panel.html",
+        "skills/design/scripts/fixtures/bad/m-allowlist-nojust/validate.config.json",
+        "skills/design/scripts/fixtures/bad/m-unknown/01-s.html",
+        "skills/design/scripts/fixtures/bad/m-unknown/components/components.json",
+        "skills/design/scripts/fixtures/bad/m-unknown/components/panel.html",
+        "skills/design/scripts/fixtures/bad/m-unknown/validate.config.json",
+        "skills/design/scripts/fixtures/bad/mark-stale/comments.json",
+        "skills/design/scripts/fixtures/bad/mark-stale/login/01-s.html",
+        "skills/design/scripts/fixtures/bad/mark-stale/login/canvas.json",
+        "skills/design/scripts/fixtures/bad/mark-stale/tokens.json",
+        "skills/design/scripts/fixtures/bad/palette/01-s.html",
+        "skills/design/scripts/fixtures/bad/palette/tokens.json",
+        "skills/design/scripts/fixtures/bad/qa-preconfig/legacy-validate.mjs",
+        "skills/design/scripts/fixtures/bad/qa-preconfig/validate.config.json",
+        "skills/design/scripts/fixtures/bad/registry-missing-slot/01-s.html",
+        "skills/design/scripts/fixtures/bad/registry-missing-slot/canvas.json",
+        "skills/design/scripts/fixtures/bad/registry-missing-slot/components/components.json",
+        "skills/design/scripts/fixtures/bad/registry-missing-slot/components/panel.html",
+        "skills/design/scripts/fixtures/bad/registry-unknown-key/01-s.html",
+        "skills/design/scripts/fixtures/bad/registry-unknown-key/canvas.json",
+        "skills/design/scripts/fixtures/bad/registry-unknown-key/components/components.json",
+        "skills/design/scripts/fixtures/bad/registry-unknown-key/components/panel.html",
+        "skills/design/scripts/fixtures/bad/script-string/01-s.html",
+        "skills/design/scripts/fixtures/bad/script-string/canvas.json",
+        "skills/design/scripts/fixtures/bad/script-string/tokens.json",
+        "skills/design/scripts/fixtures/bad/smoke-console/console/01-s.html",
+        "skills/design/scripts/fixtures/bad/smoke-console/console/canvas.json",
+        "skills/design/scripts/fixtures/bad/smoke-overflow/overflow/01-s.html",
+        "skills/design/scripts/fixtures/bad/smoke-overflow/overflow/canvas.json",
+        "skills/design/scripts/fixtures/bad/smoke-timeout/timeout/01-s.html",
+        "skills/design/scripts/fixtures/bad/smoke-timeout/timeout/canvas.json",
+        "skills/design/scripts/fixtures/bad/smoke-timeout/validate.config.json",
+        "skills/design/scripts/fixtures/bad/spec-undeclared/tela/01-tela.html",
+        "skills/design/scripts/fixtures/bad/spec-undeclared/tela/canvas.json",
+        "skills/design/scripts/fixtures/bad/spec-undeclared/validate.config.json",
+        "skills/design/scripts/fixtures/bad/stale/design-system.css",
+        "skills/design/scripts/fixtures/bad/stale/tokens.json",
+        "skills/design/scripts/fixtures/bad/stale/utilities.css",
+        "skills/design/scripts/fixtures/bad/unknown-transition/scr/01-s.html",
+        "skills/design/scripts/fixtures/bad/unknown-transition/scr/canvas.json",
+        "skills/design/scripts/fixtures/bad/url/01-s.html",
+        "skills/design/scripts/fixtures/bad/url/tokens.json",
+        "skills/design/scripts/fixtures/ok/a11y-overlay/01-s.html",
+        "skills/design/scripts/fixtures/ok/a11y-overlay/canvas.json",
+        "skills/design/scripts/fixtures/ok/a11y-overlay/components/components.json",
+        "skills/design/scripts/fixtures/ok/a11y-overlay/components/modal.html",
+        "skills/design/scripts/fixtures/ok/a11y-toast/01-s.html",
+        "skills/design/scripts/fixtures/ok/a11y-toast/canvas.json",
+        "skills/design/scripts/fixtures/ok/a11y-toast/components/components.json",
+        "skills/design/scripts/fixtures/ok/a11y-toast/components/toast.html",
+        "skills/design/scripts/fixtures/ok/action-allowlist/01-s.html",
+        "skills/design/scripts/fixtures/ok/action-allowlist/validate.config.json",
+        "skills/design/scripts/fixtures/ok/action-module/actions/tela.js",
+        "skills/design/scripts/fixtures/ok/action-module/tela.html",
+        "skills/design/scripts/fixtures/ok/action-namespaced/01-s.html",
+        "skills/design/scripts/fixtures/ok/component.html",
+        "skills/design/scripts/fixtures/ok/components/button.html",
+        "skills/design/scripts/fixtures/ok/components/card.html",
+        "skills/design/scripts/fixtures/ok/components/components.json",
+        "skills/design/scripts/fixtures/ok/config-driven/.history/01-s.html",
+        "skills/design/scripts/fixtures/ok/contract-sync/SKILL.md",
+        "skills/design/scripts/fixtures/ok/contract-sync/tokens.contract.md",
+        "skills/design/scripts/fixtures/ok/contract-sync/tokens.json",
+        "skills/design/scripts/fixtures/ok/contract-sync/validate.config.json",
+        "skills/design/scripts/fixtures/ok/data-inline/tela/01-s.html",
+        "skills/design/scripts/fixtures/ok/data-inline/tela/canvas.json",
+        "skills/design/scripts/fixtures/ok/data-inline/tela/data.json",
+        "skills/design/scripts/fixtures/ok/data-inline/validate.config.json",
+        "skills/design/scripts/fixtures/ok/data-ref/data/resumo.json",
+        "skills/design/scripts/fixtures/ok/data-ref/data/usuarios.json",
+        "skills/design/scripts/fixtures/ok/data-ref/tela/01-s.html",
+        "skills/design/scripts/fixtures/ok/data-ref/tela/canvas.json",
+        "skills/design/scripts/fixtures/ok/data-ref/tela/data.json",
+        "skills/design/scripts/fixtures/ok/data-ref/validate.config.json",
+        "skills/design/scripts/fixtures/ok/design-system.css",
+        "skills/design/scripts/fixtures/ok/encoding-citation-allowlist/citacao.md",
+        "skills/design/scripts/fixtures/ok/encoding-clean/texto.md",
+        "skills/design/scripts/fixtures/ok/encoding-pair-hi/texto.md",
+        "skills/design/scripts/fixtures/ok/encoding-png-allow/imagem.png",
+        "skills/design/scripts/fixtures/ok/login/01-clean.html",
+        "skills/design/scripts/fixtures/ok/login/canvas.json",
+        "skills/design/scripts/fixtures/ok/login/label-in-script.html",
+        "skills/design/scripts/fixtures/ok/m-allowlist/01-s.html",
+        "skills/design/scripts/fixtures/ok/m-allowlist/components/components.json",
+        "skills/design/scripts/fixtures/ok/m-allowlist/components/panel.html",
+        "skills/design/scripts/fixtures/ok/m-allowlist/validate.config.json",
+        "skills/design/scripts/fixtures/ok/m-registered/01-s.html",
+        "skills/design/scripts/fixtures/ok/m-registered/components/components.json",
+        "skills/design/scripts/fixtures/ok/m-registered/components/panel.html",
+        "skills/design/scripts/fixtures/ok/m-registered/validate.config.json",
+        "skills/design/scripts/fixtures/ok/registry-schema/01-s.html",
+        "skills/design/scripts/fixtures/ok/registry-schema/canvas.json",
+        "skills/design/scripts/fixtures/ok/registry-schema/components/components.json",
+        "skills/design/scripts/fixtures/ok/registry-schema/components/panel.html",
+        "skills/design/scripts/fixtures/ok/spec-declared/components/button.html",
+        "skills/design/scripts/fixtures/ok/spec-declared/components/components.json",
+        "skills/design/scripts/fixtures/ok/spec-declared/data/itens.json",
+        "skills/design/scripts/fixtures/ok/spec-declared/spec/tela-1.json",
+        "skills/design/scripts/fixtures/ok/spec-declared/spec/tela-1.md",
+        "skills/design/scripts/fixtures/ok/spec-declared/tela/01-tela.html",
+        "skills/design/scripts/fixtures/ok/spec-declared/tela/canvas.json",
+        "skills/design/scripts/fixtures/ok/spec-declared/tela/data.json",
+        "skills/design/scripts/fixtures/ok/spec-declared/validate.config.json",
+        "skills/design/scripts/fixtures/ok/tokens-roundtrip/design-system.css",
+        "skills/design/scripts/fixtures/ok/tokens-roundtrip/tokens.json",
+        "skills/design/scripts/fixtures/ok/tokens-roundtrip/tokens.w3c.json",
+        "skills/design/scripts/fixtures/ok/tokens-roundtrip/utilities.css",
+        "skills/design/scripts/fixtures/ok/tokens-roundtrip/validate.config.json",
+        "skills/design/scripts/fixtures/ok/tokens.json",
+        "skills/design/scripts/fixtures/ok/utilities-spec.md",
+        "skills/design/scripts/fixtures/ok/utilities-spec.txt",
+        "skills/design/scripts/fixtures/ok/utilities.css"
+      ],
+      "lines": 7648,
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/rules/spec-undeclared.mjs:13",
+          "text": " * and at validate time; the fixture pair ok/spec-declared (green) x"
+        },
+        {
+          "ref": "skills/design/scripts/validate.mjs:3",
+          "text": "/**"
+        },
+        {
+          "ref": "package.json:13",
+          "text": "    \"test\": \"node --test plugin/core.test.mjs\","
+        }
+      ],
+      "note": "corpus de casos do validador (bad/ = saídas esperadas com código de erro; ok/ = verdes). Sem runner que o percorra: só pares pontuais são consumidos por código (ok/action-module por scripts/mock-check.mjs:591, ok/config-driven por skills/design/scripts/qa.mjs:78); os demais ficam como regressão manual",
+      "sample": [
+        {
+          "path": "skills/design/scripts/fixtures/bad/spec-undeclared/tela/01-tela.html",
+          "lines": 12,
+          "evidence": {
+            "ref": "skills/design/scripts/rules/spec-undeclared.mjs:13",
+            "text": " * and at validate time; the fixture pair ok/spec-declared (green) x"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/bad/stale/tokens.json",
+          "lines": 123,
+          "evidence": {
+            "ref": "skills/design/scripts/validate.mjs:5",
+            "text": " * baseline writes owned by rules/metrics.mjs behind --metrics/--update-metrics)."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/bad/encoding-fffd/relatorio.md",
+          "lines": 3,
+          "evidence": {
+            "ref": "skills/design/scripts/rules/encoding.mjs:3",
+            "text": " * encoding check v2 (todo 2, GAP-2) — mojibake/corruption detector over TEXT"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/bad/action-both/01-s.html",
+          "lines": 14,
+          "evidence": {
+            "ref": "skills/design/scripts/rules/action-contract.mjs:3",
+            "text": " * action-contract (todo 7, GAP-4) — the data-action contract detector"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/bad/m-unknown/01-s.html",
+          "lines": 14,
+          "evidence": {
+            "ref": "skills/design/scripts/rules/instance-divergence.mjs:3",
+            "text": " * instance-divergence (todo 15, GAP-5) — the zero-unknown `.m-*` gate"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/ok/spec-declared/tela/01-tela.html",
+          "lines": 26,
+          "evidence": {
+            "ref": "skills/design/scripts/rules/spec-undeclared.mjs:14",
+            "text": " * bad/spec-undeclared (spec-undeclared, exit 1) covers both surfaces."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/ok/tokens-roundtrip/tokens.json",
+          "lines": 196,
+          "evidence": {
+            "ref": "skills/design/scripts/gen-tokens.mjs:4",
+            "text": " * gen-tokens.mjs — generate design-system.css from tokens.json (DTCG-ish)."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/ok/action-module/actions/tela.js",
+          "lines": 8,
+          "evidence": {
+            "ref": "scripts/mock-check.mjs:591",
+            "text": "const FIXTURE_DIR = join(ROOT, 'skills/design/scripts/fixtures/ok/action-module')"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/ok/config-driven/.history/01-s.html",
+          "lines": 13,
+          "evidence": {
+            "ref": "skills/design/scripts/qa.mjs:78",
+            "text": "const PROBE = fileURLToPath(new URL('./fixtures/ok/config-driven', import.meta.url))"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/ok/encoding-clean/texto.md",
+          "lines": 4,
+          "evidence": {
+            "ref": "skills/design/scripts/rules/encoding.mjs:3",
+            "text": " * encoding check v2 (todo 2, GAP-2) — mojibake/corruption detector over TEXT"
+          }
+        }
+      ]
+    },
+    {
+      "group": "fixtures-smoke",
+      "layer": "Core",
+      "subsystem": 4,
+      "class": "parcial",
+      "members": [
+        "skills/design/scripts/fixtures/smoke/README.md",
+        "skills/design/scripts/fixtures/smoke/hardcases/01-inline-handler.html",
+        "skills/design/scripts/fixtures/smoke/hardcases/02-legacy-script-overlay.html",
+        "skills/design/scripts/fixtures/smoke/hardcases/03-local-routers.html",
+        "skills/design/scripts/fixtures/smoke/hardcases/04-flat-action-names.html",
+        "skills/design/scripts/fixtures/smoke/hardcases/05-so-mobile.html",
+        "skills/design/scripts/fixtures/smoke/hardcases/canvas.json",
+        "skills/design/scripts/fixtures/smoke/hardcases/router-1.js",
+        "skills/design/scripts/fixtures/smoke/hardcases/router-2.js",
+        "skills/design/scripts/fixtures/smoke/hardcases/router-3.js",
+        "skills/design/scripts/fixtures/smoke/snapshots/hardcases-01-inline-handler-375x667.png",
+        "skills/design/scripts/fixtures/smoke/snapshots/hardcases-01-inline-handler-390x844.png",
+        "skills/design/scripts/fixtures/smoke/snapshots/hardcases-02-legacy-script-overlay-375x667.png",
+        "skills/design/scripts/fixtures/smoke/snapshots/hardcases-02-legacy-script-overlay-390x844.png",
+        "skills/design/scripts/fixtures/smoke/snapshots/hardcases-03-local-routers-375x667.png",
+        "skills/design/scripts/fixtures/smoke/snapshots/hardcases-03-local-routers-390x844.png",
+        "skills/design/scripts/fixtures/smoke/snapshots/hardcases-04-flat-action-names-375x667.png",
+        "skills/design/scripts/fixtures/smoke/snapshots/hardcases-04-flat-action-names-390x844.png",
+        "skills/design/scripts/fixtures/smoke/snapshots/hardcases-05-so-mobile-375x667.png",
+        "skills/design/scripts/fixtures/smoke/snapshots/hardcases-05-so-mobile-390x844.png",
+        "skills/design/scripts/fixtures/smoke/snapshots/manifest.json",
+        "skills/design/scripts/fixtures/smoke/snapshots/threshold.json"
+      ],
+      "lines": 1374,
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/fixtures/smoke/README.md:7",
+          "text": "de pixels."
+        },
+        {
+          "ref": "skills/design/scripts/smoke.mjs:3",
+          "text": " * Smoke v2 for the design skill (plan todo 17, GAP-6): renders every screen"
+        }
+      ],
+      "note": "hard cases sintéticos do smoke v2 (5 telas + baselines de pixels); uso documentado no README do grupo (carrega tudo com exit 0 e congela baseline), mas sem npm script/CI — roda manual num projeto com --with-smoke",
+      "sample": [
+        {
+          "path": "skills/design/scripts/fixtures/smoke/README.md",
+          "lines": 29,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/smoke/README.md:1",
+            "text": "# fixtures/smoke — hard cases sintéticos (caracterização)"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/smoke/hardcases/01-inline-handler.html",
+          "lines": 21,
+          "evidence": {
+            "ref": "skills/design/scripts/smoke.mjs:3",
+            "text": " * Smoke v2 for the design skill (plan todo 17, GAP-6): renders every screen"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/smoke/hardcases/02-legacy-script-overlay.html",
+          "lines": 34,
+          "evidence": {
+            "ref": "skills/design/scripts/smoke.mjs:3",
+            "text": " * Smoke v2 for the design skill (plan todo 17, GAP-6): renders every screen"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/smoke/hardcases/03-local-routers.html",
+          "lines": 26,
+          "evidence": {
+            "ref": "skills/design/scripts/smoke.mjs:3",
+            "text": " * Smoke v2 for the design skill (plan todo 17, GAP-6): renders every screen"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/smoke/hardcases/04-flat-action-names.html",
+          "lines": 40,
+          "evidence": {
+            "ref": "skills/design/scripts/smoke.mjs:3",
+            "text": " * Smoke v2 for the design skill (plan todo 17, GAP-6): renders every screen"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/smoke/hardcases/05-so-mobile.html",
+          "lines": 30,
+          "evidence": {
+            "ref": "skills/design/scripts/smoke.mjs:3",
+            "text": " * Smoke v2 for the design skill (plan todo 17, GAP-6): renders every screen"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/smoke/hardcases/canvas.json",
+          "lines": 10,
+          "evidence": {
+            "ref": "skills/design/scripts/lib/viewport.mjs:2",
+            "text": " * viewport.mjs — the SINGLE viewport truth (todo 16, GAP-6): a pure lib that"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/smoke/hardcases/router-1.js",
+          "lines": 9,
+          "evidence": {
+            "ref": "skills/design/scripts/smoke.mjs:3",
+            "text": " * Smoke v2 for the design skill (plan todo 17, GAP-6): renders every screen"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/smoke/snapshots/manifest.json",
+          "lines": 227,
+          "evidence": {
+            "ref": "skills/design/scripts/smoke.mjs:3",
+            "text": " * Smoke v2 for the design skill (plan todo 17, GAP-6): renders every screen"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/smoke/snapshots/threshold.json",
+          "lines": 3,
+          "evidence": {
+            "ref": "skills/design/scripts/smoke.mjs:3",
+            "text": " * Smoke v2 for the design skill (plan todo 17, GAP-6): renders every screen"
+          }
+        }
+      ]
+    },
+    {
+      "group": "fixtures-seguranca",
+      "layer": "Core",
+      "subsystem": 2,
+      "class": "existe",
+      "members": [
+        "skills/design/scripts/fixtures/security-suite.mjs"
+      ],
+      "lines": 522,
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/fixtures/security-suite.mjs:2",
+          "text": "/**"
+        },
+        {
+          "ref": ".github/workflows/ci.yml:37",
+          "text": "        run: node skills/design/scripts/fixtures/security-suite.mjs"
+        },
+        {
+          "ref": "package.json:17",
+          "text": "    \"security\": \"node skills/design/scripts/fixtures/security-suite.mjs\","
+        }
+      ],
+      "note": "security-suite permanente do serve.mjs (7 asserts: Origin evil, traversal, label inválido, body 300KB, sem token, --share 403, Host header) — única fixture com gate automatizado (ci.yml:37 + npm run security)",
+      "sample": [
+        {
+          "path": "skills/design/scripts/fixtures/security-suite.mjs",
+          "lines": 522,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/security-suite.mjs:2",
+            "text": "/**"
+          }
+        }
+      ]
+    },
+    {
+      "group": "fixtures-codegen",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "parcial",
+      "members": [
+        "skills/design/scripts/fixtures/tsconfig.codegen.json"
+      ],
+      "lines": 14,
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/fixtures/tsconfig.codegen.json:1",
+          "text": "{"
+        },
+        {
+          "ref": "skills/design/scripts/codegen.mjs:4",
+          "text": " * GAP-8 bridge half). For every registry entry it emits ONE `<realComponent>.tsx`"
+        }
+      ],
+      "note": "tsconfig strict para typecheck do TSX gerado; nada no repo executa tsc (sem typescript em package.json) — o gate de tipos do codegen é manual",
+      "sample": [
+        {
+          "path": "skills/design/scripts/fixtures/tsconfig.codegen.json",
+          "lines": 14,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/tsconfig.codegen.json:1",
+            "text": "{"
+          }
+        }
+      ]
+    },
+    {
+      "group": "fixtures-consumidores",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "parcial",
+      "members": [
+        "skills/design/scripts/fixtures/consumers/avatar-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/avatar-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/avatar-a.html/components/avatar.html",
+        "skills/design/scripts/fixtures/consumers/avatar-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/avatar-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/avatar-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/avatar-b.html/components/avatar.html",
+        "skills/design/scripts/fixtures/consumers/avatar-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/banner-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/banner-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/banner-a.html/components/banner.html",
+        "skills/design/scripts/fixtures/consumers/banner-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/banner-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/banner-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/banner-b.html/components/banner.html",
+        "skills/design/scripts/fixtures/consumers/banner-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/bubble-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/bubble-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/bubble-a.html/components/bubble.html",
+        "skills/design/scripts/fixtures/consumers/bubble-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/bubble-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/bubble-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/bubble-b.html/components/bubble.html",
+        "skills/design/scripts/fixtures/consumers/bubble-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/button-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/button-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/button-a.html/components/button.html",
+        "skills/design/scripts/fixtures/consumers/button-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/button-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/button-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/button-b.html/components/button.html",
+        "skills/design/scripts/fixtures/consumers/button-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/card-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/card-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/card-a.html/components/card.html",
+        "skills/design/scripts/fixtures/consumers/card-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/card-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/card-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/card-b.html/components/card.html",
+        "skills/design/scripts/fixtures/consumers/card-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/chip-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/chip-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/chip-a.html/components/chip.html",
+        "skills/design/scripts/fixtures/consumers/chip-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/chip-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/chip-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/chip-b.html/components/chip.html",
+        "skills/design/scripts/fixtures/consumers/chip-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/drawer-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/drawer-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/drawer-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/drawer-a.html/components/drawer.html",
+        "skills/design/scripts/fixtures/consumers/drawer-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/drawer-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/drawer-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/drawer-b.html/components/drawer.html",
+        "skills/design/scripts/fixtures/consumers/field-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/field-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/field-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/field-a.html/components/field.html",
+        "skills/design/scripts/fixtures/consumers/field-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/field-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/field-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/field-b.html/components/field.html",
+        "skills/design/scripts/fixtures/consumers/media-card-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/media-card-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/media-card-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/media-card-a.html/components/media-card.html",
+        "skills/design/scripts/fixtures/consumers/media-card-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/media-card-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/media-card-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/media-card-b.html/components/media-card.html",
+        "skills/design/scripts/fixtures/consumers/menu-row-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/menu-row-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/menu-row-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/menu-row-a.html/components/menu-row.html",
+        "skills/design/scripts/fixtures/consumers/menu-row-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/menu-row-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/menu-row-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/menu-row-b.html/components/menu-row.html",
+        "skills/design/scripts/fixtures/consumers/modal-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/modal-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/modal-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/modal-a.html/components/modal.html",
+        "skills/design/scripts/fixtures/consumers/modal-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/modal-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/modal-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/modal-b.html/components/modal.html",
+        "skills/design/scripts/fixtures/consumers/modal-device.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/modal-device.html/components/modal.html",
+        "skills/design/scripts/fixtures/consumers/modal-device.html/tablet/01-s.html",
+        "skills/design/scripts/fixtures/consumers/modal-device.html/tablet/canvas.json",
+        "skills/design/scripts/fixtures/consumers/pill-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/pill-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/pill-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/pill-a.html/components/pill.html",
+        "skills/design/scripts/fixtures/consumers/pill-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/pill-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/pill-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/pill-b.html/components/pill.html",
+        "skills/design/scripts/fixtures/consumers/tabs-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/tabs-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/tabs-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/tabs-a.html/components/tabs.html",
+        "skills/design/scripts/fixtures/consumers/tabs-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/tabs-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/tabs-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/tabs-b.html/components/tabs.html",
+        "skills/design/scripts/fixtures/consumers/toast-a.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/toast-a.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/toast-a.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/toast-a.html/components/toast.html",
+        "skills/design/scripts/fixtures/consumers/toast-b.html/01-s.html",
+        "skills/design/scripts/fixtures/consumers/toast-b.html/canvas.json",
+        "skills/design/scripts/fixtures/consumers/toast-b.html/components/components.json",
+        "skills/design/scripts/fixtures/consumers/toast-b.html/components/toast.html"
+      ],
+      "lines": 1808,
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/sync-components.mjs:4",
+          "text": " * sync-components.mjs — marker-based component rematerializer (w2-8)."
+        },
+        {
+          "ref": "skills/design/scripts/marker-parser.mjs:3",
+          "text": " * marker-parser.mjs — parser for the component marker grammar (w2-7)."
+        }
+      ],
+      "note": "29 mini design-roots consumidores do sync-components (partial divergente por variante × registry) — corpus de caracterização do rematerializador sem runner automatizado",
+      "sample": [
+        {
+          "path": "skills/design/scripts/fixtures/consumers/avatar-a.html/01-s.html",
+          "lines": 17,
+          "evidence": {
+            "ref": "skills/design/scripts/sync-components.mjs:4",
+            "text": " * sync-components.mjs — marker-based component rematerializer (w2-8)."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/consumers/avatar-a.html/components/avatar.html",
+          "lines": 4,
+          "evidence": {
+            "ref": "skills/design/scripts/sync-components.mjs:4",
+            "text": " * sync-components.mjs — marker-based component rematerializer (w2-8)."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/consumers/avatar-a.html/components/components.json",
+          "lines": 30,
+          "evidence": {
+            "ref": "skills/design/scripts/marker-parser.mjs:3",
+            "text": " * marker-parser.mjs — parser for the component marker grammar (w2-7)."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/consumers/avatar-a.html/canvas.json",
+          "lines": 10,
+          "evidence": {
+            "ref": "skills/design/scripts/sync-components.mjs:4",
+            "text": " * sync-components.mjs — marker-based component rematerializer (w2-8)."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/consumers/button-a.html/01-s.html",
+          "lines": 14,
+          "evidence": {
+            "ref": "skills/design/scripts/sync-components.mjs:4",
+            "text": " * sync-components.mjs — marker-based component rematerializer (w2-8)."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/consumers/button-b.html/01-s.html",
+          "lines": 14,
+          "evidence": {
+            "ref": "skills/design/scripts/sync-components.mjs:4",
+            "text": " * sync-components.mjs — marker-based component rematerializer (w2-8)."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/consumers/modal-a.html/01-s.html",
+          "lines": 18,
+          "evidence": {
+            "ref": "skills/design/scripts/sync-components.mjs:4",
+            "text": " * sync-components.mjs — marker-based component rematerializer (w2-8)."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/consumers/toast-a.html/01-s.html",
+          "lines": 18,
+          "evidence": {
+            "ref": "skills/design/scripts/sync-components.mjs:4",
+            "text": " * sync-components.mjs — marker-based component rematerializer (w2-8)."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/consumers/tabs-a.html/01-s.html",
+          "lines": 17,
+          "evidence": {
+            "ref": "skills/design/scripts/sync-components.mjs:4",
+            "text": " * sync-components.mjs — marker-based component rematerializer (w2-8)."
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/consumers/chip-b.html/01-s.html",
+          "lines": 17,
+          "evidence": {
+            "ref": "skills/design/scripts/sync-components.mjs:4",
+            "text": " * sync-components.mjs — marker-based component rematerializer (w2-8)."
+          }
+        }
+      ]
+    },
+    {
+      "group": "fixtures-setup-legacy",
+      "layer": "Core",
+      "subsystem": 8,
+      "class": "parcial",
+      "members": [
+        "skills/design/scripts/fixtures/legacy-project/actions/tela.js",
+        "skills/design/scripts/fixtures/legacy-project/data/pedidos.json",
+        "skills/design/scripts/fixtures/legacy-project/mock.css",
+        "skills/design/scripts/fixtures/legacy-project/mock.js",
+        "skills/design/scripts/fixtures/legacy-project/scripts/sync-components.mjs",
+        "skills/design/scripts/fixtures/legacy-project/tela/01-tela.html",
+        "skills/design/scripts/fixtures/legacy-project/tela/02-confirma.html",
+        "skills/design/scripts/fixtures/legacy-project/tela/canvas.json",
+        "skills/design/scripts/fixtures/legacy-project/validate.config.json",
+        "skills/design/scripts/fixtures/legacy-project/validate.mjs"
+      ],
+      "lines": 119,
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/setup-design.mjs:3",
+          "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+        },
+        {
+          "ref": "skills/design/scripts/setup-design.test.mjs:2",
+          "text": " * Unit tests for the setup-design.mjs path/case helpers (plan todo 24 (e))."
+        }
+      ],
+      "note": "projeto legado pré-config para exercitar o setup-design (script sem marker, validate antigo, actions/, tela/); os testes de setup-design.test.mjs usam temp dirs próprios — este corpus é manual",
+      "sample": [
+        {
+          "path": "skills/design/scripts/fixtures/legacy-project/validate.mjs",
+          "lines": 10,
+          "evidence": {
+            "ref": "skills/design/scripts/setup-design.mjs:3",
+            "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/legacy-project/mock.js",
+          "lines": 6,
+          "evidence": {
+            "ref": "skills/design/scripts/setup-design.mjs:3",
+            "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/legacy-project/mock.css",
+          "lines": 9,
+          "evidence": {
+            "ref": "skills/design/scripts/setup-design.mjs:3",
+            "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/legacy-project/validate.config.json",
+          "lines": 41,
+          "evidence": {
+            "ref": "skills/design/scripts/setup-design.mjs:3",
+            "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/legacy-project/actions/tela.js",
+          "lines": 8,
+          "evidence": {
+            "ref": "skills/design/scripts/setup-design.mjs:3",
+            "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/legacy-project/scripts/sync-components.mjs",
+          "lines": 9,
+          "evidence": {
+            "ref": "skills/design/scripts/setup-design.mjs:3",
+            "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/legacy-project/data/pedidos.json",
+          "lines": 6,
+          "evidence": {
+            "ref": "skills/design/scripts/setup-design.mjs:3",
+            "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/legacy-project/tela/canvas.json",
+          "lines": 7,
+          "evidence": {
+            "ref": "skills/design/scripts/setup-design.mjs:3",
+            "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/legacy-project/tela/01-tela.html",
+          "lines": 12,
+          "evidence": {
+            "ref": "skills/design/scripts/setup-design.mjs:3",
+            "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/legacy-project/tela/02-confirma.html",
+          "lines": 11,
+          "evidence": {
+            "ref": "skills/design/scripts/setup-design.mjs:3",
+            "text": " * setup-design.mjs — one-time per-project setup + safe update for the design"
+          }
+        }
+      ]
+    },
+    {
+      "group": "fixtures-marker",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "parcial",
+      "members": [
+        "skills/design/scripts/fixtures/marker/01-s.html"
+      ],
+      "lines": 15,
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/marker-parser.mjs:3",
+          "text": " * marker-parser.mjs — parser for the component marker grammar (w2-7)."
+        },
+        {
+          "ref": "skills/design/scripts/marker-parser.mjs:35",
+          "text": "  MARKER: \"component-marker\","
+        }
+      ],
+      "note": "fixture única da gramática de marcadores (component:/slot:) consumida manualmente pelo marker-parser — sem runner automatizado",
+      "sample": [
+        {
+          "path": "skills/design/scripts/fixtures/marker/01-s.html",
+          "lines": 15,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/marker/01-s.html:1",
+            "text": "<!doctype html>"
+          }
+        }
+      ]
+    },
+    {
+      "group": "fixtures-find-target",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "existe",
+      "members": [
+        "skills/design/scripts/fixtures/find-target/components/button.html",
+        "skills/design/scripts/fixtures/find-target/components/card.html",
+        "skills/design/scripts/fixtures/find-target/dashboard/01-overview.html",
+        "skills/design/scripts/fixtures/find-target/login/01-login.html",
+        "skills/design/scripts/fixtures/find-target/login/02-cadastro.html",
+        "skills/design/scripts/fixtures/find-target/notes/arquivo-probe-9.md",
+        "skills/design/scripts/fixtures/find-target/tokens.json"
+      ],
+      "lines": 52,
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/find.test.mjs:23",
+          "text": "const FIXTURE = fileURLToPath(new URL(\"./fixtures/find-target\", import.meta.url));"
+        },
+        {
+          "ref": "skills/design/scripts/find.mjs:2",
+          "text": " * find.mjs — busca direta no alvo de design: \"onde está <termo>?\" em uma consulta."
+        }
+      ],
+      "note": "entrada incremental (grupo novo pós-e7ef945, faixa paralela do todo 8): corpus de aceitação do find.mjs com termos plantados (planted-term ×6 em 3 telas + classe + token + data-attr; mockbird-probe-42 ×3 em 2 arquivos; a.*b literal com decoys; probe de arquivo/ícone) — consumida por find.test.mjs:23 (FIXTURE)",
+      "sample": [
+        {
+          "path": "skills/design/scripts/fixtures/find-target/login/01-login.html",
+          "lines": 12,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/find-target/login/01-login.html:7",
+            "text": "  <h1>planted-term no texto da tela de login</h1>"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/find-target/login/02-cadastro.html",
+          "lines": 13,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/find-target/login/02-cadastro.html:7",
+            "text": "  <h1>planted-term no texto da tela de cadastro</h1>"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/find-target/dashboard/01-overview.html",
+          "lines": 11,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/find-target/dashboard/01-overview.html:7",
+            "text": "  <h1>planted-term no texto da tela de overview</h1>"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/find-target/components/button.html",
+          "lines": 2,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/find-target/components/button.html:1",
+            "text": "<button type=\"button\" data-action=\"plantado\" data-extra=\"planted-term\">OK</button>"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/find-target/components/card.html",
+          "lines": 1,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/find-target/components/card.html:1",
+            "text": "<div class=\"card planted-term rounded\">conteudo do card</div>"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/find-target/tokens.json",
+          "lines": 10,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/find-target/tokens.json:6",
+            "text": "        \"$value\": \"planted-term\""
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/find-target/notes/arquivo-probe-9.md",
+          "lines": 3,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/find-target/notes/arquivo-probe-9.md:1",
+            "text": "# Notas de apoio"
+          }
+        }
+      ]
+    },
+    {
+      "group": "fixtures-map-dead",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "parcial",
+      "members": [
+        "skills/design/scripts/fixtures/map-dead/chat/01-lista.html",
+        "skills/design/scripts/fixtures/map-dead/chat/09-novo-chat.html",
+        "skills/design/scripts/fixtures/map-dead/chat/canvas.json",
+        "skills/design/scripts/fixtures/map-dead/components/button.html",
+        "skills/design/scripts/fixtures/map-dead/components/painel.html"
+      ],
+      "lines": 49,
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/agent-map.mjs:3",
+          "text": " * agent-map.mjs — the agent map generator (plan todo 6, GAP-J1/J2)."
+        },
+        {
+          "ref": "skills/design/scripts/fixtures/map-dead/chat/09-novo-chat.html:14",
+          "text": "    <a href=\"10-inexistente.html\">Página fantasma</a>"
+        }
+      ],
+      "note": "entrada incremental (faixa paralela do todo 6): corpus dos \"contratos mortos\" do agent map — data-action sem actions/<stem>.js, link para tela fantasma (09-novo-chat.html:14 → 10-inexistente.html), partial órfão (components/painel.html:1); consumo via agent-map.mjs sem runner automatizado no momento da auditoria",
+      "sample": [
+        {
+          "path": "skills/design/scripts/fixtures/map-dead/chat/01-lista.html",
+          "lines": 19,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/map-dead/chat/01-lista.html:12",
+            "text": "    <!-- component:button size=md tone=primary state=default --><button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"default\"><!-- slot:label -->Novo chat<!-- /…"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/map-dead/chat/09-novo-chat.html",
+          "lines": 19,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/map-dead/chat/09-novo-chat.html:14",
+            "text": "    <a href=\"10-inexistente.html\">Página fantasma</a>"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/map-dead/chat/canvas.json",
+          "lines": 7,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/map-dead/chat/canvas.json:1",
+            "text": "{"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/map-dead/components/button.html",
+          "lines": 2,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/map-dead/components/button.html:1",
+            "text": "<!-- fixture map-dead: partial usado pelas telas (marker component:button). -->"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/map-dead/components/painel.html",
+          "lines": 2,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/map-dead/components/painel.html:1",
+            "text": "<!-- fixture map-dead: parcial órfão — nenhuma tela referencia \"painel\". -->"
+          }
+        }
+      ]
+    },
+    {
+      "group": "fixtures-verbs-divergent",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "parcial",
+      "members": [
+        "skills/design/scripts/fixtures/verbs-divergent/mock.js"
+      ],
+      "lines": 55,
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/fixtures/verbs-divergent/mock.js:1",
+          "text": "/* fixture verbs-divergent — a MINIMAL mock.js-shaped runtime whose click"
+        },
+        {
+          "ref": "skills/design/scripts/agent-map.mjs:3",
+          "text": " * agent-map.mjs — the agent map generator (plan todo 6, GAP-J1/J2)."
+        }
+      ],
+      "note": "entrada incremental (faixa paralela do todo 6): mock.js mínimo que despacha data-nav no lugar de data-go — o --check-verbs do agent-map.mjs deve sair != 0 citando o verbo divergente; sem runner automatizado no momento da auditoria",
+      "sample": [
+        {
+          "path": "skills/design/scripts/fixtures/verbs-divergent/mock.js",
+          "lines": 55,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/verbs-divergent/mock.js:1",
+            "text": "/* fixture verbs-divergent — a MINIMAL mock.js-shaped runtime whose click"
+          }
+        }
+      ]
+    },
+    {
+      "group": "fixtures-map-adversarial",
+      "layer": "Core",
+      "subsystem": 7,
+      "class": "parcial",
+      "members": [
+        "skills/design/scripts/fixtures/map-adversarial/01-x.html",
+        "skills/design/scripts/fixtures/map-adversarial/canvas.json"
+      ],
+      "lines": 31,
+      "evidence": [
+        {
+          "ref": "skills/design/scripts/fixtures/map-adversarial/01-x.html:10",
+          "text": "  <!-- fixture map-adversarial: texto externo hostil em atributos e nós de"
+        },
+        {
+          "ref": "skills/design/scripts/agent-map.mjs:3",
+          "text": " * agent-map.mjs — the agent map generator (plan todo 6, GAP-J1/J2)."
+        }
+      ],
+      "note": "entrada incremental (faixa paralela do todo 6): entrada hostil para o agent map (texto externo em atributos/nós deve virar dado escapado, nunca avaliação — 01-x.html:10-12); sem runner automatizado no momento da auditoria",
+      "sample": [
+        {
+          "path": "skills/design/scripts/fixtures/map-adversarial/01-x.html",
+          "lines": 25,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/map-adversarial/01-x.html:10",
+            "text": "  <!-- fixture map-adversarial: texto externo hostil em atributos e nós de"
+          }
+        },
+        {
+          "path": "skills/design/scripts/fixtures/map-adversarial/canvas.json",
+          "lines": 6,
+          "evidence": {
+            "ref": "skills/design/scripts/fixtures/map-adversarial/canvas.json:1",
+            "text": "{"
+          }
+        }
+      ]
+    }
+  ]
+}
