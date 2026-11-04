@@ -105,7 +105,7 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { basename, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { inflateSync } from 'node:zlib'
+import { decodePng, pixelDiff } from './lib/image-diff.mjs'
 import { deriveViewport } from './lib/viewport.mjs'
 
 // ---------- args ----------
@@ -119,7 +119,10 @@ let allDevices = false
 let updateSnapshots = false
 for (let i = 0; i < argv.length; i += 1) {
   const token = argv[i]
-  if (token === '--print-viewport') {
+  if (token === '--help' || token === '-h') {
+    console.log(usage)
+    process.exit(0)
+  } else if (token === '--print-viewport') {
     printViewport = true
   } else if (token === '--all-devices') {
     allDevices = true
@@ -304,96 +307,10 @@ function discoverScreens(rootDir, exemptDirs) {
   return { screens, problems }
 }
 
-// ---------- PNG decode + pixel diff (chromium screenshots: 8-bit RGB/RGBA) ----------
-
-function paeth(a, b, c) {
-  const p = a + b - c
-  const pa = Math.abs(p - a)
-  const pb = Math.abs(p - b)
-  const pc = Math.abs(p - c)
-  return pa <= pb && pa <= pc ? a : pb <= pc ? b : c
-}
-
-function decodePng(buffer) {
-  if (buffer.length < 8 || buffer.readUInt32BE(0) !== 0x89504e47) throw new Error('not a PNG')
-  let pos = 8
-  let width = 0
-  let height = 0
-  let depth = 0
-  let color = 0
-  let interlace = 0
-  const idat = []
-  while (pos + 8 <= buffer.length) {
-    const length = buffer.readUInt32BE(pos)
-    const type = buffer.toString('ascii', pos + 4, pos + 8)
-    const data = buffer.subarray(pos + 8, pos + 8 + length)
-    if (type === 'IHDR') {
-      width = data.readUInt32BE(0)
-      height = data.readUInt32BE(4)
-      depth = data[8]
-      color = data[9]
-      interlace = data[12]
-    } else if (type === 'IDAT') {
-      idat.push(data)
-    } else if (type === 'IEND') {
-      break
-    }
-    pos += 12 + length
-  }
-  if (depth !== 8 || (color !== 2 && color !== 6) || interlace !== 0) {
-    throw new Error(`png nao suportado (depth ${depth}, color ${color}, interlace ${interlace})`)
-  }
-  const channels = color === 6 ? 4 : 3
-  const stride = width * channels
-  const raw = inflateSync(Buffer.concat(idat))
-  const pixels = Buffer.alloc(height * stride)
-  let prev = 0
-  for (let y = 0; y < height; y += 1) {
-    const filter = raw[y * (stride + 1)]
-    const line = y * (stride + 1) + 1
-    const out = y * stride
-    for (let x = 0; x < stride; x += 1) {
-      const cur = raw[line + x]
-      const a = x >= channels ? pixels[out + x - channels] : 0
-      const b = y > 0 ? pixels[prev + x] : 0
-      const c = y > 0 && x >= channels ? pixels[prev + x - channels] : 0
-      let value
-      if (filter === 0) value = cur
-      else if (filter === 1) value = cur + a
-      else if (filter === 2) value = cur + b
-      else if (filter === 3) value = cur + ((a + b) >> 1)
-      else if (filter === 4) value = cur + paeth(a, b, c)
-      else throw new Error(`png filter ${filter} invalido (linha ${y})`)
-      pixels[out + x] = value & 255
-    }
-    prev = out
-  }
-  return { width, height, channels, pixels }
-}
-
-/** Per-pixel diff: {sizeMismatch} when dims differ, else {differing, ratio}. */
-function pixelDiff(base, current) {
-  if (base.width !== current.width || base.height !== current.height) {
-    return { sizeMismatch: [base.width, base.height, current.width, current.height] }
-  }
-  const total = base.width * base.height
-  let differing = 0
-  for (let i = 0; i < total; i += 1) {
-    const bo = i * base.channels
-    const co = i * current.channels
-    const ba = base.channels === 4 ? base.pixels[bo + 3] : 255
-    const ca = current.channels === 4 ? current.pixels[co + 3] : 255
-    if (
-      base.pixels[bo] !== current.pixels[co] ||
-      base.pixels[bo + 1] !== current.pixels[co + 1] ||
-      base.pixels[bo + 2] !== current.pixels[co + 2] ||
-      ba !== ca
-    ) {
-      differing += 1
-    }
-  }
-  return { differing, ratio: total === 0 ? 0 : differing / total }
-}
+// ---------- PNG decode + pixel diff ----------
+// decodePng/pixelDiff (plus the shared {pixelRatio, ssim} diff and the
+// per-platform thresholds) live in lib/image-diff.mjs — plan todo 10
+// extraction; the math is unchanged (lift-and-shift).
 
 // ---------- run ----------
 

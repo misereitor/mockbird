@@ -24,6 +24,8 @@
     { "from": "scripts/setup-design.mjs", "to": "scripts/setup-design.mjs" },
     { "from": "scripts/lib/token-groups.mjs", "to": "scripts/lib/token-groups.mjs" },
     { "from": "scripts/lib/viewport.mjs", "to": "scripts/lib/viewport.mjs" },
+    { "from": "scripts/lib/image-diff.mjs", "to": "scripts/lib/image-diff.mjs" },
+    { "from": "scripts/lib/ssim.mjs", "to": "scripts/lib/ssim.mjs" },
     { "from": "scripts/rules/a11y.mjs", "to": "scripts/rules/a11y.mjs" },
     { "from": "scripts/rules/action-contract.mjs", "to": "scripts/rules/action-contract.mjs" },
     { "from": "scripts/rules/action-module.mjs", "to": "scripts/rules/action-module.mjs" },

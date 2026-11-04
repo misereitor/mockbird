@@ -1,0 +1,17 @@
+{
+  "maxDiffPixelRatio": 0.02,
+  "platforms": {
+    "linux": {
+      "maxDiffPixelRatio": 0.02,
+      "minSsim": 0.98
+    },
+    "darwin": {
+      "maxDiffPixelRatio": 0.03,
+      "minSsim": 0.97
+    },
+    "win32": {
+      "maxDiffPixelRatio": 0.05,
+      "minSsim": 0.95
+    }
+  }
+}
