@@ -50,6 +50,8 @@ After the design read, set three dials. Every layout, motion, and density decisi
 
 **Baseline:** `8 / 6 / 4`. Use these unless the design read overrides them. Do not ask the user to edit this file - overrides happen conversationally.
 
+**Scope (ADR-0006):** this `8 / 6 / 4` baseline is the source of truth for landing / portfolio / marketing work. For product UI the scoped baseline is `7 / 4 / 4` and `../design/assets/craft.md` §2 is the source of truth there.
+
 ### 1.A Dial Inference (design read → dial values)
 | Signal | VARIANCE | MOTION | DENSITY |
 |---|---|---|---|
@@ -180,7 +182,7 @@ LLMs default to clichés. Override these defaults proactively. Each rule has a c
   * **Specifically BANNED as defaults:** `Fraunces` and `Instrument_Serif` (the two LLM-favorite display serifs).
   * **If a serif is justified** (rare, per the above), rotate from this pool, do NOT reuse the same serif across consecutive projects: PP Editorial New, GT Sectra Display, Cardinal Grotesque, Reckless Neue, Tiempos Headline, Recoleta, Cormorant Garamond, Playfair Display, EB Garamond, IvyPresto, Migra, Editorial Old, Saol Display, Söhne Breit Kursiv, Domaine Display, Canela, Schnyder, Tobias, NB Architekt, ITC Galliard.
 
-* **ITALIC DESCENDER CLEARANCE (mandatory):** When italic is used in display type and the word contains a descender letter (`y g j p q`), `leading-[1]` or `leading-none` will clip the descender. Use `leading-[1.1]` minimum and add `pb-1` or `mb-1` reserve on the wrapping element. Audit every italic word in display headlines before shipping.
+* **ITALIC DESCENDER CLEARANCE (mandatory):** When italic is used in display type and the word contains a descender letter (`y g j p q`), `leading-[1]` or `leading-none` will clip the descender. Use `leading-[1.1]` minimum and add `pb-1` or `mb-1` reserve on the wrapping element. Audit every italic word in display headlines before shipping. (`leading-[1.1]`/`leading-[1]` are declared exceptions to the arbitrary-value ban — `../design/assets/craft.md` §3 owns that list; every other `-[…]` value stays banned unless declared there.)
 
 ### 4.2 Color Calibration
 * Max 1 accent color. Saturation < 80% by default.
@@ -352,6 +354,8 @@ The page has ONE theme. Sections do not invert.
 ## 5. CONTEXT-AWARE PROACTIVITY
 
 These are tools, not defaults. Use them when the design read calls for them. **None of these fire automatically.**
+
+**CSS-first (ADR-0006):** motion ships in plain CSS (transitions, `@starting-style`, scroll-driven animations — `../emil-design-eng/SKILL.md` is the reference). The GSAP / Motion / Three.js patterns in §5.A–§5.C apply ONLY when the library is already present in the project; never add a motion library just to follow these skeletons.
 
 * **Liquid Glass / Glassmorphism:** Appropriate for premium consumer, Apple-adjacent, luxury brand, or media-overlay vibes. Inappropriate for dashboards, public-sector, or "boring B2B." When used, go beyond `backdrop-blur`: add a 1px inner border (`border-white/10`) and a subtle inner shadow (`shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]`) for physical edge refraction. Provide a solid-fill fallback under `prefers-reduced-transparency`.
 * **Magnetic Micro-physics:** Use when `MOTION_INTENSITY > 5` AND the brief reads premium / playful / agency. Implement EXCLUSIVELY with Motion's `useMotionValue` / `useTransform` outside the React render cycle. Never `useState`. See Section 3.B.
@@ -616,6 +620,7 @@ Avoid these signatures unless the brief explicitly asks for them.
 * **NO generic names.** "John Doe", "Sarah Chan", "Jack Su" → use creative, realistic, locale-appropriate names.
 * **NO generic avatars.** No SVG "egg" or Lucide user icons → use believable photo placeholders or specific styling.
 * **NO fake-perfect numbers.** Avoid `99.99%`, `50%`, `1234567`. Use organic, messy data (`47.2%`, `+1 (312) 847-1928`).
+* **NO lorem ipsum or dummy filler text.** Every visible string is real, plausible copy in the user's language.
 * **NO startup-slop brand names.** "Acme", "Nexus", "SmartFlow", "Cloudly" → invent contextual, premium names that sound real.
 * **NO filler verbs.** "Elevate", "Seamless", "Unleash", "Next-Gen", "Revolutionize" → concrete verbs only.
 
@@ -839,8 +844,11 @@ The Reference Vocabulary (Section 10) names patterns. The Block Library implemen
 **Status:** schema defined here. Blocks will be added iteratively. Do not freelance new blocks without following this schema.
 
 ### 12.A File Location
+
+Blocks land in `blocks/` next to this SKILL.md (i.e. `skills/taste/blocks/`);
+the directory is created with the first block. The shape:
 ```
-skills/taste-skill/blocks/
+skills/taste/blocks/
   hero/
     asymmetric-split.md
     editorial-manifesto.md

@@ -13,42 +13,58 @@ for <audience>, with a <vibe> language, leaning toward <aesthetic family>."
 If the brief is ambiguous in a way that changes direction, ask exactly one
 question. Never default to AI aesthetics — reach past them deliberately.
 
-## 2. Dials (taste)
+## 2. Dials (taste) — scoped baselines (ADR-0006)
 
-Set and honor three dials per canvas:
+Set and honor three dials per canvas. The baseline is scoped by screen kind;
+the scope's source of truth is the file named below and nothing else:
 
-- `DESIGN_VARIANCE` (1–10, default 7): 1–3 symmetric and equal, 4–7 offset
+| Scope | `DESIGN_VARIANCE` | `MOTION_INTENSITY` | `VISUAL_DENSITY` | Source of truth |
+|---|---|---|---|---|
+| product UI (canvas screens) | 7 | 4 | 4 | this file (§2) |
+| landing / portfolio / marketing | 8 | 6 | 4 | `../taste/SKILL.md` §1 (`8 / 6 / 4`) |
+
+- `DESIGN_VARIANCE` (1–10): 1–3 symmetric and equal, 4–7 offset
   compositions, 8–10 asymmetric. Mobile screens collapse to one column.
-- `MOTION_INTENSITY` (1–10, default 4 for product screens, 6–7 for landing
-  pages): motion must be motivated; a screen that claims motion must show it.
-- `VISUAL_DENSITY` (1–10, default 4): 1–3 airy, 4–7 standard, 8–10 tight with
+- `MOTION_INTENSITY` (1–10): motion must be motivated; a screen that claims
+  motion must show it. Landing/portfolio pages may run 6–8 per taste §1.A.
+- `VISUAL_DENSITY` (1–10): 1–3 airy, 4–7 standard, 8–10 tight with
   hairline separators and monospace numerals.
 
-## 3. The bans (taste)
+## 3. The bans (taste owns the list — ADR-0006)
 
-Never on a canvas screen unless the brand brief explicitly asks:
+Taste is the reference for the aesthetic bans: apply every ban in
+`../taste/SKILL.md` in full — §0.D anti-defaults, §4.1 type bans, §4.2
+palette bans, §4.7 layout hard rules, §9 AI tells (incl. §9.G em-dash) and
+its final checklist. This file does not repeat that list; if the two ever
+seem to disagree, taste's ban wins and this file only narrows it for the
+canvas. Never on a canvas screen unless the brand brief explicitly asks.
 
-- AI-purple gradients, neon outer glows, pure `#000`/`#fff`, more than one
-  accent color, accents drifting between sections (pick one, lock it).
-- Three identical feature cards; centered hero as the only hero shape; more
-  than two consecutive zigzag image+text sections; an eyebrow label above
-  every section (max 1 per 3 sections); split-header (headline left, small
-  paragraph floating right) as the default section header.
-- Fake screenshots built from `<div>` rectangles; generic filler names
-  (John Doe, Acme, Nexus); fake-perfect numbers (99.99%, 50%); lorem ipsum.
-- Em-dash anywhere; decorative status dots on every row; scroll cues
-  ("Scroll to explore"); version labels (`v0.6`, `BETA`) in heroes.
-- Serif as the default display font (`Fraunces` and `Instrument Serif` are
-  banned defaults); `Inter` as the default body font (Geist, Satoshi,
-  Cabinet Grotesk or a brand-appropriate face first).
-- The warm beige + brass + espresso palette as the default reach for
-  premium-consumer briefs.
-- Buttons whose text fails WCAG AA contrast against their own background;
-  CTAs that wrap to two lines at desktop width.
+Machine-enforced canvas bans (the sweep in `validate.mjs` fails them; these
+are contract, not advice):
+
 - Literal colors outside `tokens.json`: the sweep checks `<style>` blocks,
   `style=""` attributes and the VALUE positions of SVG `fill=`/`stroke=`.
-  Remote URLs (`http(s)://`) in screens. Tailwind palette classes like
-  `bg-zinc-900`. Arbitrary values like `text-[13px]`.
+- Remote URLs (`http(s)://`) anywhere in screens.
+- Tailwind palette classes like `bg-zinc-900`.
+- Arbitrary values like `text-[13px]` (Tailwind `-[…]` syntax).
+
+**Arbitrary Tailwind values: banned (ADR-0006).** The ban is absolute on
+canvas screens. In real frontend code the ban also stands by default; the
+ONLY declared exceptions are the arbitrary values taste's own mandatory
+rules require, and only when the consumer's framework is Tailwind:
+
+- `leading-[1.1]` / `leading-[1]` — italic descender clearance (taste §4.1).
+- Display eyebrow metrics: `text-[11px]`, `text-[10.5px]`,
+  `tracking-[0.18em]`, `tracking-[0.22em]` (taste §4.7 eyebrow restraint).
+- Measure and viewport: `w-[65ch]`, `h-[100dvh]`, `w-[1400px]`,
+  `w-[calc(33%-1rem)]`.
+- Micro-transforms and layers: `translate-y-[1px]`, `scale-[0.98]`,
+  `z-[60]`.
+- Hairline inset: `shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]`
+  (taste §5 glass edge).
+
+Anything outside this list needs an explicit declaration in the design read
+before use; outside Tailwind consumer projects use `var(--…)` or custom CSS.
 
 **Utilities are the vocabulary.** Token-backed styling (colors, type, spacing,
 radius) goes through the generated utilities matrix (exactly 140 entries:
@@ -75,7 +91,12 @@ leave a clearly labeled placeholder when a real photo is required. And the
 canvas shows light **and** dark through the same tokens: never hard-code a
 color, never build a section that only works in one theme.
 
-## 4. Motion rules (emil-design-eng)
+## 4. Motion rules (emil-design-eng) — CSS-first (ADR-0006)
+
+CSS-first wins: implement motion in plain CSS (transitions, `@starting-style`,
+scroll-driven animations) — see `../emil-design-eng/SKILL.md`. GSAP / Motion /
+Three.js patterns (taste §5.A–§5.C) apply ONLY when that library is already
+present in the project; never add one just to animate a canvas screen.
 
 Answer in order before animating anything: should it animate at all (never
 for actions used hundreds of times a day) → what purpose → which easing →
@@ -93,12 +114,15 @@ how fast.
   `@media (hover: hover) and (pointer: fine)`.
 - Popovers scale from their trigger (`transform-origin`), modals stay centered.
 
-## 5. Verification loop (impeccable)
+## 5. Verification loop (impeccable + design) — until clean, cap 4 (ADR-0006)
 
-Build every screen fully first — no half-built screens. Then exactly one
-bounded review round: run the validator, open the viewer, look at desktop and
-dark theme, fix everything in one batch, confirm with at most one more round,
-and stop. No open-ended polishing.
+Build every screen fully first — no half-built screens. Then review in
+batched rounds: run the validator, open the viewer, look at desktop and dark
+theme, fix everything in one batch, and re-run until clean — the whole loop
+is capped at 4 rounds (screenshots, defect scans, micro-edits and rebuilds
+alike). At the cap, stop polishing and hand off with the explicit
+pending-issues list; a canvas with open issues is never presented as clean.
+No open-ended polishing.
 
 ## 6. Interactivity (system preview)
 

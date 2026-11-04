@@ -317,7 +317,10 @@ drifted token paths (e.g. `motion.duration.fast`).
       colors. The ban sweep scans literal colors in `<style>`, `style=""` and
       the VALUE positions of SVG `fill=`/`stroke=`; it also bans `http(s)://`
       anywhere in screens, Tailwind palette classes like `bg-zinc-900`, and
-      arbitrary values like `text-[13px]`.
+      arbitrary values like `text-[13px]`. Arbitrary values are banned here
+      without exception — the declared exception list for real Tailwind
+      consumer projects lives in `assets/craft.md` §3 (ADR-0006) and never
+      applies to canvas screens.
    - Work in both themes through the tokens; the theme arrives as
      `data-theme` on `<html>` (`light` by default — include the attribute).
    - No CDN or remote URL of any kind (the canvas is offline and sandboxed):
@@ -392,8 +395,10 @@ drifted token paths (e.g. `motion.duration.fast`).
    `file:line` diff per divergent region and exits 1 on divergence (0 clean),
    never writing. Then run from the project root:
    `node design/validate.mjs design/<canvas>`. Fix every issue it lists and run
-   again until only the summary line remains. Never present a canvas that has
-   issues. The validator's argument is a design-root (project mode) or a single
+   again until only the summary line remains — the loop runs until clean,
+   capped at 4 rounds for the whole cycle; at the cap, stop and hand off with
+   the explicit pending-issues list instead of presenting it as clean. Never
+   present a canvas that has issues as if it were clean. The validator's argument is a design-root (project mode) or a single
    canvas folder (canvas mode); with no argument it defaults to `./design`.
    Structural checks cover only the screens listed in `canvas.json`; project
    mode additionally checks tokens/generated-CSS staleness, components and
@@ -411,8 +416,12 @@ drifted token paths (e.g. `motion.duration.fast`).
    be listed in the `classes.allow` allowlist in `validate.config.json`
    (`{ "name": …, "justification": … }` — an item without justification fails
    on its own, `m-allowlist-nojust`; an unknown class fails as `m-unknown`,
-   citing the class and the file). `classes.allow` is transitional: it exists
-   for the client corpus migration and empties when that migration closes.
+   citing the class and the file). `classes.allow` migration status: CLOSED
+   (2026-11-04) — the shipped `validate.config.json` lists `classes.allow: []`
+   and the corpus needs no entries (ADR-0006). The mechanism stays as a
+   justification-gated escape hatch: each entry must carry
+   `{ name, justification }`, and any new entry is exceptional and must state
+   in its justification when it can be removed.
 4b. **Impeccable audit.** After validating, run the sibling `impeccable`
    skill's technical audit on the canvas (installed layout, win32):
    `<skill-impeccable>/scripts/impeccable.cmd audit design/<canvas>` - the
@@ -526,18 +535,20 @@ mechanism is forbidden — everything goes through the one dispatch point.
    `Mock.registerActions('<telaId>', { acao(event, el) { … } })` must match
    `^[a-z0-9_-]+$` (the runtime rejects anything else with a warning). A flat
    value like `data-action="salvar"` never matches the pattern — such names
-   are only possible through the transitional allowlist (item 2). Clicks run
+   are only possible through the escape-hatch allowlist (item 2). Clicks run
    `handler(event, el)`; the handler owns `event.preventDefault()` if it
    needs it. A name with no registered handler warns on the console and never
    throws (guided degrade).
 
-2. **Allowlist policy (transitional).** Flat `data-action` names (no dot) fail
+2. **Allowlist policy (escape hatch).** Flat `data-action` names (no dot) fail
    `action-contract` unless listed in `actions.allowLegacy`, a list of
    `{ "name": …, "justification": … }` items — an item without a non-empty
    justification fails on its own (`action-allowlist-nojust`) and a listed
-   name is rescued regardless of its justification. Flat names are
-   transitional: the allowlist exists for the client corpus migration and
-   empties when that migration closes. The `on*` + `data-action` detector
+   name is rescued regardless of its justification. The client corpus
+   migration is CLOSED (2026-11-04): `actions.allowLegacy` and
+   `handlers.allowLegacy` ship empty in `validate.config.json`, new work is
+   namespaced-only, and any new entry is exceptional and must state in its
+   justification when it can be removed. The `on*` + `data-action` detector
    (`action-both`) is PERMANENT and outlives the allowlist.
 
 3. **The unification table.** The complete action surface, dispatched by one
