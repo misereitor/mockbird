@@ -1,0 +1,6 @@
+{
+  "title": "Orquestrador",
+  "screens": [
+    { "id": "tela", "name": "Tela única", "file": "01-tela.html", "device": "mobile", "width": 390, "height": 844 }
+  ]
+}
