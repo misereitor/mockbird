@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tela com cor literal</title>
+  <style>
+    /* VIOLAÇÃO PLANTADA (fixture gate-contract-bad): literal cor fora de
+       tokens.json — validate.mjs reprova (hard-coded-color). Serve para provar
+       que o gate bloqueia por contrato quebrado mesmo com todos os diffs ok. */
+    body { color: #123456; background-color: #ffffff; }
+  </style>
+</head>
+<body>
+  <!-- state:default -->
+  <main>
+    <h1>Tela com cor literal</h1>
+    <p>Contrato quebrado de propósito.</p>
+  </main>
+</body>
+</html>

@@ -143,7 +143,7 @@ versão de schema (§5.6).
 - **QA de navegador:** smoke por viewport derivado
   (`skills/design/scripts/lib/viewport.mjs:2`), decodificador PNG + pixel-diff
   caseiro (`skills/design/scripts/smoke.mjs:307-390`) e limiar gravado por
-  execução (`skills/design/scripts/smoke.mjs:767`).
+  execução (`skills/design/scripts/smoke.mjs:680`).
 - **Design system:** geração/exportação de tokens
   (`skills/design/scripts/lib/token-groups.mjs:2`), registry de componentes com
   rematerialização por marcadores, codegen e contrato de tokens travado por
@@ -423,6 +423,14 @@ todos precisam de APPROVE antes de o plano ser declarado completo.
    funcionando; serviço e conector são adição, não substituição.
 8. **Anti-fake**: artefatos embutem `gitSHA` + hash de conteúdo + timestamp e o
    verificador re-executa comparando hash — presença de arquivo não é evidência.
+
+Clarificação (todo 12): `skills/design/scripts/visual-score.mjs` apenas
+registra — agrega as issues do critic e a cobertura da matriz de captura em
+scores 0-100 por critério e anexa o histórico *design/.visual/scores.json*
+(append-only, truncado — nunca arredonda para cima). A decisão de bloqueio é
+exclusiva de `skills/design/scripts/visual-gate.mjs`, que decide APENAS por
+diff determinístico (pixelRatio/SSIM vs limiar da plataforma) ou contrato
+quebrado — e não lê score.
 
 ### 8.2 Aceitação por resultado-alvo (espelho da tabela de Success criteria do plano)
 

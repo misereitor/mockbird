@@ -1,0 +1,6 @@
+{
+  "title": "Gate contract-bad — contrato propositalmente quebrado (fixture do visual-gate)",
+  "screens": [
+    { "id": "quebrada", "name": "Tela com cor literal", "file": "01-quebrada.html", "device": "desktop", "width": 1440, "height": 900 }
+  ]
+}
