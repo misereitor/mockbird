@@ -28,7 +28,7 @@
     "test:mock": "node scripts/mock-check.mjs",
     "test:ui": "node scripts/viewer-accept.mjs",
     "bench:dry": "node benchmarks/run.mjs --dry-run",
-    "ci": "npm run skills:check && npm test && npm run test:mock && npm run smoke:plugin && npm run smoke:screen && npm run test:ui && npm run visual:gate && npm run validate && npm run qa && npm run security && npm run check:i18n",
+    "ci": "npm run skills:check && npm run golden:check && npm test && npm run test:mock && npm run smoke:plugin && npm run smoke:screen && npm run test:ui && npm run visual:gate && npm run validate && npm run qa && npm run security && npm run check:i18n",
     "ci:base": "npm test && npm run test:mock && npm run smoke:plugin && npm run visual:gate && npm run validate && npm run qa && npm run security && npm run check:i18n",
     "parity": "node skills/design/scripts/parity.mjs",
     "critic:calibrate": "node skills/design/scripts/critic-calibrate.mjs",
@@ -36,6 +36,7 @@
     "skills:check": "node skills/sync-check.mjs"
     ,"experiment:compare": "node skills/design/scripts/experiment-compare.mjs",
     "done:check": "node skills/design/scripts/done-check.mjs"
+    ,"golden:check": "node skills/design/scripts/golden-check.mjs"
   },
   "devDependencies": {
     "playwright-core": "1.64.1"
