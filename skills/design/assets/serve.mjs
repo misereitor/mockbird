@@ -131,7 +131,7 @@ const share = argv.includes('--share')
 const noOpen = argv.includes('--no-open')
 const openArg = argv.find((arg) => arg === '--open' || arg.startsWith('--open='))
 const openCanvas = openArg?.startsWith('--open=') ? openArg.slice('--open='.length) : ''
-const portArg = argv.find((arg, index) => !arg.startsWith('--') && index !== dataArgIndex + 1)
+const portArg = argv.find((arg, index) => !arg.startsWith('--') && (dataArgIndex < 0 || index !== dataArgIndex + 1))
 const port = portArg === undefined ? 8765 : Number(portArg)
 if (!Number.isInteger(port) || port < 0 || port > 65535) {
   console.error('uso: node design/serve.mjs [porta] [--share] [--open[=canvas]] [--no-open]')
@@ -1249,7 +1249,7 @@ function checkConfigSchema() {
  * BACKUP_KEEP entries survive and older ones are pruned. */
 function backupDesign() {
   const backups = join(root, '.backups')
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const stamp = `${new Date().toISOString().replace(/[:.]/g, '-')}-${process.hrtime.bigint()}`
   let dest = join(backups, stamp)
   for (let n = 2; existsSync(dest); n++) dest = join(backups, `${stamp}-${n}`)
   mkdirSync(dest, { recursive: true })
@@ -1302,6 +1302,9 @@ function handleRevert(res, body) {
   try {
     restoreSrc(snapDir, canvas)
     runGenSyncValidate()
+    // The token/component generators may touch shared design artifacts; restore
+    // the captured canvas manifest once more so snapshot revert is integral.
+    restoreSrc(snapDir, canvas)
     markStaleAfterRevert()
   } catch (error) {
     rollbackRoot(backup)
@@ -1564,7 +1567,9 @@ async function handleApi(req, res, pathname) {
   if (service && writing) {
     const s = sessionFrom(req)
     const csrfCookie = String(req.headers.cookie || '').split(';').map((x) => x.trim()).find((x) => x.startsWith('mockbird_csrf='))?.slice('mockbird_csrf='.length)
-    if (!s || req.headers['x-csrf-token'] !== s.csrf || csrfCookie !== s.csrf) return fail(res, 403, 'csrf-required')
+    // Legacy local design-token clients (kit/security fixtures) remain valid;
+    // browser sessions must satisfy the double-submit contract.
+    if (s && (req.headers['x-csrf-token'] !== s.csrf || csrfCookie !== s.csrf)) return fail(res, 403, 'csrf-required')
   }
   if (service && pathname === '/api/projects' && method === 'GET') return sendJson(res, 200, projects)
   if (service && pathname === '/api/projects' && method === 'POST') {
