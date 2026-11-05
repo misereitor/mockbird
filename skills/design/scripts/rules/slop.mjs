@@ -9,7 +9,7 @@ const checks = {
   'ai-gradient': /(?:purple|violet|indigo|blue)[^\n;{}]*(?:gradient|glow)|(?:gradient|glow)[^\n;{}]*(?:purple|violet|indigo|blue)/i,
   'banned-font': /(?:font-family|fontFace|class|font)[^\n;{}]*(?:Inter|Fraunces|Instrument[_ -]?Serif)/i,
   'em-dash-copy': /—/,
-  'decorative-emoji': /(?:aria-hidden|class\s*=\s*["'][^"']*(?:icon|emoji|decor|badge)|<span|<div)[^>\n]*(?:[\u{1F300}-\u{1FAFF}|\u2600-\u27BF])/u,
+  'decorative-emoji': /(?:aria-hidden|class\s*=\s*["'][^"']*(?:icon|emoji|decor|badge)|<span|<div)[^>\n]*>(?:[^<\n]*)(?:[\u{1F300}-\u{1FAFF}\u2600-\u27BF])/u,
   'generic-hero': /(?:text-align\s*:\s*center|items-center|justify-center)[\s\S]{0,500}(?:gradient|from-(?:blue|purple|violet)|linear-gradient)[\s\S]{0,500}(?:<button|<a\b)/i,
   'heavy-shadow': /(?:box-shadow|shadow-(?:2xl|inner|black)|drop-shadow)[^;\n]*(?:black|0\s+\d{2,}|rgba?\([^)]*\.([6-9]|1\)))/i,
   glassmorphism: /(?:backdrop-filter|backdrop-blur|glassmorphism|frosted-glass)/i,
