@@ -14,8 +14,10 @@
  *     => exit≠0 nomeando a etapa, relatório nunca emitido;
  *   - CLI guiado (argumento/target inválido, target em modo canvas).
  *
- * Alvo: fixtures/visual-orchestrator (design-root mínima, 1 tela) — os runs
- * gravam .visual/ na fixture e o teardown o remove (worktree limpo).
+ * Alvo: fixtures/visual-orchestrator (design-root mínima, 1 tela), copiada
+ * para um alvo temporário POR PROCESSO dentro do repositório (o relatório
+ * exige gitSHA do worktree): execuções concorrentes da suite não partilham
+ * estado .visual e a fixture versionada fica intacta.
  * Pesado: cada run completo executa a matriz de captura (35 PNGs ≈ 30 s).
  *
  * Run: node --test skills/design/scripts/visual-orchestrator.test.mjs
@@ -35,6 +37,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..', '..')
 const ORCH = join(HERE, 'visual-orchestrator.mjs')
 const GATE = join(HERE, 'visual-gate.mjs')
+const CAPTURE = join(HERE, 'visual-capture.mjs')
 const FIXTURE = join(HERE, 'fixtures', 'visual-orchestrator')
 const SCREEN = join(FIXTURE, 'tela', '01-tela.html')
 const REPORT_KEYS = ['gitSHA', 'platform', 'schemaVersion', 'screens', 'summary', 'timestamp']
@@ -45,26 +48,43 @@ function tmpRoot(prefix) {
   tmpRoots.push(dir)
   return dir
 }
+// Alvo de execução por processo: cópia descartável da fixture, como irmã em
+// fixtures/ (gitSHA do relatório resolve ao HEAD do worktree). Nunca a fixture
+// partilhada — runs concorrentes da suite não podem apagar o .visual uma da
+// outra (era a fonte do flake: manifest apontando PNG já removido).
+function fixtureTarget() {
+  const target = mkdtempSync(join(HERE, 'fixtures', '.tmp-orch-'))
+  tmpRoots.push(target)
+  cpSync(FIXTURE, target, {
+    recursive: true,
+    filter: (src) => !src.endsWith(`${sep}.visual`),
+  })
+  return target
+}
+
 process.on('exit', () => {
-  rmSync(join(FIXTURE, '.visual'), { recursive: true, force: true })
   for (const dir of tmpRoots) rmSync(dir, { recursive: true, force: true })
 })
 
-// Estado inicial limpo: um .visual deixado por run anterior nunca alimenta o teste.
-rmSync(join(FIXTURE, '.visual'), { recursive: true, force: true })
-
-function runOrch(args, script = ORCH, target = FIXTURE) {
+function runOrch(args, script = ORCH, target = RUN_TARGET) {
   return spawnSync(process.execPath, [script, '--target', target, ...args], { cwd: ROOT, encoding: 'utf8' })
 }
 
-function readReport() {
-  return JSON.parse(readFileSync(join(FIXTURE, '.visual', 'report.json'), 'utf8'))
+function readReport(target = RUN_TARGET) {
+  return JSON.parse(readFileSync(join(target, '.visual', 'report.json'), 'utf8'))
 }
 
-/** Relatório com timestamp normalizado (o único campo não determinístico). */
+/**
+ * Relatório com campos de ambiente normalizados: timestamp (o único campo não
+ * determinístico do conteúdo) e gitSHA (acompanha HEAD — um commit concorrente
+ * entre execuções não é não-determinismo do relatório).
+ */
 function normalized(report) {
-  return { ...report, timestamp: '<normalized>' }
+  return { ...report, timestamp: '<normalized>', gitSHA: '<normalized>' }
 }
+
+const RUN_TARGET = fixtureTarget() // séries relatório único + determinismo
+const GATE_TARGET = fixtureTarget() // séries --gate (freeze → corrompe → re-freeze)
 
 // ---------- encoder PNG mínimo (RGB/RGBA, linhas filter 0) para corromper baseline ----------
 
@@ -192,16 +212,16 @@ test('relatório único: forma do contrato, 1 entrada por tela, gitSHA/contentHa
   firstRunReport = normalized(report)
 })
 
-test('determinismo: re-execução reproduz o relatório (timestamp normalizado)', () => {
+test('determinismo: re-execução reproduz o relatório (timestamp/gitSHA normalizados)', () => {
   const run = runOrch([])
   assert.equal(run.status, 0, `${run.stdout}${run.stderr}`)
-  assert.deepEqual(normalized(readReport()), firstRunReport, 'relatório reproduzido byte a byte menos o timestamp')
+  assert.deepEqual(normalized(readReport()), firstRunReport, 'relatório reproduzido byte a byte menos timestamp/gitSHA (ambiente)')
 })
 
 // ---------- --gate: delegação ao visual-gate.mjs (todo 12, o dono da semântica) ----------
 
-function freezeBaseline() {
-  const freeze = spawnSync(process.execPath, [GATE, '--update-baseline', '--target', FIXTURE], {
+function freezeBaseline(target) {
+  const freeze = spawnSync(process.execPath, [GATE, '--update-baseline', '--target', target], {
     cwd: ROOT,
     encoding: 'utf8',
   })
@@ -209,14 +229,17 @@ function freezeBaseline() {
 }
 
 test('--gate com diff acima do limiar: exit 1 + summary.gate=fail (decisão delegada)', () => {
-  freezeBaseline()
+  // capturas reais primeiro: o freeze congela as imagens ATUAIS de .visual/tela
+  const capture = spawnSync(process.execPath, [CAPTURE, '--target', GATE_TARGET], { cwd: ROOT, encoding: 'utf8' })
+  assert.equal(capture.status, 0, `${capture.stdout}${capture.stderr}`)
+  freezeBaseline(GATE_TARGET)
   // corrompe 1 PNG da baseline: bloco preto acima do limiar da plataforma
-  const key = join(FIXTURE, '.visual', 'baseline', 'tela', '1440x900__modal.png')
+  const key = join(GATE_TARGET, '.visual', 'baseline', 'tela', '1440x900__modal.png')
   const { width, height, channels } = decodePng(readFileSync(key))
   writeFileSync(key, encodePng(width, height, channels, Buffer.alloc(width * height * channels)))
-  const run = runOrch(['--gate'])
+  const run = runOrch(['--gate'], ORCH, GATE_TARGET)
   assert.equal(run.status, 1, `${run.stdout}${run.stderr}`)
-  const report = readReport()
+  const report = readReport(GATE_TARGET)
   assert.equal(report.summary.gate, 'fail')
   assert.ok(report.screens[0].diff.aboveThreshold >= 1, 'o par corrompido está acima do limiar')
   assert.match(run.stdout, /visual-gate: FALHOU|visual-gate: BLOQUEADO/, 'a saída do gate delegado aparece no stdout')
@@ -227,10 +250,10 @@ test('--gate com diff acima do limiar: exit 1 + summary.gate=fail (decisão dele
 })
 
 test('--gate com baseline íntegra: exit 0 + summary.gate=pass', () => {
-  freezeBaseline() // re-congela por cima da cópia corrompida
-  const run = runOrch(['--gate'])
+  freezeBaseline(GATE_TARGET) // re-congela por cima da cópia corrompida
+  const run = runOrch(['--gate'], ORCH, GATE_TARGET)
   assert.equal(run.status, 0, `${run.stdout}${run.stderr}`)
-  assert.equal(readReport().summary.gate, 'pass')
+  assert.equal(readReport(GATE_TARGET).summary.gate, 'pass')
 })
 
 // ---------- sem verde parcial: etapa ausente nunca vira relatório completo ----------
