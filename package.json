@@ -36,7 +36,7 @@
     "skills:check": "node skills/sync-check.mjs"
     ,"experiment:compare": "node skills/design/scripts/experiment-compare.mjs",
     "done:check": "node skills/design/scripts/done-check.mjs",
-    "llm:offline": "node --test skills/design/scripts/lib/llm/",
+    "llm:offline": "node --test skills/design/scripts/lib/llm/*.test.mjs",
     "secret-scan": "node skills/design/scripts/secret-scan.mjs"
     ,"design:run": "node skills/design/scripts/design-run.mjs",
     "maturity": "node skills/design/scripts/maturity.mjs"
