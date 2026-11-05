@@ -160,6 +160,12 @@ const overlayBox = async () => {
 await page.goto(`${base}/viewer.html?canvas=login`, { waitUntil: 'load' })
 await page.waitForTimeout(1500)
 
+// Sandbox comparison surface: the 3-up viewer consumes sandbox reports when
+// present, while retaining an explicit empty state for projects without one.
+const sandboxSurface = await page.evaluate(() => ({ score: Boolean(document.querySelector('#sandboxScore')), three: Boolean(document.querySelector('#modeThree')) }))
+if (sandboxSurface.score && sandboxSurface.three) ok('sandbox 3-up comparison surface is available')
+else fail('sandbox 3-up comparison surface', JSON.stringify(sandboxSurface))
+
 // 3-up exploration surface: open comparison, switch mode, and verify that
 // the three direction fixture labels are present in the rendered columns.
 await page.click('#snapshotBtn')

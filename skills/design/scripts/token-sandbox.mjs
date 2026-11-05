@@ -61,6 +61,9 @@ const variantBytes = files.filter((p) => p.startsWith(out)).reduce((n, p) => n +
 const delta = baselineBytes === 0 ? 0 : Number(((variantBytes - baselineBytes) / baselineBytes).toFixed(6))
 const report = { schemaVersion: 1, variant, tokensHashBefore: beforeHash, tokensHashAfter: hash(readFileSync(tokenPath)), scoreDelta: delta, comparison: { mode: '3-up', baseline: 'current', variant: out }, generatedAt: new Date().toISOString() }
 writeFileSync(join(out, 'sandbox-report.json'), JSON.stringify(report, null, 2) + '\n')
+const sandboxRoot = join(target, '.visual', 'sandbox')
+const variants = existsSync(sandboxRoot) ? readdirSync(sandboxRoot).filter((name) => statSync(join(sandboxRoot, name)).isDirectory()) : [variant]
+writeFileSync(join(sandboxRoot, 'index.json'), JSON.stringify({ variants }, null, 2) + '\n')
 if (has('--apply')) {
   const category = value('--dec-category'); const decision = value('--dec-decision'); const reason = value('--dec-reason')
   if (!category || !decision || !reason) { console.error('token-sandbox: --apply requires --dec-category, --dec-decision and --dec-reason; no DEC, nothing applied'); process.exit(1) }

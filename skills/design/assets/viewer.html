@@ -776,6 +776,7 @@
     <button id="compareClose" type="button" data-share-hide data-i18n="closeBtn">Close</button>
   </div>
   <p id="compareMsg" role="alert" hidden></p>
+  <p id="sandboxScore" role="status" hidden></p>
   <div id="compareStage">
     <div class="compare-cols" id="compareCols">
       <section class="compare-col" id="compareColA">
@@ -2597,6 +2598,7 @@ function buildCompareSpec(selA, selB, mode, snapshots, canvas) {
     const value = String(sel ?? '')
     if (value.startsWith('screen:')) return { kind: 'screen', label: value.slice('screen:'.length) }
     if (value === '' || value === 'atual') return { kind: 'atual', label: 'atual' }
+    if (value.startsWith('sandbox:')) return { kind: 'sandbox', label: value.slice('sandbox:'.length) }
     const found = list.find((snap) => snap && snap.canvas === canvas && snap.label === value)
     return found ? { kind: 'snapshot', label: found.label, date: found.date } : null
   }
@@ -2617,11 +2619,14 @@ function compareSrc(side, file, canvas, bust) {
   const clean = String(file).split('?')[0]
   return side.kind === 'snapshot'
     ? `snapshots/${canvas}/${side.label}/render/${clean}`
+    : side.kind === 'sandbox'
+      ? `.visual/sandbox/${side.label}/${clean}`
     : `${canvas}/${clean}?_=${bust}`
 }
 
 function compareLabel(side) {
   if (side.kind === 'snapshot') return `${t('snapshotWord')} ${side.label}`
+  if (side.kind === 'sandbox') return `Sandbox ${side.label}`
   if (side.kind === 'screen') return `${t('screenWord')} ${side.label}`
   return t('currentLabel')
 }
@@ -2759,6 +2764,16 @@ async function renderCompareOptions() {
       option.textContent = `${snap.label} — ${snap.date}`
       select.appendChild(option)
     }
+    try {
+      const response = await fetch('.visual/sandbox/index.json', { cache: 'no-store' })
+      if (response.ok) for (const item of (await response.json()).variants ?? []) {
+        const option = document.createElement('option')
+        option.value = `sandbox:${item}`
+        let delta = ''
+        try { const report = await (await fetch(`.visual/sandbox/${item}/sandbox-report.json`)).json(); delta = ` (score delta ${report.scoreDelta})` } catch {}
+        option.textContent = `Sandbox — ${item}${delta}`; select.appendChild(option)
+      }
+    } catch {}
     // w9 comparar telas: telas vivas do canvas também entram como opção A/B
     const screensGroup = document.createElement('optgroup')
     screensGroup.label = t('screensGroupLabel')
@@ -2803,12 +2818,20 @@ function buildCompareSide(side) {
     slot.className = 'compare-slot'
     slot.style.width = `${width}px`
     slot.style.height = `${height}px`
-    const iframe = document.createElement('iframe')
-    iframe.sandbox = 'allow-scripts allow-same-origin allow-forms'
-    iframe.title = `${compareLabel(side)} — ${screen.name}`
-    iframe.src = compareSrc(side, String(screen.file).split('?')[0], state.canvas, state.bust)
-    iframe.addEventListener('load', () => applyThemeToFrame(iframe))
-    slot.appendChild(iframe)
+    if (side.kind === 'sandbox') {
+      const image = document.createElement('img')
+      image.alt = `${compareLabel(side)} — ${screen.name}`
+      image.src = compareSrc(side, `${String(screen.file).split('?')[0]}/1366x768__base.png`, state.canvas, state.bust)
+      image.style.cssText = 'display:block;width:100%;height:100%;object-fit:contain;background:#fff'
+      slot.appendChild(image)
+    } else {
+      const iframe = document.createElement('iframe')
+      iframe.sandbox = 'allow-scripts allow-same-origin allow-forms'
+      iframe.title = `${compareLabel(side)} — ${screen.name}`
+      iframe.src = compareSrc(side, String(screen.file).split('?')[0], state.canvas, state.bust)
+      iframe.addEventListener('load', () => applyThemeToFrame(iframe))
+      slot.appendChild(iframe)
+    }
     frag.appendChild(slot)
   }
   return frag
@@ -2851,6 +2874,14 @@ $('compareStart').addEventListener('click', async () => {
   const mode = $('compareStage').dataset.mode || 'side'
   const spec = buildCompareSpec($('compareA').value, $('compareB').value, mode, snapshots, state.canvas)
   compareSpec = spec.ok ? spec : null
+  const sandboxScore = $('sandboxScore')
+  if (sandboxScore) {
+    sandboxScore.hidden = !spec.ok || !spec.a || (spec.a.kind !== 'sandbox' && spec.b?.kind !== 'sandbox')
+    if (!sandboxScore.hidden) {
+      const label = spec.a.kind === 'sandbox' ? spec.a.label : spec.b.label
+      try { const report = await (await fetch(`.visual/sandbox/${label}/sandbox-report.json`)).json(); sandboxScore.textContent = `Sandbox ${label} — score delta ${report.scoreDelta}` } catch { sandboxScore.textContent = `Sandbox ${label} — score delta unavailable` }
+    }
+  }
   $('compareView').hidden = false
   if (!spec.ok) {
     $('sideA').innerHTML = ''
