@@ -427,6 +427,8 @@
     background: var(--ui-surface); border-left: 1px solid var(--ui-border);
     box-shadow: -12px 0 32px rgb(15 23 42 / .18);
   }
+  #contextPanel { position: fixed; right: 0; top: 0; bottom: 0; width: min(380px, 92vw); z-index: 18; overflow: auto; background: var(--ui-bg); border-left: 1px solid var(--ui-border); box-shadow: -4px 0 18px #0003; }
+  #contextBody { padding: 12px; } #contextBody h3 { margin: 14px 0 4px; } #contextBody ul { margin: 4px 0 8px; padding-left: 20px; }
   #snapshotForm, #historyForm { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--ui-border); }
   #snapshotLabel { flex: 1; }
   #snapshotList, #historyList {
@@ -580,6 +582,7 @@
     <button id="pendingBtn" data-share-hide data-i18n-title="pendingBtnTitle" title="Open the pending comments panel (all canvases)"><span data-i18n="pendingBtn">💬 Pending</span> <span id="pendingBadge">0</span></button>
     <button id="snapshotBtn" data-share-hide data-i18n-title="snapshotBtnTitle" title="Save a snapshot of this canvas (src/ + flat render/) and see the saved snapshots" data-i18n="snapshotBtn">Save snapshot</button>
     <button id="historyBtn" data-share-hide data-i18n-title="historyBtnTitle" title="Restore any recorded version of a file (rescue)" data-i18n="historyBtn">🕘 History</button>
+    <button id="contextBtn" type="button" title="Inspect design context">🧭 Contexto</button>
     <button id="exportBtn" disabled data-i18n="exportScreenBtn">⬇ Screen PNG</button>
     <button id="exportAllBtn" data-i18n="exportCanvasBtn">⬇ Canvas PNG</button>
     <button id="langBtn" data-i18n-title="languageTitle" title="Switch language (reloads the page)">🌐 Português</button>
@@ -841,6 +844,11 @@
     <select id="historyFile" data-share-hide></select>
   </form>
   <div id="historyList" data-share-hide></div>
+</aside>
+
+<aside id="contextPanel" class="context-panel" hidden aria-label="Design context">
+  <div class="pending-top"><strong>Contexto</strong><button id="contextClose" type="button" title="Close panel">×</button></div>
+  <div id="contextBody"></div>
 </aside>
 
 <script>
@@ -1432,6 +1440,43 @@ function applyI18n() {
   if (langBtn) langBtn.textContent = LANG === 'pt' ? '🌐 English' : '🌐 Português'
 }
 
+// Minimal, bundler-free panel registry. Future panels register here and are
+// activated by name; the viewer owns only the lifecycle, not panel markup.
+const viewerPanels = new Map()
+function registerViewerPanel(name, panel) { viewerPanels.set(name, panel) }
+async function activateViewerPanel(name) {
+  const panel = viewerPanels.get(name)
+  if (!panel) return
+  await panel.render({ state, root: $('contextBody'), screen: state.screens.find((s) => s.id === state.selectedId) })
+}
+
+async function readContextJson(path) {
+  const response = await fetch(path, { cache: 'no-store' })
+  if (!response.ok) throw new Error(`${path} (${response.status})`)
+  try { return await response.json() } catch { throw new Error(`${path} invalid JSON`) }
+}
+function contextList(title, values) {
+  const section = document.createElement('section'); const heading = document.createElement('h3'); heading.textContent = title; section.append(heading)
+  if (!values?.length) { const empty = document.createElement('p'); empty.textContent = 'Sem dados disponíveis.'; section.append(empty); return section }
+  const list = document.createElement('ul'); values.forEach((value) => { const li = document.createElement('li'); li.textContent = typeof value === 'string' ? value : JSON.stringify(value); list.append(li) }); section.append(list); return section
+}
+registerViewerPanel('context', { async render({ root, screen }) {
+  root.replaceChildren(); const data = {}
+  const sources = [['brief', 'brief.json'], ['tokens', 'tokens.json'], ['decisions', 'decisions.json'], ['approvals', 'approvals.json'], ['comments', 'comments.json']]
+  for (const [key, path] of sources) { try { data[key] = await readContextJson(path) } catch (error) { data[key] = { __error: error.message } } }
+  const errors = Object.values(data).filter((item) => item?.__error)
+  if (errors.some((item) => item.__error.startsWith('decisions.json'))) { const p = document.createElement('p'); p.setAttribute('role', 'alert'); p.textContent = `Erro: ${errors.find((item) => item.__error.startsWith('decisions.json')).__error}`; root.append(p); return }
+  const brief = data.brief?.__error ? [] : [data.brief?.title || data.brief?.summary || JSON.stringify(data.brief)].filter(Boolean)
+  root.append(contextList('Brief', brief), contextList('Tokens ativos', Object.keys(data.tokens?.tokens || data.tokens || {}).slice(0, 20)))
+  const components = screen?.file ? [...document.querySelectorAll('#strip .card.selected [data-component], #strip .card.selected [data-component-id]')].map((el) => el.dataset.component || el.dataset.componentId) : []
+  root.append(contextList('Componentes usados', [...new Set(components)]))
+  const decisions = data.decisions?.decisions || data.decisions || []; const approval = data.approvals?.approvals?.find((a) => a.screen === `${state.canvas}/${screen?.file}` || a.screen === screen?.file)
+  root.append(contextList('Decisões DEC', (approval?.decIds || decisions.map((d) => d.id)).filter(Boolean)), contextList('Telas de referência', data.brief?.referenceScreens || data.brief?.references || []))
+  const comments = data.comments?.comments || []; root.append(contextList('Reviews pendentes', comments.filter((c) => c.status !== 'resolved' && (c.marker === '🎯' || c.selector || c.canvas)).map((c) => c.text || c.id)))
+  const stale = approval && screen?.file ? approval.contentHash !== 'unknown' && !approval.contentHash ? 'desconhecido' : 'registrado' : 'sem aprovação registrada'
+  root.append(contextList('Staleness', [stale]))
+} })
+
 applyI18n()
 
 $('langBtn').addEventListener('click', () => {
@@ -1451,6 +1496,9 @@ const state = {
   scenario: '', problems: [],
   allComments: [], sweepIndex: -1,
 }
+
+$('contextBtn').addEventListener('click', async () => { $('contextPanel').hidden = false; await activateViewerPanel('context') })
+$('contextClose').addEventListener('click', () => { $('contextPanel').hidden = true })
 
 /* ------------------------------------------ share-mode degradation (w4-20) */
 

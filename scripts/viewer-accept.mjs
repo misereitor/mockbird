@@ -59,6 +59,9 @@ writeFileSync(join(ROOT, 'design', 'comments.json'), JSON.stringify({
     { id: 'p-done1', canvas: 'login', file: '01-login.html', selector: 'body', snippet: 'y', rect: { x: 10, y: 40, width: 20, height: 20 }, status: 'resolved', replies: [{ text: 'resolvido', createdAt: '2026-01-01T00:00:00.000Z' }], createdAt: '2026-01-01T00:00:00.000Z' },
   ],
 }, null, 2))
+writeFileSync(join(ROOT, 'design', 'brief.json'), JSON.stringify({ title: 'Fixture brief', referenceScreens: ['login/02-cadastro.html'] }))
+writeFileSync(join(ROOT, 'design', 'decisions.json'), JSON.stringify({ decisions: [{ id: 'DEC-001', title: 'Use tokens' }] }))
+writeFileSync(join(ROOT, 'design', 'tokens.json'), JSON.stringify({ tokens: { colorPrimary: '#123456', spacingMd: '16px' } }))
 // fixture: approval status surface (todo 27) — aprovado+bate, aprovado+stale
 // (hash errado = regra central visível) e em revisão
 {
@@ -178,6 +181,23 @@ await page.keyboard.press('Escape')
 await page.waitForTimeout(150)
 if (await page.$eval('#clipboard', (el) => el.hidden)) ok('modal de aprovação fecha (Esc)')
 else fail('fechar modal aprovação', 'ainda aberto')
+
+// 1.5 Context inspector: registered panel renders fixture data and malformed
+// decisions fail visibly instead of producing a blank panel.
+await page.click('#contextBtn')
+await page.waitForTimeout(300)
+const contextText = await page.$eval('#contextBody', (el) => el.textContent)
+if (/Fixture brief/.test(contextText) && /DEC-001/.test(contextText) && /Tokens ativos/.test(contextText)) ok('painel Contexto renderiza dados da fixture')
+else fail('painel Contexto', contextText.slice(0, 300))
+writeFileSync(join(ROOT, 'design', 'decisions.json'), '{ invalid json')
+await page.click('#contextClose')
+await page.click('#contextBtn')
+await page.waitForTimeout(250)
+const contextError = await page.$eval('#contextBody', (el) => el.textContent)
+if (/decisions\.json/i.test(contextError) && /erro|invalid/i.test(contextError)) ok('painel Contexto nomeia decisions.json corrompido')
+else fail('erro decisions.json', contextError.slice(0, 300))
+writeFileSync(join(ROOT, 'design', 'decisions.json'), JSON.stringify({ decisions: [{ id: 'DEC-001' }] }))
+await page.click('#contextClose')
 
 // 2. COMMENT screen: Enter saves, Shift+Enter breaks the line (w16)
 await page.click('#commentBtn')

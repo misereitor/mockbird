@@ -322,6 +322,19 @@ nos respectivos todos e não mudam sem o processo da §5.6.
 
 ## 6. Estrutura de diretórios (Core / Skills / Adapters)
 
+### 6.0 Painéis do viewer
+
+O viewer expõe um registro mínimo, sem bundler: `registerViewerPanel(nome,
+painel)` cadastra um módulo e `activateViewerPanel(nome)` ativa o painel pelo
+nome. O módulo recebe `{ state, root, screen }` e é responsável por renderizar
+seu conteúdo; o viewer permanece responsável apenas pelo ciclo de vida e pela
+área de ativação. O painel Contexto usa essa fronteira para ler
+`brief.json`, `tokens.json`, `decisions.json`, `approvals.json` e
+`comments.json`, exibindo estado vazio explícito quando não há dados e erro
+identificando o arquivo quando um JSON é inválido. Painéis futuros (como
+comparação 3-up e previews) devem registrar módulos independentes, sem copiar
+markup ou reescrever o viewer.
+
 Regra de camada (definição exata em `docs/auditoria.json#taxonomy.layerRule` e
 ADR-0002): **Core** = código executável determinístico + dados/contratos;
 **Skills** = instrução escrita à mão; **Adapters** = superfícies de
