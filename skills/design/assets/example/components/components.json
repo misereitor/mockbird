@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 2,
   "button": {
     "name": "button",
     "template": "button.html",
@@ -10,7 +11,13 @@
     },
     "slots": ["label"],
     "realComponent": "Button",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "button",
+    "file": "button.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "primary", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-accent", "color-bg", "dimension-space-2", "typography-body-font-family", "typography-body-font-size"],
+    "docs": { "description": "Botão de ação clicável.", "usage": "Ação principal (primary), secundária, fantasma (ghost) ou destrutiva (danger) de uma tela." }
   },
   "card": {
     "name": "card",
@@ -23,7 +30,13 @@
     },
     "slots": ["title", "body"],
     "realComponent": "Card",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "card",
+    "file": "card.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "default", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size"],
+    "docs": { "description": "Contêiner de conteúdo agrupado.", "usage": "Agrupa título e corpo em um bloco; use elevated para destacar o cartão na hierarquia." }
   },
   "modal": {
     "name": "modal",
@@ -36,7 +49,13 @@
     },
     "slots": ["header", "body", "footer"],
     "realComponent": "Modal",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "modal",
+    "file": "modal.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "default", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size", "typography-heading-font-size", "typography-heading-font-weight"],
+    "docs": { "description": "Diálogo modal sobreposto à tela.", "usage": "Confirmações e formulários curtos; sempre com fechamento explícito (data-close e ESC) e foco inicial no botão de fechar." }
   },
   "drawer": {
     "name": "drawer",
@@ -49,7 +68,13 @@
     },
     "slots": ["header", "body", "footer"],
     "realComponent": "Drawer",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "drawer",
+    "file": "drawer.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "default", "state": "default" } },
+    "tokensUsed": ["color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size", "typography-heading-font-size", "typography-heading-font-weight"],
+    "docs": { "description": "Painel lateral deslizante.", "usage": "Navegação secundária ou formulários laterais; fecha com data-close e ESC como o modal." }
   },
   "field": {
     "name": "field",
@@ -62,7 +87,13 @@
     },
     "slots": ["label", "input", "hint"],
     "realComponent": "Field",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "field",
+    "file": "field.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "default", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-border", "color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size"],
+    "docs": { "description": "Campo de formulário com rótulo, entrada e ajuda.", "usage": "Entrada de dados com estados filled/error/success; hint sempre presente quando há validação." }
   },
   "bubble": {
     "name": "bubble",
@@ -75,7 +106,13 @@
     },
     "slots": ["content", "meta"],
     "realComponent": "Bubble",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "bubble",
+    "file": "bubble.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "in", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size", "typography-body-line-height"],
+    "docs": { "description": "Balão de mensagem de conversa.", "usage": "Mensagens de chat; tone in (recebida) e tone out (enviada)." }
   },
   "menu-row": {
     "name": "menu-row",
@@ -88,7 +125,13 @@
     },
     "slots": ["icon", "label", "shortcut"],
     "realComponent": "MenuRow",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "menu-row",
+    "file": "menu-row.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "default", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size"],
+    "docs": { "description": "Item de menu.", "usage": "Linhas de menu contextual; active marca o item atual e disabled bloqueia a ação." }
   },
   "media-card": {
     "name": "media-card",
@@ -101,7 +144,13 @@
     },
     "slots": ["media", "title", "body", "actions"],
     "realComponent": "MediaCard",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "media-card",
+    "file": "media-card.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "default", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "border-radius-sm", "color-bg", "color-surface", "color-text", "dimension-space-2", "dimension-space-4", "typography-body-font-family", "typography-body-font-size", "typography-heading-font-weight"],
+    "docs": { "description": "Cartão de mídia com capa.", "usage": "Conteúdo com imagem de capa, título, corpo e ações." }
   },
   "toast": {
     "name": "toast",
@@ -114,7 +163,13 @@
     },
     "slots": ["icon", "message", "action"],
     "realComponent": "Toast",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "toast",
+    "file": "toast.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "info", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-border", "color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size", "typography-body-line-height"],
+    "docs": { "description": "Notificação efêmera.", "usage": "Feedback de ações concluídas; anuncia via aria-live (mock-live)." }
   },
   "pill": {
     "name": "pill",
@@ -127,7 +182,13 @@
     },
     "slots": ["label"],
     "realComponent": "Pill",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "pill",
+    "file": "pill.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "neutral", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size"],
+    "docs": { "description": "Rótulo compacto de status.", "usage": "Categorias e status; tons semânticos (neutral/info/success/warning/danger)." }
   },
   "avatar": {
     "name": "avatar",
@@ -140,7 +201,13 @@
     },
     "slots": ["image", "initials"],
     "realComponent": "Avatar",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "avatar",
+    "file": "avatar.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "default", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size"],
+    "docs": { "description": "Avatar de usuário.", "usage": "Imagem ou iniciais do usuário; estados online/offline." }
   },
   "banner": {
     "name": "banner",
@@ -153,7 +220,13 @@
     },
     "slots": ["icon", "message", "action"],
     "realComponent": "Banner",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "banner",
+    "file": "banner.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "info", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-border", "color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size", "typography-body-line-height"],
+    "docs": { "description": "Faixa de aviso persistente.", "usage": "Alertas no topo da tela; tons info/warning/danger/success." }
   },
   "tabs": {
     "name": "tabs",
@@ -166,7 +239,13 @@
     },
     "slots": ["tabs", "panel"],
     "realComponent": "Tabs",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "tabs",
+    "file": "tabs.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "default", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size"],
+    "docs": { "description": "Navegação por abas.", "usage": "Alternância entre painéis relacionados; exatamente uma aba selecionada por vez." }
   },
   "chip": {
     "name": "chip",
@@ -179,6 +258,12 @@
     },
     "slots": ["label", "remove"],
     "realComponent": "Chip",
-    "dataProps": { "data-action": "action" }
+    "dataProps": { "data-action": "action" },
+    "id": "chip",
+    "file": "chip.html",
+    "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+    "props": { "markerArgs": { "size": "md", "tone": "neutral", "state": "default" } },
+    "tokensUsed": ["border-radius-md", "color-surface", "color-text", "dimension-space-2", "typography-body-font-family", "typography-body-font-size"],
+    "docs": { "description": "Ciqueta com remoção opcional.", "usage": "Filtros e seleções múltiplas; selected marca a escolha e disabled bloqueia." }
   }
 }

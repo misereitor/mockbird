@@ -297,10 +297,13 @@ export function runCodegen({ rootDir, configPath, only = null, outDir = null }) 
   const tokensRaw = readRequired(join(resolvedRoot, "tokens.json"), "tokens.json", 2);
   const tokensHash = normalizedSha256(tokensRaw);
 
-  let keys = Object.keys(registry);
+  // Registry metadata keys (catalog extension, todo 22 — e.g. `schemaVersion`)
+  // are NOT component entries and never generate.
+  const RESERVED_KEYS = new Set(["schemaVersion"]);
+  let keys = Object.keys(registry).filter((key) => !RESERVED_KEYS.has(key));
   if (only !== null) {
     for (const wanted of only) {
-      if (!Object.prototype.hasOwnProperty.call(registry, wanted)) {
+      if (RESERVED_KEYS.has(wanted) || !Object.prototype.hasOwnProperty.call(registry, wanted)) {
         throw new CodegenError(2, `--only: unknown component "${wanted}" (not in ${registryPath})`);
       }
     }

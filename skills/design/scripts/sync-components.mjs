@@ -45,8 +45,10 @@
  * Registry schema v2 (one entry per component in components.json):
  *   { name, template, variants: {size, tone, state, device}, slots,
  *     realComponent, dataProps }
- *   - entry keys are EXACTLY name/template/variants/slots/realComponent/
- *     dataProps — an unknown key fails citing the key, a missing one fails
+ *   - entry keys are name/template/variants/slots/realComponent/dataProps
+ *     (required) plus the optional catalog keys id/file/states/props/
+ *     tokensUsed/docs (todo 22) and the file-level `schemaVersion` metadata
+ *     key — any other key fails citing the key, a missing required one fails
  *     citing it too (`name` must equal the registry key; `realComponent` is
  *     the target React component name; `dataProps` maps instance `data-*`
  *     attributes to its props, both consumed by codegen);
@@ -397,6 +399,11 @@ function loadPartial(rootDir, entry, id) {
 // (misleading-success rule: never a generic error).
 // ---------------------------------------------------------------------------
 const SCHEMA_ENTRY_KEYS = ["name", "template", "variants", "slots", "realComponent", "dataProps"];
+// Catalog extension (todo 22): optional per-entry doc fields, tolerated by the
+// schema but never required — the deep validation lives in component-docs.mjs.
+const SCHEMA_OPTIONAL_KEYS = ["id", "file", "states", "props", "tokensUsed", "docs"];
+// File-level metadata keys (catalog extension) that are NOT registry entries.
+const SCHEMA_METADATA_KEYS = new Set(["schemaVersion"]);
 const VALUE_RE = /^[a-zA-Z0-9_-]+$/; // marker-safe variant value (parser's own rule)
 const DATA_PROPS_KEY_RE = /^data-[a-z][a-z0-9-]*$/;
 
@@ -406,14 +413,20 @@ const DATA_PROPS_KEY_RE = /^data-[a-z][a-z0-9-]*$/;
 function registrySchemaErrors(rootDir, registry) {
   const errors = [];
   for (const [key, entry] of Object.entries(registry)) {
+    if (SCHEMA_METADATA_KEYS.has(key)) {
+      if (!Number.isInteger(entry) || entry < 1) {
+        errors.push(`components/components.json: "${key}" must be a positive integer`);
+      }
+      continue;
+    }
     const where = `components/components.json: entry "${key}"`;
     if (!isPlainObject(entry)) {
       errors.push(`${where}: must be an object`);
       continue;
     }
     for (const k of Object.keys(entry)) {
-      if (!SCHEMA_ENTRY_KEYS.includes(k)) {
-        errors.push(`${where}: unknown key "${k}" (allowed: ${SCHEMA_ENTRY_KEYS.join(", ")})`);
+      if (!SCHEMA_ENTRY_KEYS.includes(k) && !SCHEMA_OPTIONAL_KEYS.includes(k)) {
+        errors.push(`${where}: unknown key "${k}" (allowed: ${SCHEMA_ENTRY_KEYS.concat(SCHEMA_OPTIONAL_KEYS).join(", ")})`);
       }
     }
     for (const k of SCHEMA_ENTRY_KEYS) {
@@ -421,6 +434,12 @@ function registrySchemaErrors(rootDir, registry) {
     }
     if (typeof entry.name === "string" && entry.name !== key) {
       errors.push(`${where}: name "${entry.name}" must equal the registry key "${key}"`);
+    }
+    if (typeof entry.id === "string" && entry.id !== key) {
+      errors.push(`${where}: id "${entry.id}" must equal the registry key "${key}"`);
+    }
+    if (typeof entry.file === "string" && typeof entry.template === "string" && entry.file !== entry.template) {
+      errors.push(`${where}: file "${entry.file}" must equal the template "${entry.template}"`);
     }
     // template: non-empty string + parseable slot grammar (the slot check
     // below needs the parsed names).
