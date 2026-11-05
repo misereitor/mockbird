@@ -1,9 +1,18 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { AdapterConfigError, ContractViolationError, validatePayload } from '../../agent-adapters/validate.mjs'
 import { assertBudget, assembleResponse, parseModelText, DESIGN_AGENT_SYSTEM_PROMPT } from '../../agent-adapters/protocol.mjs'
 import { DeterministicStubAdapter } from '../../agent-adapters/stub-deterministic.mjs'
 
 export class LLMError extends Error { constructor(message, options = {}) { super(message); this.name = 'LLMError'; this.provider = options.provider; this.model = options.model; this.cause = options.cause } }
+
+export function maskSecret(value) {
+  const s = String(value ?? '')
+  return s.length <= 4 ? '****' : `${s.slice(0, 2)}…${s.slice(-2)}`
+}
+export function safeLog(message, logger = console.warn) {
+  return logger(String(message).replace(/(sk-|AIza|api[_-]?key[=: ]+)([A-Za-z0-9_-]+)/gi, (_, p, v) => `${p}${maskSecret(v)}`))
+}
 
 export function loadConfig(path = new URL('../../../../../design/llm.config.json', import.meta.url)) {
   return JSON.parse(readFileSync(path, 'utf8'))
@@ -28,7 +37,14 @@ export class NativeLLMConnector {
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch
     this.timeoutMs = options.timeoutMs ?? 30000
     this.config = options.config ?? loadConfig(options.configPath)
+    this.runtime = options.runtime ?? {}
+    this.enabled = this.config?.mockbird?.llm?.enabled !== false && this.config?.enabled !== false
+    this.budgetTokens = options.budgetTokens ?? this.config?.budgets?.perRunTokens
+    this.monthlyBudgetTokens = options.monthlyBudgetTokens ?? this.config?.budgets?.monthlyTokens
+    this.monthlyUsedTokens = options.monthlyUsedTokens ?? 0
     this.providerId = options.provider ?? 'stub'
+    if (!this.enabled) { safeLog('LLM disabled by kill-switch; using deterministic stub', options.logger); this.providerId = 'stub'; this.adapter = new DeterministicStubAdapter(); return }
+    if (this.budgetTokens !== undefined && options.requestBudgetTokens > this.budgetTokens) { safeLog('LLM per-run budget exceeded; using deterministic stub', options.logger); this.providerId = 'stub'; this.adapter = new DeterministicStubAdapter(); return }
     if (this.providerId === 'stub') { this.adapter = new DeterministicStubAdapter(); return }
     this.provider = this.config.providers?.find((p) => p.id === this.providerId)
     if (!this.provider) throw new AdapterConfigError(`provider desconhecido "${this.providerId}"`)
@@ -40,6 +56,8 @@ export class NativeLLMConnector {
   async analyze(r) { const x = await this.review({ schemaVersion: 1, operation: 'review', ...r, screenshotPng: r.screenshotPng ? Buffer.from(r.screenshotPng).toString('base64') : '' }); return { schemaVersion: x.schemaVersion, model: x.model, tokensUsed: x.tokensUsed, issues: x.issues } }
   async #run(operation, request) {
     const req = validatePayload(request, `${operation}-request`)
+    if (this.budgetTokens !== undefined && req.budgetTokens > this.budgetTokens) { safeLog('LLM per-run budget exceeded; using deterministic stub', this.runtime.logger); return new DeterministicStubAdapter()[operation](req) }
+    if (this.monthlyBudgetTokens !== undefined && this.monthlyUsedTokens + req.budgetTokens > this.monthlyBudgetTokens) { safeLog('LLM monthly budget exceeded; using deterministic stub', this.runtime.logger); return new DeterministicStubAdapter()[operation](req) }
     assertBudget(req, this.providerId)
     if (this.adapter) return this.adapter[operation](req)
     const p = this.provider; let last
@@ -52,7 +70,10 @@ export class NativeLLMConnector {
         if (typeof text !== 'string' || !text) throw new ContractViolationError(`provider ${p.id} model ${p.model}: resposta sem conteúdo`)
         const used = Number(data?.usage?.total_tokens ?? data?.usageMetadata?.totalTokenCount ?? Math.ceil(text.length / 4))
         if (used > req.budgetTokens) throw new ContractViolationError(`teto violado: provider ${p.id} model ${p.model} usou ${used}, teto ${req.budgetTokens}`)
-        return assembleResponse(parseModelText(text), { kind: operation, adapterId: p.id, model: p.model, tokensUsed: used })
+        this.monthlyUsedTokens += used
+        const response = assembleResponse(parseModelText(text), { kind: operation, adapterId: p.id, model: p.model, tokensUsed: used })
+        if (this.runtime.costDir) writeCost(this.runtime.costDir, p.id, used, req.budgetTokens)
+        return response
       } catch (err) { last = err.name === 'AbortError' ? new LLMError(`provider ${p.id} model ${p.model}: timeout`, { provider: p.id, model: p.model, cause: err }) : err; if (attempt === 0 && (last instanceof LLMError)) continue; break } finally { clearTimeout(timer) }
     }
     if (this.config.fallback === 'stub' && last instanceof LLMError) return this.adapterFallback(operation, req)
@@ -62,6 +83,13 @@ export class NativeLLMConnector {
   #url() { const p = this.provider; if (p.type === 'openai' || p.type === 'custom') return `${p.baseUrl.replace(/\/+$/, '')}/chat/completions`; if (p.type === 'anthropic') return `${p.baseUrl.replace(/\/+$/, '')}/messages`; return `${p.baseUrl.replace(/\/+$/, '')}/models/${encodeURIComponent(p.model)}:generateContent?key=${encodeURIComponent(this.key)}` }
   #headers() { const p = this.provider; return { 'content-type': 'application/json', ...(p.type === 'anthropic' ? { 'x-api-key': this.key, 'anthropic-version': '2023-06-01' } : p.type === 'google-genai' ? {} : { authorization: `Bearer ${this.key}` }) } }
   #body(req) { const p = this.provider; const prompt = [{ role: 'system', content: DESIGN_AGENT_SYSTEM_PROMPT }, { role: 'user', content: JSON.stringify(req) }]; if (p.type === 'anthropic') return { model: p.model, max_tokens: req.budgetTokens, system: DESIGN_AGENT_SYSTEM_PROMPT, messages: [{ role: 'user', content: JSON.stringify(req) }] }; if (p.type === 'google-genai') return { contents: [{ role: 'user', parts: [{ text: DESIGN_AGENT_SYSTEM_PROMPT }, { text: JSON.stringify(req) }] }], generationConfig: { temperature: 0, maxOutputTokens: req.budgetTokens } }; return { model: p.model, temperature: 0, max_tokens: req.budgetTokens, messages: prompt } }
+}
+
+export function writeCost(dir, provider, usedTokens, estimatedTokens = usedTokens) {
+  mkdirSync(dir, { recursive: true })
+  const cost = { schemaVersion: 1, provider, tokensUsed: usedTokens, tokensEstimated: estimatedTokens, totalTokens: usedTokens, generatedAt: 'deterministic' }
+  writeFileSync(join(dir, 'cost.json'), JSON.stringify(cost, null, 2) + '\n')
+  return cost
 }
 
 export function createLLMConnector(options = {}) { return new NativeLLMConnector(options) }

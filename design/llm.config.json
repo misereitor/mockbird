@@ -1,4 +1,6 @@
 {
+  "mockbird": { "llm": { "enabled": true } },
+  "budgets": { "perRunTokens": 100000, "monthlyTokens": 1000000 },
   "fallback": "stub",
   "providers": [
     { "id": "openai", "type": "openai", "baseUrl": "https://api.openai.com/v1", "model": "gpt-4o-mini", "apiKeyEnv": "OPENAI_API_KEY" },
