@@ -60,6 +60,7 @@
     "spec/overview.json",
     "spec/overview.md",
     "spec/parity.md",
+    "tasks.json",
     "tokens.json",
     "utilities.css"
   ]

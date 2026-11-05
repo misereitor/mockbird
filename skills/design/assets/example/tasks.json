@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    {
+      "id": "entrar",
+      "title": "Entrar com e-mail e senha",
+      "start": "login/01-login.html",
+      "steps": [
+        {
+          "id": "entrar",
+          "click": "[data-component=\"button\"][data-tone=\"primary\"]",
+          "fill": [
+            { "selector": "input[type=email]", "value": "ana@empresa.com.br" },
+            { "selector": "input[type=password]", "value": "senha-forte" }
+          ],
+          "expect": {
+            "url": "dashboard/01-overview.html",
+            "toast": "Bem-vindo",
+            "state": "logado"
+          }
+        }
+      ]
+    },
+    {
+      "id": "criar-conta",
+      "title": "Criar conta de demonstração",
+      "start": "login/02-cadastro.html",
+      "steps": [
+        {
+          "id": "criar-conta",
+          "click": "[data-component=\"button\"][data-tone=\"primary\"]",
+          "fill": [
+            { "selector": "input[type=text]", "value": "Ana Souza" },
+            { "selector": "input[type=email]", "value": "ana@empresa.com.br" },
+            { "selector": "input[placeholder=\"Mínimo de 8 caracteres\"]", "value": "senha-forte" },
+            { "selector": "input[placeholder=\"Repita a senha\"]", "value": "senha-forte" }
+          ],
+          "expect": {
+            "url": "dashboard/01-overview.html",
+            "toast": "Conta criada",
+            "state": "conta-criada"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sair",
+      "title": "Sair: excluir conta de demonstração",
+      "start": "login/03-modal.html",
+      "steps": [
+        {
+          "id": "sair",
+          "click": ".excluir-acao button[data-tone=\"primary\"]",
+          "expect": {
+            "url": "dashboard/01-overview.html",
+            "toast": "Conta excluída",
+            "state": "saiu"
+          }
+        }
+      ]
+    }
+  ]
+}
