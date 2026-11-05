@@ -23,7 +23,7 @@ function slopCategories(output) {
 test('bad-slop cobre as oito categorias documentadas com arquivo e linha', () => {
   const result = run(BAD)
   assert.equal(result.status, 0, result.stdout + result.stderr)
-  const output = result.stdout
+  const output = result.stdout + result.stderr
   const categories = slopCategories(output)
   assert.deepEqual([...categories].sort(), [
     'ai-gradient', 'banned-font', 'decorative-emoji', 'em-dash-copy',
@@ -35,7 +35,7 @@ test('bad-slop cobre as oito categorias documentadas com arquivo e linha', () =>
 test('ok-slop valida sem achados', () => {
   const result = run(OK)
   assert.equal(result.status, 0, result.stdout + result.stderr)
-  assert.doesNotMatch(result.stdout, /WARN slop-/)
+  assert.doesNotMatch(result.stdout + result.stderr, /WARN slop-/)
 })
 
 test('slop.rules false fica silenciosa', () => {
@@ -48,7 +48,7 @@ test('slop.rules false fica silenciosa', () => {
     try {
       const result = run(BAD, configPath)
       assert.equal(result.status, 0, result.stdout + result.stderr)
-      assert.doesNotMatch(result.stdout, /WARN slop-/)
+       assert.doesNotMatch(result.stdout + result.stderr, /WARN slop-/)
     } finally {
       rmSync(configPath, { force: true })
     }
