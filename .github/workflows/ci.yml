@@ -21,17 +21,32 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Unit tests (plugin core)
-        run: node --test plugin/core.test.mjs
+      - name: Install dependencies (playwright-core, sem browsers empacotados)
+        run: npm ci
 
-      - name: Plugin smoke test
-        run: node plugin/smoke.mjs
+      # ADR-0007: playwright-core nao embute navegadores — o runner limpo
+      # precisa do chromium provisionado ANTES dos checks visuais. Falha de
+      # download/dependencia FALHA o job (nunca mascarada com `|| true`).
+      - name: Provision Playwright chromium (ADR-0007)
+        if: matrix.os == 'ubuntu-latest' && matrix.node >= 20
+        run: npx playwright-core install --with-deps chromium
+
+      # ADR-0007: cadeia completa (10 checks, 3 visuais: smoke:screen,
+      # test:ui, visual:gate) somente em celulas com suporte a navegador e
+      # baselines de snapshot validos: ubuntu-latest x node >= 20.
+      - name: npm run ci (checks visuais inclusos — ADR-0007)
+        if: matrix.os == 'ubuntu-latest' && matrix.node >= 20
+        run: npm run ci
+
+      # ADR-0007 — exclusoes EXPLICITAS da matriz (nunca `|| true`):
+      #   - node 18: playwright-core 1.64 exige node >= 20 (CLI aborta);
+      #   - windows-latest: baselines de screenshot congelados no linux com
+      #     fontes de sistema — o diff cross-OS estoura maxDiffPixelRatio 0.02.
+      # Celulas excluidas rodam npm run ci:base (mesma cadeia menos
+      # smoke:screen e test:ui; visual:gate continua).
+      - name: npm run ci:base (celula excluida dos checks de navegador — ADR-0007)
+        if: matrix.os != 'ubuntu-latest' || matrix.node < 20
+        run: npm run ci:base
 
       - name: Install into a fresh folder (skills + licenses)
         run: node install.mjs --dir "${{ runner.temp }}/mockbird-install"
-
-      - name: Validator on the example canvas
-        run: node skills/design/scripts/validate.mjs --config skills/design/assets/validate.config.json skills/design/assets/example
-
-      - name: Security suite (serve.mjs)
-        run: node skills/design/scripts/fixtures/security-suite.mjs
