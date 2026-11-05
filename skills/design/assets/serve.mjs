@@ -119,9 +119,7 @@ import {
 import { homedir, networkInterfaces, tmpdir } from 'node:os'
 import { basename, dirname, extname, join, normalize, relative, resolve, sep } from 'node:path'
 let createUserAdmin, loadUsers, inviteUser, activateUser, saveUsers, verifyUserPassword
-try { ({ createAdmin: createUserAdmin, load: loadUsers, invite: inviteUser, activate: activateUser, save: saveUsers, verifyPassword: verifyUserPassword } = await import('../scripts/users.mjs')) } catch {
-  ({ createAdmin: createUserAdmin, load: loadUsers, invite: inviteUser, activate: activateUser, save: saveUsers, verifyPassword: verifyUserPassword } = await import('./users.mjs'))
-}
+try { ({ createAdmin: createUserAdmin, load: loadUsers, invite: inviteUser, activate: activateUser, save: saveUsers, verifyPassword: verifyUserPassword } = await import('../scripts/users.mjs')) } catch { ({ createAdmin: createUserAdmin, load: loadUsers, invite: inviteUser, activate: activateUser, save: saveUsers, verifyPassword: verifyUserPassword } = await import('./users.mjs').catch(() => ({ createAdmin:()=>{throw new Error('users store unavailable')}, load:()=>({users:[]}), invite:()=>{throw new Error('users store unavailable')}, activate:()=>{throw new Error('users store unavailable')}, save:()=>{}, verifyPassword:()=>false }))) }
 
 const argv = process.argv.slice(2)
 const service = argv.includes('--service')
