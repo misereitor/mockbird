@@ -38,6 +38,7 @@
     "done:check": "node skills/design/scripts/done-check.mjs"
     ,"design:run": "node skills/design/scripts/design-run.mjs",
     "maturity": "node skills/design/scripts/maturity.mjs"
+    ,"compat": "node skills/design/scripts/compat-check.mjs"
     ,"golden:check": "node skills/design/scripts/golden-check.mjs"
   },
   "devDependencies": {
