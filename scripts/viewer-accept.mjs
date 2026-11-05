@@ -40,11 +40,16 @@ for (const item of ['mock.js', 'mock.css', 'vendor', 'scripts', 'validate.mjs', 
   } catch { /* optional file */ }
 }
 // fixture: one open + one RESOLVED comment (resolved ones must stay visible)
-// w19: the THIRD screen drops its device - proves the desktop default (1440x900)
+// w19: the THIRD screen drops BOTH size and device - "no size or device declared"
+// is the contract case that defaults to Desktop 1440x900 (README v1.0.23)
 {
   const manifestPath = join(ROOT, 'design', 'login', 'canvas.json')
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
-  if (manifest.screens[2]) delete manifest.screens[2].device
+  if (manifest.screens[2]) {
+    delete manifest.screens[2].device
+    delete manifest.screens[2].width
+    delete manifest.screens[2].height
+  }
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
 }
 writeFileSync(join(ROOT, 'design', 'comments.json'), JSON.stringify({
@@ -60,19 +65,25 @@ const server = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), '8796
   stdio: ['ignore', 'pipe', 'pipe'],
 })
 // wait for the real startup line (a leftover server holding the port would
-// otherwise turn into a confusing goto timeout later)
+// otherwise turn into a confusing goto timeout later). serve.mjs cede para a
+// proxima porta livre quando a pedida esta ocupada - usar a porta REAL da
+// linha de startup, nunca uma fixa (senao o run fala com a instancia errada
+// e os calls autenticados respondem 403)
 let token = ''
+let port = ''
 await new Promise((resolve, reject) => {
   const timer = setTimeout(() => reject(new Error('serve.mjs nao subiu em 10s (porta ocupada?)')), 10_000)
   server.stdout.on('data', (chunk) => {
-    const m = /TOKEN: ([a-f0-9]+)/.exec(String(chunk))
-    if (m) token = m[1]
-    if (String(chunk).includes('TOKEN:')) {
+    const m = /URL: http:\/\/[\d.]+:(\d+) TOKEN: ([a-f0-9]+)/.exec(String(chunk))
+    if (m) {
+      port = m[1]
+      token = m[2]
       clearTimeout(timer)
       resolve()
     }
   })
 })
+const base = `http://127.0.0.1:${port}`
 
 const browser = await chromium.launch({
   executablePath: existsSync('C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe')
@@ -90,14 +101,33 @@ page.on('console', (message) => {
 })
 
 const shots = join(tmpdir(), 'opencode')
-const fail = (label, detail) => console.log(`FAIL ${label}: ${detail}`)
+const failures = []
+const fail = (label, detail) => {
+  failures.push(`${label}: ${detail}`)
+  console.log(`FAIL ${label}: ${detail}`)
+}
 let pass = 0
 const ok = (label) => {
   pass++
   console.log(`PASS ${label}`)
 }
+// lookup resiliente do overlay do strip: os cards re-renderizam durante o
+// fluxo e um page.$ avulso volta detached/null (TypeError em tbox.x)
+const overlayBox = async () => {
+  for (let i = 0; i < 30; i++) {
+    const box = await page.evaluate(() => {
+      const el = document.querySelector('#strip .card-overlay')
+      if (!el) return null
+      const r = el.getBoundingClientRect()
+      return r.width > 0 ? { x: r.x, y: r.y, width: r.width, height: r.height } : null
+    })
+    if (box) return box
+    await page.waitForTimeout(100)
+  }
+  return null
+}
 
-await page.goto('http://127.0.0.1:8796/viewer.html?canvas=login', { waitUntil: 'load' })
+await page.goto(`${base}/viewer.html?canvas=login`, { waitUntil: 'load' })
 await page.waitForTimeout(1500)
 
 // 1. SELECT
@@ -273,7 +303,7 @@ await page.fill('#sizeHField', '700')
 await page.keyboard.press('Enter')
 await page.waitForTimeout(700)
 const frameW = await page.$eval('.card .card-frame', (el) => el.style.width)
-const manAll = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
+const manAll = await (await fetch(`${base}/login/canvas.json`)).json()
 const allUniform = manAll.screens.every((s) => s.width === 500 && s.height === 700)
 if (frameW === '500px' && allUniform) ok('mudar tudo: um comando alcanca todas as telas (500x700)')
 else fail('aplicar em todas', `frame=${frameW} manifesto=${JSON.stringify(manAll.screens.map((s) => `${s.width}x${s.height}`))}`)
@@ -282,13 +312,13 @@ await page.fill('#sizeWField', '640')
 await page.fill('#sizeHField', '480')
 await page.keyboard.press('Enter')
 await page.waitForTimeout(700)
-const manSel = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
+const manSel = await (await fetch(`${base}/login/canvas.json`)).json()
 if (manSel.screens[0].width === 640 && manSel.screens[1].width === 500) ok('escopo Selecionadas muda so a selecionada')
 else fail('escopo selecionadas', JSON.stringify(manSel.screens.map((s) => `${s.width}x${s.height}`)))
 await page.selectOption('#deviceSelect', 'tablet')
 await page.waitForTimeout(700)
 const framePreset = await page.$eval('.card .card-frame', (el) => el.style.width)
-const manPreset = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
+const manPreset = await (await fetch(`${base}/login/canvas.json`)).json()
 if (framePreset === '834px' && manPreset.screens[0].width === 834 && manPreset.screens[1].width === 500) ok('preset Tablet (834x1112) segue o escopo')
 else fail('preset tablet', `frame=${framePreset} manifesto=${JSON.stringify(manPreset.screens.map((s) => `${s.width}x${s.height}`))}`)
 const seHandle = await page.$('.card.selected .rs-se')
@@ -302,19 +332,18 @@ await page.mouse.move(hbox.x + hbox.width / 2 + 60, hbox.y + hbox.height / 2 + 4
 await page.mouse.up()
 await page.waitForTimeout(700)
 const draggedW = parseInt(await page.$eval('.card .card-frame', (el) => el.style.width), 10)
-const manDrag = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
+const manDrag = await (await fetch(`${base}/login/canvas.json`)).json()
 if (draggedW > beforeDrag && manDrag.screens[0].width === draggedW) ok(`arraste redimensiona ao vivo (${draggedW} px)`)
 else fail('arraste de tamanho', `antes=${beforeDrag} frame=${draggedW} manifesto=${manDrag.screens[0].width}`)
 
 // 6. FLOW mode: double-click + right-click menu inside the screen
-const target = await page.$('#strip .card-overlay')
-const tbox = await target.boundingBox()
-const cx = tbox.x + tbox.width / 2
-const cy = tbox.y + tbox.height / 2
-const under = await page.evaluate(([x, y]) => {
-  const el = document.elementFromPoint(x, y)
-  return el ? `${el.tagName}.${el.className}` : 'null'
-}, [cx, cy])
+const tbox = await overlayBox()
+const under = tbox
+  ? await page.evaluate(([x, y]) => {
+    const el = document.elementFromPoint(x, y)
+    return el ? `${el.tagName}.${el.className}` : 'null'
+  }, [tbox.x + tbox.width / 2, tbox.y + tbox.height / 2])
+  : 'sem overlay no strip'
 console.log(`  [diag] sob o duplo-clique: ${under}`)
 await page.dblclick('#strip .card-overlay')
 await page.waitForTimeout(700)
@@ -333,7 +362,7 @@ if (flowOpen) {
   await page.keyboard.press('Enter')
   await page.waitForTimeout(500)
   const fsW = await page.$eval('#fsFrame', (el) => el.style.width)
-  const manifest3 = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
+  const manifest3 = await (await fetch(`${base}/login/canvas.json`)).json()
   if (fsW === '620px' && manifest3.screens[0].width === 620) ok('modo fluxo: controle unico aplica e persiste')
   else fail('tamanho no fluxo', `frame=${fsW} manifesto=${manifest3.screens[0].width}`)
   await page.click('#fsFrame', { button: 'right', position: { x: 200, y: 300 } })
@@ -356,10 +385,11 @@ if (flowOpen) {
   await page.fill('#elementText', 'comentario dentro do modal')
   await page.click('#elementForm button[type="submit"]')
   await page.waitForTimeout(600)
-  const apiPins = await (await fetch('http://127.0.0.1:8796/api/comments', { headers: { 'X-Design-Token': token } })).json()
+  const apiRes = await fetch(`${base}/api/comments`, { headers: { 'X-Design-Token': token } })
+  const apiPins = await apiRes.json().catch(() => ({}))
   const newest = (apiPins.comments ?? []).at(-1)
   if (newest?.file === '03-modal.html') ok(`comentario no modal pertence ao modal (${newest.file})`)
-  else fail('superficie do comentario', `file=${newest?.file}`)
+  else fail('superficie do comentario', `http=${apiRes.status} file=${newest?.file}`)
   await page.click('#fsInspect')
   await page.waitForTimeout(200)
   const countModalPins = () => page.$$eval('#fsPins .pin', (els) =>
@@ -421,12 +451,12 @@ if (marker === undefined) ok('viewer recarrega a si mesmo quando muda')
 else fail('self-reload', 'a aba continuou com o codigo antigo')
 
 // 8. SHARE mode (--share): degradation must be DECLARED, never silent
-const shareServer = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), '8796', '--share', '--no-open'], {
+const shareServer = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), port, '--share', '--no-open'], {
   cwd: ROOT,
   windowsHide: true,
   stdio: ['ignore', 'pipe', 'pipe'],
 })
-// w20: a porta pedida (8796) esta OCUPADA pela instancia com permissoes -
+// w20: a porta pedida esta OCUPADA pela instancia com permissoes -
 // o --share precisa ceder para a proxima livre e abrir a INSTANCIA certa
 let sharePort = ''
 await new Promise((resolve, reject) => {
@@ -440,8 +470,8 @@ await new Promise((resolve, reject) => {
     }
   })
 })
-if (sharePort && sharePort !== '8796') ok(`porta ocupada cede (${sharePort} no lugar de 8796)`)
-else fail('porta do share', `porta=${sharePort} (esperado != 8796)`)
+if (sharePort && sharePort !== port) ok(`porta ocupada cede (${sharePort} no lugar de ${port})`)
+else fail('porta do share', `porta=${sharePort} (esperado != ${port})`)
 await page.goto(`http://127.0.0.1:${sharePort}/viewer.html?canvas=login`, { waitUntil: 'load' })
 await page.waitForTimeout(1200)
 const bannerVisible = await page.$eval('#shareBanner', (el) => !el.hidden)
@@ -479,7 +509,8 @@ shareServer.kill()
 if (errors.length) fail('erros de pagina', errors.join(' | '))
 else ok('nenhum erro de pagina em todo o fluxo')
 
-console.log(`RESULTADO: ${pass} passos ok`)
+console.log(`RESULTADO: ${pass} passos ok, ${failures.length} falhas`)
+process.exitCode = failures.length ? 1 : 0
 await browser.close()
 server.kill()
 await new Promise((resolve) => setTimeout(resolve, 300))
