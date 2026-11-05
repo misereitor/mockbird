@@ -10,7 +10,8 @@ if(!id){console.error('usage: done-check.mjs --screen <id> [--target <design>]')
 const errors=[]
 const sha=p=>createHash('sha256').update(readFileSync(p)).digest('hex')
 const git=execSync('git rev-parse HEAD',{cwd:root,encoding:'utf8'}).trim()
-const approvals=JSON.parse(readFileSync(join(root,'approvals.json'),'utf8')).approvals||[]
+let approvals=[]
+try { approvals=JSON.parse(readFileSync(join(root,'approvals.json'),'utf8')).approvals||[] } catch { errors.push('approval missing') }
 const approval=approvals.find(a=>a.screen.endsWith(`${id}.html`)||a.screen===id)
 const screen=approval&&join(root,approval.screen)
 if(!approval||!screen||!existsSync(screen)) errors.push('approval missing')
@@ -18,7 +19,7 @@ else if(approval.contentHash!==sha(screen)) errors.push('approval hash divergenc
 const reportPath=join(root,'.visual','report.json')
 let report=null
 if(!existsSync(reportPath)) errors.push('visual report missing')
-else { report=JSON.parse(readFileSync(reportPath,'utf8')); if(report.gitSHA&&report.gitSHA!==git) errors.push('relatório obsoleto'); if((report.issues||[]).some(i=>i.severity==='blocker')) errors.push('critic blocker') }
+else { try { report=JSON.parse(readFileSync(reportPath,'utf8')); if(report.gitSHA&&report.gitSHA!==git) errors.push('relatório obsoleto'); if((report.issues||report.critic?.issues||[]).some(i=>i.severity==='blocker')) errors.push('critic blocker') } catch { errors.push('visual report invalid') } }
 if(!existsSync(join(root,'spec',`${id}.json`))) errors.push('generated spec missing')
 const result={schemaVersion:1,screen:id,done:errors.length===0,gitSHA:git,checklist:{approval:!!approval,report:!!report,spec:existsSync(join(root,'spec',`${id}.json`)),blockers:false},errors}
 const out=join(root,'.visual','done'); mkdirSync(out,{recursive:true}); writeFileSync(join(out,`${id}.json`),JSON.stringify(result,null,2)+'\n')
