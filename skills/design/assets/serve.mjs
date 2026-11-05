@@ -125,6 +125,7 @@ const argv = process.argv.slice(2)
 const service = argv.includes('--service')
 const dataArgIndex = argv.indexOf('--data')
 const dataDir = dataArgIndex >= 0 ? resolve(argv[dataArgIndex + 1] || '') : resolve(process.cwd(), 'data')
+const authzMatrix = { '/api/projects':['viewer','commenter','editor','admin'], '/api/comments':['viewer','commenter','editor','admin'], '/api/snapshots':['viewer','editor','admin'], '/api/snapshot':['editor','admin'], '/api/revert':['editor','admin'], '/api/agent-send':['editor','admin'], '/api/history':['viewer','commenter','editor','admin'], '/api/history/restore':['editor','admin'], '/api/screen-size':['editor','admin'], '/api/admin/users':['admin'] }
 if (service && argv.includes('--create-admin')) { const email=argv[argv.indexOf('--create-admin')+1]; if(!email||email.startsWith('--')) { console.error('uso: --create-admin email'); process.exit(2) } try { console.log(JSON.stringify(createUserAdmin(dataDir,email))); process.exit(0) } catch(e) { console.error(e.message); process.exit(1) } }
 if (argv.includes('--backup')) { const { backup } = await import('../scripts/service-persistence.mjs'); console.log(backup(dataDir)); process.exit(0) }
 if (argv.includes('--restore')) { const ri=argv.indexOf('--restore'); const { restore } = await import('../scripts/service-persistence.mjs'); restore(dataDir, resolve(argv[ri+1])); console.log('restore ok'); process.exit(0) }
@@ -1585,6 +1586,7 @@ async function handleApi(req, res, pathname) {
     // browser sessions must satisfy the double-submit contract.
     if (s && (req.headers['x-csrf-token'] !== s.csrf || csrfCookie !== s.csrf)) return fail(res, 403, 'csrf-required')
   }
+  if (service && authzMatrix[pathname]) { const s=sessionFrom(req); const role=s?.role || (share ? 'viewer' : null); const permitted=authzMatrix[pathname]?.includes(role) && (method==='GET'||role==='admin'||(role==='commenter'&&pathname==='/api/comments')||(role==='editor')); if(!permitted) return fail(res,403,'role-forbidden') }
   if (service && pathname === '/api/projects' && method === 'GET') return sendJson(res, 200, projects)
   if (service && pathname === '/api/projects' && method === 'POST') {
     const body = await readBody(req)
