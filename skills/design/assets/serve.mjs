@@ -1105,6 +1105,14 @@ function restoreSrc(snapDir, canvas) {
     mkdirSync(dirname(to), { recursive: true })
     cpSync(from, to, { recursive: true })
   }
+  // The manifest is the authoritative canvas state. Generators may normalize
+  // it during the pipeline, so restore it last and byte-for-byte as captured.
+  const capturedManifest = join(srcDir, 'canvas.json')
+  if (existsSync(capturedManifest)) {
+    const liveManifest = join(root, canvas, 'canvas.json')
+    mkdirSync(dirname(liveManifest), { recursive: true })
+    writeFileSync(liveManifest, readFileSync(capturedManifest))
+  }
 }
 
 /** Post-restore pipeline (ALWAYS): gen-tokens -> sync-components -> validate,
@@ -1306,6 +1314,11 @@ function handleRevert(res, body) {
     // the captured canvas manifest once more so snapshot revert is integral.
     restoreSrc(snapDir, canvas)
     markStaleAfterRevert()
+    // Stale marking is allowed to rewrite shared files; keep the restored
+    // canvas manifest authoritative after the complete revert transaction.
+    restoreSrc(snapDir, canvas)
+    const finalManifest = join(snapDir, 'src', 'canvas.json')
+    if (existsSync(finalManifest)) writeFileSync(join(root, canvas, 'canvas.json'), readFileSync(finalManifest))
   } catch (error) {
     rollbackRoot(backup)
     if (error instanceof ApiError) throw error
