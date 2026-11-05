@@ -92,6 +92,39 @@ test('happy: add → list grava DEC-001 com reason, exit 0', () => {
   assert.match(saved.decisions[0].createdAt, /^\d{4}-\d{2}-\d{2}$/)
 })
 
+test('outcome: grava resultado e exporta lição com outcome', () => {
+  const file = freshStore()
+  assert.equal(run(addArgs(file, { category: 'layout', decision: 'Login claro', reason: 'Teste de aprovação', screens: 'login/01-login.html' })).status, 0)
+  const outcome = run(['outcome', 'DEC-001', '--file', file, '--value', 'funcionou', '--note', 'Aprovado e medido'])
+  assert.equal(outcome.status, 0, outcome.stdout + outcome.stderr)
+  const saved = JSON.parse(readFileSync(file, 'utf8'))
+  assert.deepEqual(saved.decisions[0].outcome, { result: 'funcionou', note: 'Aprovado e medido' })
+  const lessons = join(tmpRoot('lessons-'), 'lessons.json')
+  assert.equal(run(['export', '--file', file, '--out', lessons]).status, 0)
+  assert.deepEqual(JSON.parse(readFileSync(lessons, 'utf8')).decisions[0].outcome, saved.decisions[0].outcome)
+})
+
+test('outcome inexistente e value inválido são rejeitados com código apropriado', () => {
+  const file = freshStore()
+  assert.equal(run(addArgs(file, { category: 'x', decision: 'y', reason: 'z' })).status, 0)
+  assert.notEqual(run(['outcome', 'DEC-999', '--file', file, '--value', 'funcionou', '--note', 'x']).status, 0)
+  assert.equal(run(['outcome', 'DEC-001', '--file', file, '--value', 'talvez', '--note', 'x']).status, 2)
+})
+
+test('export/import prefixa DEC-id e import duplicado avisa sem duplicar', () => {
+  const source = freshStore()
+  assert.equal(run(addArgs(source, { category: 'x', decision: 'y', reason: 'z' })).status, 0)
+  const lessons = join(tmpRoot('lessons-'), 'lessons.json')
+  assert.equal(run(['export', '--file', source, '--out', lessons]).status, 0)
+  const target = freshStore()
+  const imported = run(['import', '--file', target, '--source', lessons, '--origin', 'origem'])
+  assert.equal(imported.status, 0, imported.stdout + imported.stderr)
+  const duplicate = run(['import', '--file', target, '--source', lessons, '--origin', 'origem'])
+  assert.equal(duplicate.status, 0)
+  assert.match(duplicate.stderr, /duplicate/)
+  assert.equal(JSON.parse(readFileSync(target, 'utf8')).decisions.length, 1)
+})
+
 test('failure: add sem reason → exit != 0 nomeando o campo reason', () => {
   const file = freshStore()
   const r = run(addArgs(file, { category: 'layout', decision: 'Tabela densa' }))

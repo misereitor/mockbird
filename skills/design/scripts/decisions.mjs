@@ -20,6 +20,7 @@
  *   query  <screen|DEC-id|text>           decisions matching the term
  *   impact <DEC-id|screen>                screens affected + decisions that
  *                                         govern them (both directions)
+ *   outcome <DEC-id> --value funcionou|nao-funcionou --note <text>
  *   delete/remove ...                     ALWAYS rejected — supersede instead
  *   --file <path>  register path (default: design/decisions.json)
  *
@@ -34,7 +35,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const usage = 'usage: node decisions.mjs <add|list|query|impact|export|import> [args] [--file <path>]'
+const usage = 'usage: node decisions.mjs <add|list|query|impact|outcome|export|import> [args] [--file <path>]'
 const SHAPE = '{schemaVersion, decisions: [{id: "DEC-001", category, decision, reason, status, scope, screens: [], createdAt, supersedes}]}'
 
 function fatal(message) {
@@ -77,13 +78,14 @@ function isPlainObject(value) {
 // ---------------------------------------------------------------------------
 // CLI contract (mirrors validate-brief.mjs: unknown flags/extra args = exit 2).
 // ---------------------------------------------------------------------------
-const COMMANDS = new Set(['add', 'list', 'query', 'impact', 'export', 'import'])
+const COMMANDS = new Set(['add', 'list', 'query', 'impact', 'outcome', 'export', 'import'])
 const DELETE_COMMANDS = new Set(['delete', 'remove', 'rm'])
 const COMMAND_FLAGS = {
   add: new Set(['--file', '--category', '--decision', '--reason', '--scope', '--screens', '--supersedes']),
   list: new Set(['--file', '--status']),
   query: new Set(['--file']),
   impact: new Set(['--file']),
+  outcome: new Set(['--file', '--value', '--note']),
   export: new Set(['--file', '--out', '--product-type', '--audience']),
   import: new Set(['--file', '--source', '--origin']),
 }
@@ -113,7 +115,7 @@ for (let i = 1; i < argv.length; i++) {
     positional.push(token)
   }
 }
-const expectedPositionals = command === 'query' || command === 'impact' ? 1 : 0
+const expectedPositionals = command === 'query' || command === 'impact' || command === 'outcome' ? 1 : 0
 if (positional.length !== expectedPositionals) {
   fatal(`${command} expects ${expectedPositionals} positional arg(s), got ${positional.length} — ${usage}`)
 }
@@ -424,11 +426,39 @@ function cmdExport() {
   process.exit(0)
 }
 
+function cmdOutcome() {
+  const [id] = positional
+  const value = flags['--value']
+  const note = flags['--note']
+  if (!/^(?:[A-Za-z][A-Za-z0-9_-]*-)?DEC-\d{3,}$/i.test(id)) fatal(`outcome: expected a DEC-id, got ${render(id)} — ${usage}`)
+  if (value !== 'funcionou' && value !== 'nao-funcionou') fatal(`--value: expected funcionou or nao-funcionou, got ${render(value)} — ${usage}`)
+  if (note === undefined || note.trim() === '') fatal('--note requires a non-empty value — outcome notes explain the measured result')
+  const store = loadStore(storePath, fileLabel)
+  checkStore(store)
+  if (issues.length > 0) printIssuesAndExit()
+  const entry = store.decisions.find((decision) => decision.id.toLowerCase() === id.toLowerCase())
+  if (!entry) {
+    fail('outcome', 'error', 'id', `decision ${render(id)} does not exist in ${fileLabel}`)
+    printIssuesAndExit()
+  }
+  entry.outcome = { result: value === 'nao-funcionou' ? 'não funcionou' : 'funcionou', note: note.trim() }
+  checkStore(store)
+  if (issues.length > 0) printIssuesAndExit()
+  writeFileSync(storePath, JSON.stringify(store, null, 2) + '\n', 'utf8')
+  console.log(`outcome recorded for ${escapeOut(entry.id)}: ${escapeOut(entry.outcome.result)}`)
+  process.exit(0)
+}
+
 function cmdImport() {
   const source = flags['--source']; const origin = flags['--origin']
   if (!source || !origin) fatal('import requires --source <lessons.json> --origin <prefix>')
   if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(origin)) fatal('--origin must be a safe prefix')
-  const incoming = JSON.parse(readFileSync(resolve(process.cwd(), source), 'utf8'))
+  let incoming
+  try {
+    incoming = JSON.parse(readFileSync(resolve(process.cwd(), source), 'utf8'))
+  } catch (error) {
+    fatal(`import: invalid lessons JSON — ${escapeOut(String(error?.message ?? error))}`)
+  }
   if (!isPlainObject(incoming) || incoming.schemaVersion !== 1 || !Array.isArray(incoming.decisions)) fatal('lessons file is invalid: expected schemaVersion 1 and decisions')
   const store = existsSync(storePath) ? loadStore(storePath, fileLabel) : { schemaVersion: 1, decisions: [] }
   checkStore(store); if (issues.length > 0) printIssuesAndExit()
@@ -549,5 +579,6 @@ if (command === 'add') cmdAdd()
 else if (command === 'list') cmdList()
 else if (command === 'query') cmdQuery()
 else if (command === 'impact') cmdImpact()
+else if (command === 'outcome') cmdOutcome()
 else if (command === 'export') cmdExport()
 else cmdImport()
