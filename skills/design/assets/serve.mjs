@@ -113,16 +113,24 @@ import {
   rmSync,
   statSync,
   writeFileSync,
+  renameSync,
 } from 'node:fs'
 import { homedir, networkInterfaces, tmpdir } from 'node:os'
 import { basename, dirname, extname, join, normalize, relative, resolve, sep } from 'node:path'
 
 const argv = process.argv.slice(2)
+const service = argv.includes('--service')
+const dataArgIndex = argv.indexOf('--data')
+const dataDir = dataArgIndex >= 0 ? resolve(argv[dataArgIndex + 1] || '') : resolve(process.cwd(), 'data')
+if (service && (!argv[dataArgIndex + 1] || argv[dataArgIndex + 1].startsWith('--'))) {
+  console.error('uso: node serve.mjs --service --data <dir> [porta]')
+  process.exit(2)
+}
 const share = argv.includes('--share')
 const noOpen = argv.includes('--no-open')
 const openArg = argv.find((arg) => arg === '--open' || arg.startsWith('--open='))
 const openCanvas = openArg?.startsWith('--open=') ? openArg.slice('--open='.length) : ''
-const portArg = argv.find((arg) => !arg.startsWith('--'))
+const portArg = argv.find((arg, index) => !arg.startsWith('--') && index !== dataArgIndex + 1)
 const port = portArg === undefined ? 8765 : Number(portArg)
 if (!Number.isInteger(port) || port < 0 || port > 65535) {
   console.error('uso: node design/serve.mjs [porta] [--share] [--open[=canvas]] [--no-open]')
@@ -136,6 +144,19 @@ if (openCanvas && !/^[a-zA-Z0-9_-]+$/.test(openCanvas)) {
 const bindHost = share ? '0.0.0.0' : '127.0.0.1'
 const root = resolve(process.cwd(), 'design')
 const token = randomBytes(16).toString('hex')
+const sessionToken = randomBytes(32).toString('hex')
+const projectsFile = join(dataDir, 'projects.json')
+function loadProjects() {
+  mkdirSync(dataDir, { recursive: true })
+  try { const value = JSON.parse(readFileSync(projectsFile, 'utf8')); return Array.isArray(value.projects) ? value : { projects: [] } } catch { return { projects: [] } }
+}
+let projects = service ? loadProjects() : { projects: [] }
+function saveProjects() {
+  mkdirSync(dataDir, { recursive: true })
+  const temp = `${projectsFile}.${process.pid}.tmp`
+  writeFileSync(temp, JSON.stringify(projects, null, 2) + '\n')
+  renameSync(temp, projectsFile)
+}
 
 const MAX_BODY = 256 * 1024
 const SAFE_ID = /^[a-z0-9-]+$/
@@ -293,6 +314,13 @@ function apiGuard(req) {
   const given = req.headers['x-design-token']
   if (typeof given !== 'string' || given !== token) return { code: 403, error: 'forbidden' }
   return null
+}
+
+function serviceSession(req) {
+  const header = req.headers['x-session-token']
+  const cookies = String(req.headers.cookie || '').split(';').map((x) => x.trim())
+  const cookie = cookies.find((x) => x.startsWith('mockbird_session='))?.slice('mockbird_session='.length)
+  return (typeof header === 'string' && header === sessionToken) || cookie === sessionToken
 }
 
 // ---------- rate limit (todo 35) ----------
@@ -1492,10 +1520,22 @@ async function handleApi(req, res, pathname) {
     res.setHeader('retry-after', String(retryAfter))
     return fail(res, 429, 'rate-limited')
   }
-  const guard = apiGuard(req)
+  const guard = service && (pathname === '/api/projects') ? null : apiGuard(req)
   if (guard) return fail(res, guard.code, guard.error)
 
   const method = req.method ?? 'GET'
+  const writing = method === 'POST' || method === 'PUT' || method === 'DELETE'
+  if (service && writing && !serviceSession(req)) return fail(res, 401, 'session-required')
+  if (service && pathname === '/api/projects' && method === 'GET') return sendJson(res, 200, projects)
+  if (service && pathname === '/api/projects' && method === 'POST') {
+    const body = await readBody(req)
+    if (body.error || !body.text) return fail(res, 400, 'invalid')
+    let parsed; try { parsed = JSON.parse(body.text) } catch { return fail(res, 400, 'invalid') }
+    if (!parsed || typeof parsed.id !== 'string' || !SAFE_ID.test(parsed.id)) return fail(res, 400, 'invalid')
+    if (projects.projects.some((p) => p.id === parsed.id)) return fail(res, 409, 'duplicate')
+    const project = { id: parsed.id, name: typeof parsed.name === 'string' ? parsed.name : parsed.id, createdAt: new Date().toISOString() }
+    projects.projects.push(project); saveProjects(); return sendJson(res, 201, { project })
+  }
   const route =
     pathname === '/api/comments'
       ? 'comments'
@@ -1602,6 +1642,11 @@ const server = createServer(async (req, res) => {
     return res.end('bad request')
   }
   try {
+    if (service && pathname === '/health' && req.method === 'GET') return sendJson(res, 200, { status: 'ok', service: true })
+    if (service && pathname === '/api/session' && req.method === 'POST') {
+      res.setHeader('set-cookie', `mockbird_session=${sessionToken}; HttpOnly; SameSite=Strict; Path=/`)
+      return sendJson(res, 200, { authenticated: true })
+    }
     if (pathname === '/api' || pathname.startsWith('/api/')) {
       return await handleApi(req, res, pathname)
     }
@@ -1793,3 +1838,11 @@ if (shouldOpen) {
   const viewer = `http://127.0.0.1:${servePort}/viewer.html${openCanvas ? `?canvas=${encodeURIComponent(openCanvas)}` : ''}`
   openBrowser(viewer)
 }
+
+function shutdown() {
+  server.close(() => process.exit(0))
+  for (const socket of server.getConnections ? [] : []) socket.destroy()
+  setTimeout(() => process.exit(0), 2000).unref()
+}
+process.once('SIGINT', shutdown)
+process.once('SIGTERM', shutdown)
