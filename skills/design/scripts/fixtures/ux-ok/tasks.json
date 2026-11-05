@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    {
+      "id": "fluxo",
+      "title": "Fluxo completo do painel",
+      "start": "app/01-inicio.html",
+      "steps": [
+        { "id": "aviso", "click": "#avisar", "expect": { "toast": "Tudo certo", "state": "aviso" } },
+        { "id": "salvar", "click": "#salvar", "expect": { "toast": "Alterações salvas", "state": "salvo", "confirmation": true } },
+        { "id": "abrir", "click": "#abrir", "expect": { "overlay": true, "state": "modal-aberto" } },
+        { "id": "fechar", "click": "#fechar", "expect": { "overlay": false, "state": "modal-fechado" } },
+        { "id": "continuar", "click": "#continuar", "expect": { "url": "03-fim", "state": "fim" } }
+      ]
+    }
+  ]
+}

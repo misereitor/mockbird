@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    {
+      "id": "morto",
+      "title": "Botão sem ação",
+      "start": "app/01-morto.html",
+      "steps": [
+        { "id": "clicar", "click": "#morto" }
+      ]
+    }
+  ]
+}

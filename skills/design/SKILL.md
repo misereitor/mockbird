@@ -681,3 +681,45 @@ mechanism is forbidden — everything goes through the one dispatch point.
    screen in a real browser and matches the frozen pixel baseline. In user
    projects the static contract runs through `node design/validate.mjs
    design/<canvas>` (Workflow step 4).
+
+## Simulação de tarefas (usabilidade por fluxo)
+
+Um fluxo não está pronto porque as telas renderizam — ele está pronto quando
+cliques REAIS percorrem as tarefas de usuário e o relatório de usabilidade
+confirma. A regra é uma só: **consulte o relatório de simulação antes de
+declarar fluxo pronto.** `scripts/ux-simulate.mjs` executa cada tarefa
+declarada em `design/tasks.json` com Playwright — cliques verdadeiros no
+vocabulário declarativo do `mock.js` (`data-toast`/`data-close`/`data-go`/
+`data-overlay`/`data-action` + `Mock.registerActions`/`loadActions`), nunca
+simulação — e grava `design/.visual/ux/<tarefa>.json` com os passos executados,
+os estados encontrados/faltantes, as fricções e o timing.
+
+1. **Entrada.** `design/tasks.json` (`{"schemaVersion": 1, "tasks": [...]}`).
+   Cada tarefa tem `id`, `start` (tela inicial do design root) e `steps`; cada
+   passo declara `click` (seletor real — obrigatório) e `expect` opcional com a
+   saída esperada (`url`, `toast`, `overlay`, `text`, `state`, `confirmation`).
+
+2. **Fricções (lista fechada).** Por passo, o relatório reporta:
+   `click-no-action` "botão sem ação" (clique real sem efeito — botão morto ou
+   `data-action` sem handler registrado), `return-no-confirmation` "retorno sem
+   confirmação" (passo de retorno sem toast/estado/texto de confirmação) e
+   `step-no-feedback` "etapa sem feedback" (houve efeito, mas a saída declarada
+   em `expect` não apareceu). Sem `--gate` a fricção é report-only (exit 0);
+   com `--gate` qualquer fricção bloqueia (exit != 0).
+
+3. **Invariante dura.** Um relatório NUNCA conclui com passo não executado:
+   `concluded` só é `true` quando todo passo foi executado, e um passo não
+   executado sempre sai exit != 0 mesmo sem `--gate`.
+
+4. **Uso.** Na raiz do skill (alvo = o design root com `tasks.json`):
+
+   ```
+   node skills/design/scripts/ux-simulate.mjs --target design [--task <id>] [--gate]
+   ```
+
+   Exit codes: `0` relatório gravado; `1` `--gate` com fricção ou passo não
+   executado; `2` erro guiado de entrada (`tasks.json` ausente/malformado,
+   `schemaVersion` não suportado, tarefa desconhecida, tela inicial ausente,
+   seletor malformado); `5` `playwright-core` ausente. Os artefatos em
+   `design/.visual/ux/` são transitórios (evidência de simulação — não se
+   commita).

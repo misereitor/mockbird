@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    {
+      "id": "falta",
+      "title": "Passo com alvo ausente",
+      "start": "app/01-falta.html",
+      "steps": [
+        { "id": "clicar", "click": "#nao-existe" }
+      ]
+    }
+  ]
+}

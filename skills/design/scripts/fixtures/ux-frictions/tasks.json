@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    {
+      "id": "retorno",
+      "title": "Retorno sem confirmação",
+      "start": "app/01-friccionar.html",
+      "steps": [
+        { "id": "voltar", "click": "#voltar", "expect": { "confirmation": true, "state": "retornou" } }
+      ]
+    },
+    {
+      "id": "feedback",
+      "title": "Etapa sem feedback",
+      "start": "app/01-friccionar.html",
+      "steps": [
+        { "id": "aviso", "click": "#aviso", "expect": { "toast": "Esperado", "state": "avisado" } }
+      ]
+    }
+  ]
+}
