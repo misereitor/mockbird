@@ -123,6 +123,8 @@ const argv = process.argv.slice(2)
 const service = argv.includes('--service')
 const dataArgIndex = argv.indexOf('--data')
 const dataDir = dataArgIndex >= 0 ? resolve(argv[dataArgIndex + 1] || '') : resolve(process.cwd(), 'data')
+if (argv.includes('--backup')) { const { backup } = await import('../scripts/service-persistence.mjs'); console.log(backup(dataDir)); process.exit(0) }
+if (argv.includes('--restore')) { const ri=argv.indexOf('--restore'); const { restore } = await import('../scripts/service-persistence.mjs'); restore(dataDir, resolve(argv[ri+1])); console.log('restore ok'); process.exit(0) }
 if (service && (!argv[dataArgIndex + 1] || argv[dataArgIndex + 1].startsWith('--'))) {
   console.error('uso: node serve.mjs --service --data <dir> [porta]')
   process.exit(2)
