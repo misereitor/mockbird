@@ -1,3 +1,10 @@
-import test from 'node:test'; import assert from 'node:assert/strict'; import { execFileSync } from 'node:child_process';
+import test from 'node:test'; import assert from 'node:assert/strict'; import { execFileSync } from 'node:child_process'; import { mkdtempSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs'; import { tmpdir } from 'node:os'; import { join } from 'node:path';
 test('bisect usage is guarded',()=>assert.throws(()=>execFileSync(process.execPath,['skills/design/scripts/visual-bisect.mjs'],{encoding:'utf8'})))
 test('no-regression output includes workspace hash',()=>{const out=execFileSync(process.execPath,['skills/design/scripts/visual-bisect.mjs','--from','HEAD','--to','HEAD','--screen','login'],{encoding:'utf8'}); assert.match(out,/workspaceHash/); assert.match(out,/nenhuma/)})
+test('synthetic three commits names middle regression, DEC, and cleans temp workspace',()=>{
+ const d=mkdtempSync(join(tmpdir(),'bisect-fixture-')); execFileSync('git',['init','-q',d]); execFileSync('git',['-C',d,'config','user.email','test@example.com']); execFileSync('git',['-C',d,'config','user.name','Test']); mkdirSync(join(d,'design'),{recursive:true});
+ const commit=(text)=>{writeFileSync(join(d,'design','login.html'),text); execFileSync('git',['-C',d,'add','.']); execFileSync('git',['-C',d,'commit','-qm',text]); return execFileSync('git',['-C',d,'rev-parse','HEAD'],{encoding:'utf8'}).trim()};
+ const base=commit('baseline'); const middle=commit('regressed'); const final=commit('baseline');
+ mkdirSync(join(d,'design','.visual','evolution'),{recursive:true}); writeFileSync(join(d,'design','.visual','evolution','login.json'),JSON.stringify([{gitSHA:middle,decIds:['DEC-999']}]))
+ const before=execFileSync('git',['-C',d,'status','--porcelain'],{encoding:'utf8'}); const out=execFileSync(process.execPath,[join(process.cwd(),'skills/design/scripts/visual-bisect.mjs'),'--from',base,'--to',final,'--screen','login'],{cwd:d,encoding:'utf8'}); assert.match(out,new RegExp(middle)); assert.match(out,/DEC-999/); assert.equal(execFileSync('git',['-C',d,'status','--porcelain'],{encoding:'utf8'}),before); assert.ok(!existsSync(join(d,'mockbird-bisect-'))); rmSync(d,{recursive:true,force:true});
+})
