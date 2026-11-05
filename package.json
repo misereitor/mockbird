@@ -18,6 +18,7 @@
     "brief:check": "node skills/design/scripts/validate-brief.mjs",
     "qa": "node skills/design/scripts/qa.mjs --config skills/design/assets/validate.config.json --target skills/design/assets/example",
     "score": "node skills/design/scripts/visual-score.mjs --target skills/design/assets/example",
+    "health": "node skills/design/scripts/governance.mjs --target skills/design/assets/example",
     "visual": "node skills/design/scripts/visual-orchestrator.mjs --target skills/design/assets/example",
     "visual:gate": "node skills/design/scripts/visual-gate.mjs --target skills/design/assets/example",
     "security": "node skills/design/scripts/fixtures/security-suite.mjs",

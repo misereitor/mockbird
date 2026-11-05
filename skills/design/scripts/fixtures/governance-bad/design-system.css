@@ -1,0 +1,12 @@
+/* fixture governance-bad: superfície sem o token brand-neon (token órfão). */
+[data-theme="light"] {
+  --color-bg: #f8fafc;
+  --color-text: #0f172a;
+  --space-2: 8px;
+}
+
+[data-theme="dark"] {
+  --color-bg: #f8fafc;
+  --color-text: #0f172a;
+  --space-2: 8px;
+}
