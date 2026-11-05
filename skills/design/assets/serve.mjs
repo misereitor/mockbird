@@ -118,7 +118,7 @@ import {
 } from 'node:fs'
 import { homedir, networkInterfaces, tmpdir } from 'node:os'
 import { basename, dirname, extname, join, normalize, relative, resolve, sep } from 'node:path'
-import { createAdmin as createUserAdmin, load as loadUsers, invite as inviteUser, activate as activateUser, save as saveUsers } from '../scripts/users.mjs'
+import { createAdmin as createUserAdmin, load as loadUsers, invite as inviteUser, activate as activateUser, save as saveUsers, verifyPassword as verifyUserPassword } from '../scripts/users.mjs'
 
 const argv = process.argv.slice(2)
 const service = argv.includes('--service')
@@ -1704,6 +1704,7 @@ const server = createServer(async (req, res) => {
     if (service && pathname === '/api/login' && req.method === 'POST') {
       const body = await readBody(req); let parsed; try { parsed = JSON.parse(body.text || '') } catch { return fail(res, 400, 'invalid') }
       const account=loadUsers(dataDir).users.find(u=>u.email===String(parsed.email||parsed.user||'').toLowerCase()); if(account?.disabled) return fail(res,403,'user-disabled')
+      if (account) { if (!verifyUserPassword(String(parsed.password||''), account.passwordHash)) return fail(res,401,'invalid-credentials'); const id=randomBytes(24).toString('hex'); const now=Date.now(); const csrf=randomBytes(24).toString('hex'); sessions.set(id,{used:now,expires:now+7*86400000,csrf,userId:account.id,role:account.role}); res.setHeader('set-cookie',[`mockbird_session=${signedSession(id)}; HttpOnly; SameSite=Strict; Path=/`,`mockbird_csrf=${csrf}; SameSite=Strict; Path=/`]); return sendJson(res,200,{authenticated:true,csrfToken:csrf,user:{id:account.id,email:account.email,role:account.role}}) }
       const key = `${req.socket.remoteAddress}|${String(parsed.user || parsed.email || '').toLowerCase()}`; const attempt = loginFailures.get(key) || { count: 0, until: 0 }
       if (attempt.until > Date.now()) return fail(res, 429, 'locked')
       if (parsed.password !== 'mockbird-development-password') { attempt.count += 1; if (attempt.count >= 6) attempt.until = Date.now() + 60_000; loginFailures.set(key, attempt); return fail(res, attempt.until ? 429 : 401, attempt.until ? 'locked' : 'invalid-credentials') }
