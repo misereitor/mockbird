@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mockbird://design/design-decisions.schema.json",
+  "title": "Design decisions (design memory)",
+  "description": "Memória de decisões de design do projeto (plano todo 18, GAP-B2). Formato fixado por docs/arquitetura-evolutiva.md §5.3: {schemaVersion, decisions: [{id: \"DEC-001\", category, decision, reason, status, scope, screens: [], createdAt, supersedes}]}. Regras do contrato: (1) decisão sem reason é rejeitada; (2) decisão nunca é apagada — é supercedida: a decisão nova traz supersedes com o id antigo e o status do registro antigo vira \"superseded\"; (3) consulta/impacto é obrigatória antes de criar ou mudar tela, regra registrada em skills/design/SKILL.md junto deste schema (mesmo commit). Consumidores (approvals todo 27, evolution todo 31) fazem join por id/status/supersedes — os nomes destes campos não mudam sem o processo da §5.6. Ferramenta: skills/design/scripts/decisions.mjs (subcomandos add/list/query/impact).",
+  "type": "object",
+  "required": ["schemaVersion", "decisions"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "description": "Versão do formato da memória. Evolução aditiva preserva o número; incompatível sobe (§5.6). Obrigatório: consumidores verificam o campo antes de interpretar."
+    },
+    "decisions": {
+      "type": "array",
+      "description": "Registro append-only de decisões: entradas nunca somem — a entrada antiga permanece com status \"superseded\". Ordenado por id crescente (atribuição sequencial DEC-001, DEC-002, ...).",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "decision", "reason", "status", "scope", "screens", "createdAt", "supersedes"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^DEC-\\d{3,}$",
+            "description": "Identificador estável da decisão (DEC-001, DEC-002, ...). É a chave de join com approvals (decIds) e evolution (decIds) — nunca reutilizado, nunca renomeado."
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Frente da decisão (ex.: \"navegação\", \"dados\", \"tipografia\", \"acessibilidade\")."
+          },
+          "decision": {
+            "type": "string",
+            "minLength": 1,
+            "description": "O que foi decidido, em uma frase executável."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Por que foi decidido. Obrigatório: decisão sem reason é REJEITADA pelo decisions.mjs (§5.3) — sem motivo registrado a decisão não orienta regressões nem evolução."
+          },
+          "status": {
+            "enum": ["active", "superseded"],
+            "description": "active = vigente; superseded = substituída por outra decisão (campo supersedes do sucessor aponta para este id). Nunca deletar: superceder."
+          },
+          "scope": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Onde a decisão vale (ex.: \"global\", \"dashboard.html\", \"fluxo de checkout\")."
+          },
+          "screens": {
+            "type": "array",
+            "description": "Telas que a decisão governa/afeta. Base do impacto: `decisions.mjs impact <DEC-id|tela>` lista as telas afetadas e as decisões que as governam. Pode ser vazio quando a decisão ainda não materializou em tela.",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Data do registro (YYYY-MM-DD). Dia basta para a cronologia de \"qual decisão causou esta mudança?\" e mantém o arquivo determinístico dentro do dia."
+          },
+          "supersedes": {
+            "type": ["string", "null"],
+            "pattern": "^DEC-\\d{3,}$",
+            "description": "Id da decisão substituída por esta (null quando não supercede ninguém). O registro referenciado deve ficar com status \"superseded\" — o decisions.mjs valida esse par e rejeita estado inconsistente."
+          }
+        }
+      }
+    }
+  }
+}

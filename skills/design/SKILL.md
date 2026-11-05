@@ -313,6 +313,32 @@ and re-run until exit 0. A contradiction is resolved by rewriting the brief
 WITH the user — never by picking a side silently. While the flow is active,
 building a screen over a non-validating brief is prohibited.
 
+## Design decisions (design memory)
+
+Every design decision is registered in `design/decisions.json` with a stable
+`DEC-xxx` id — `{schemaVersion, decisions: [{id, category, decision, reason,
+status, scope, screens, createdAt, supersedes}]}` (schema:
+`assets/design-decisions.schema.json`). Two rules are hard: a decision without
+`reason` is rejected, and a decision is NEVER deleted — it is superseded (the
+new record carries `supersedes: "DEC-xxx"` and the old one flips to
+`status: "superseded"`). DEC-ids are the join key with approvals and evolution
+logs: "qual decisão causou esta mudança?" is answered by crossing a screen or a
+DEC-id with the register.
+
+MANDATORY before creating or changing ANY screen — consult the memory first:
+
+    node design/scripts/decisions.mjs impact <screen>     # what governs this screen + blast radius
+    node design/scripts/decisions.mjs query <screen|DEC-id|text>
+    node design/scripts/decisions.mjs add --category <c> --decision <d> --reason <r> [--screens a.html,b.html] [--supersedes DEC-xxx]
+    node design/scripts/decisions.mjs list
+
+`impact` lists the screens a decision affects and the decisions governing them
+(both directions). `add` assigns the next DEC-id; `--supersedes` replaces an
+older decision. All output is escaped — register text is untrusted. Exit 0 =
+recorded/found; nonzero = rejected (missing `reason`, stale supersede state,
+empty result) or usage error. While this flow is active, creating or editing a
+screen without a governing decision in the register is prohibited.
+
 ## Workflow
 
 1. **Design system first.** Read `design/design-system.css` and
@@ -324,7 +350,9 @@ building a screen over a non-validating brief is prohibited.
    platform, what data), ask once; if it is clear, start.
 3. **Build the canvas.** Brief gate first: when the brief flow is active (see
    *Design brief* above), no screen is built before `validate-brief.mjs`
-   exits 0 on the project brief. Read `assets/craft.md` from this skill's folder first
+   exits 0 on the project brief. Design memory gate: before creating or
+   changing any screen, consult `design/decisions.json` and register the
+   governing decision (see *Design decisions* above). Read `assets/craft.md` from this skill's folder first
    (it fuses the sibling craft skills — taste, emil-design-eng, impeccable —
    into rules for canvas screens) and apply it to every screen. Then create
    `canvas.json` and the screens. Rules for every screen:
