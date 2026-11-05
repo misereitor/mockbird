@@ -65,3 +65,16 @@ export class NativeLLMConnector {
 }
 
 export function createLLMConnector(options = {}) { return new NativeLLMConnector(options) }
+
+export const ROUTING_ROLES = Object.freeze(['designer', 'critic-vision', 'reviewer'])
+export function createRoleConnector(role, options = {}) {
+  const config = options.config ?? loadConfig(options.configPath)
+  const route = config.routing?.[role]
+  const candidates = Array.isArray(route) ? route : route ? [route] : []
+  for (const candidate of candidates) {
+    const provider = typeof candidate === 'string' ? candidate : candidate.provider
+    try { return new NativeLLMConnector({ ...options, config, provider }) }
+    catch (error) { if (options.onFallback) options.onFallback({ role, provider, error: error.message }) }
+  }
+  return new NativeLLMConnector({ ...options, config, provider: 'stub' })
+}

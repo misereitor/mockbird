@@ -5,6 +5,7 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync, mkdirSy
 import { join, relative, resolve } from 'node:path'
 import { createDesignAgent } from './agent-adapters/stub-deterministic.mjs'
 import { validatePayload } from './agent-adapters/validate.mjs'
+import { createRoleConnector } from './lib/llm/connector.mjs'
 
 export const ROLES = Object.freeze([
   { role: 'Design Architect', writes: true },
@@ -42,7 +43,7 @@ function safeResult(result) {
   return JSON.parse(JSON.stringify(result, (_, value) => typeof value === 'string' ? cleanText(value) : value))
 }
 
-export async function orchestrate({ target = '.', mode = 'single', agentFactory = createDesignAgent, request = {}, reportPath } = {}) {
+export async function orchestrate({ target = '.', mode = 'single', agentFactory = createDesignAgent, connectorFactory = createRoleConnector, request = {}, reportPath } = {}) {
   const root = resolve(target)
   if (!['single', 'review', 'multi'].includes(mode)) throw new Error(`modo inválido "${mode}"; use single, review ou multi`)
   const selected = mode === 'single' ? [ROLES[0]] : mode === 'review' ? [ROLES[0], ROLES[2]] : [...ROLES]
@@ -59,13 +60,14 @@ export async function orchestrate({ target = '.', mode = 'single', agentFactory 
   }
   const results = []
   for (const descriptor of selected) {
-    const agent = agentFactory({ adapter: 'stub', role: descriptor.role })
+    const role = descriptor.role === 'Design Architect' ? 'designer' : descriptor.role === 'Visual Critic' ? 'critic-vision' : 'reviewer'
+    const agent = request.useConnector ? connectorFactory(role, request.connectorOptions) : agentFactory({ adapter: 'stub', role: descriptor.role })
     const operation = descriptor.writes ? 'generate' : 'review'
     const payload = operation === 'generate'
       ? { schemaVersion: 1, operation, budgetTokens: 1000, brief: request.brief ?? { goal: 'orchestration' }, screens: request.screens ?? [{ screen: 'default' }] }
       : { schemaVersion: 1, operation, budgetTokens: 1000, screen: request.screen ?? 'default', viewport: request.viewport ?? '1920x1080', state: request.state ?? 'default', html: request.html ?? '<html></html>', screenshotPng: request.screenshotPng ?? '' }
     const response = await agent[operation](validatePayload(payload, `${operation}-request`))
-    results.push({ role: descriptor.role, writes: descriptor.writes, operation, response: safeResult(response), selfEvaluation: false })
+    results.push({ role: descriptor.role, writes: descriptor.writes, operation, response: safeResult(response), selfEvaluation: false, connectorRole: role })
     const after = workspaceHash(root)
     if (!descriptor.writes && after !== before) throw new Error('evaluator write detected')
   }
