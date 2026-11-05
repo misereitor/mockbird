@@ -94,6 +94,7 @@ const PACK_THRESHOLDS = join(HERE, '..', '..', '..', 'design', 'visual-threshold
 const REPORT_NAME = 'report.json'
 const SCHEMA_VERSION = 1
 const A11Y_CHECKS = ['rules/a11y.mjs', 'validate.mjs']
+const DIAGNOSTICS = join(HERE, 'diagnostics.mjs')
 // Espelho do SKIP_DIRS do visual-capture.mjs (pastas que nunca hospedam canvas).
 const SKIP_DIRS = new Set(['node_modules', '.history', 'snapshots', 'vendor', 'scripts', 'spec', '.visual'])
 
@@ -277,6 +278,7 @@ function runStep(id, args) {
 // 1. capture — manifest como evidência por tela.
 // ---------------------------------------------------------------------------
 runStep('capture', [CAPTURE, '--target', opts.target])
+runStep('diagnostics', [DIAGNOSTICS, '--target', opts.target])
 const manifestPath = join(targetDir, '.visual', 'manifest.json')
 if (!existsSync(manifestPath)) dieMissing('capture', `manifest não encontrado: ${labelOf('.visual/manifest.json')}`)
 let manifest = null
@@ -571,6 +573,9 @@ for (const screen of screens) {
   const critic = criticByScreen.get(screen.file)
   const score = scoreByScreen.get(screen.file)
   const failures = a11yByScreen.get(screen.file)
+  const id = capture?.tela ?? basename(screen.file, extname(screen.file))
+  const i18nPath = join(targetDir, '.visual', 'i18n-stress', `${id}.json`)
+  const perfPath = join(targetDir, '.visual', 'perf', `${id}.json`)
   if (!capture) dieMissing('capture', `sem evidência de captura para ${screen.file}`)
   if (!diff) dieMissing('diff', `sem comparação para ${screen.file}`)
   if (!critic) dieMissing('critic', `sem relatório para ${screen.file}`)
@@ -602,6 +607,8 @@ for (const screen of screens) {
     critic: { score: critic.score, issues: critic.issues },
     score: { perCriteria: score.perCriteria, overall: score.overall },
     a11y: { checks: A11Y_CHECKS, failures, ok: failures.length === 0 },
+    'i18n-stress': existsSync(i18nPath) ? JSON.parse(readFileSync(i18nPath, 'utf8')) : { overflow: [] },
+    perf: existsSync(perfPath) ? JSON.parse(readFileSync(perfPath, 'utf8')) : { reportOnly: true },
   })
 }
 

@@ -108,6 +108,7 @@ const VIEWPORTS = Object.freeze([
 ])
 
 const STATES = Object.freeze([
+  'long-text',
   'modal',
   'dropdown',
   'form-invalid',
@@ -119,6 +120,7 @@ const STATES = Object.freeze([
 
 /** Canonical state -> declarative scenario aliases (data.json "scenarios"). */
 const STATE_SCENARIO_ALIASES = Object.freeze({
+  'long-text': ['long-text', 'longtext', 'texto-longo'],
   modal: ['modal', 'overlay', 'dialog'],
   dropdown: ['dropdown', 'menu', 'select'],
   'form-invalid': ['form-invalid', 'invalid', 'invalido', 'form-erro'],
@@ -297,6 +299,27 @@ function scenarioForState(state, scenarioKeys) {
     if (hit !== undefined) return hit
   }
   return null
+}
+
+function pseudoLocalize(value) {
+  return String(value).replace(/[A-Za-zÀ-ÿ]+/g, (word) => `［${word.replace(/[aeiou]/gi, (v) => `${v}${v}`)}］`)
+}
+
+async function inspectI18n(page) {
+  return page.evaluate((pseudo) => {
+    const issues = []
+    for (const element of document.querySelectorAll('body *')) {
+      const rect = element.getBoundingClientRect()
+      const style = getComputedStyle(element)
+      const text = element.textContent?.trim() ?? ''
+      if (!text || rect.width === 0 || rect.height === 0) continue
+      if (element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1) {
+        issues.push({ selector: element.id ? `#${element.id}` : element.className ? `.${String(element.className).trim().split(/\s+/)[0]}` : element.tagName.toLowerCase(), reason: 'overflow', text: text.slice(0, 120) })
+      }
+      if (style.whiteSpace === 'nowrap' && element.scrollWidth > rect.width + 1) issues.push({ selector: element.tagName.toLowerCase(), reason: 'nowrap-overflow', text: text.slice(0, 120) })
+    }
+    return { pseudoLocale: pseudo, issues }
+  }, 'de-DE-pseudo')
 }
 
 function scenarioKeysOf(canvasDir) {
