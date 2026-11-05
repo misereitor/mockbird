@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, frontmatter, loadCommands, loadSkills, MIRROR, PACK_ROOT, SEED, syncProject } from './core.mjs'
+import { describe, frontmatter, loadCommands, loadSkills, LOG_FILE, MIRROR, PACK_ROOT, pullPack, SEED, syncProject, verifyStamp } from './core.mjs'
 
 // Independent recomputation of the stamp hash — same documented rule as the
 // stamp itself: `dest\n<sha256>\n` per MIRROR entry, in order, fed to SHA-256.
@@ -233,6 +233,104 @@ test('describe summarizes the sync for the setup log', () => {
   assert.equal(describe(null), 'design/: no design/ folder in this project — nothing to sync')
   assert.equal(describe({ updated: [], added: [] }), 'design/: updated = none; added = none')
   assert.equal(describe({ updated: ['a'], added: ['b', 'c'] }), 'design/: updated = a; added = b, c')
+  assert.match(describe({ updated: [], added: [], warnings: ['integrity: x'] }), /WARNING: integrity: x/)
+})
+
+test('autoUpdate is off by default: update refused with zero git calls (todo 34)', () => {
+  const calls = []
+  const exec = (args) => { calls.push(args); return '' }
+  for (const autoUpdate of [undefined, null, false, '']) {
+    const result = pullPack(autoUpdate, exec)
+    assert.equal(result.ok, false, `must refuse for ${JSON.stringify(autoUpdate)}`)
+    assert.equal(result.applied, null)
+    assert.match(result.message, /refused/)
+    assert.match(result.message, /mockbird\.autoUpdate/)
+  }
+  assert.deepEqual(calls, [], 'autoUpdate=false must perform no git call at all')
+})
+
+test('autoUpdate pinned to a semver tag runs exactly the pinned checkout (todo 34)', () => {
+  const calls = []
+  const exec = (args) => { calls.push(args); return args[0] === 'remote' ? 'origin\n' : '' }
+  const result = pullPack('v1.2.3', exec)
+  assert.equal(result.ok, true)
+  assert.equal(result.applied, 'v1.2.3')
+  assert.deepEqual(calls, [['remote'], ['fetch', '--tags', '--quiet'], ['checkout', '--quiet', 'v1.2.3']])
+  assert.ok(calls.every((args) => !args.includes('pull')), 'a pinned update must never run a floating git pull')
+  // malformed pins are refused exactly like a missing flag
+  calls.length = 0
+  for (const bad of [true, 'latest', '1.2', 'HEAD~1']) {
+    const refused = pullPack(bad, exec)
+    assert.equal(refused.ok, false, `must refuse ${JSON.stringify(bad)}`)
+    assert.equal(refused.applied, null)
+    assert.match(refused.message, /refused/)
+  }
+  assert.deepEqual(calls, [], 'a malformed pin must perform no git call at all')
+})
+
+test('checksum verification detects a tampered MIRROR file and rechecks fresh (todo 34)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mockbird-test-'))
+  try {
+    mkdirSync(join(dir, 'design'))
+    syncProject(dir)
+    assert.equal(verifyStamp(join(dir, 'design')).ok, true)
+    const tampered = join(dir, 'design', 'mock.js')
+    writeFileSync(tampered, '// tampered')
+    let check = verifyStamp(join(dir, 'design'))
+    assert.equal(check.ok, false)
+    assert.deepEqual(check.tampered, ['mock.js'])
+    // stale_state probe: re-checksummed on every call, no cached pass
+    syncProject(dir) // restores the mirror and re-stamps
+    assert.equal(verifyStamp(join(dir, 'design')).ok, true)
+    writeFileSync(tampered, '// tampered again')
+    check = verifyStamp(join(dir, 'design'))
+    assert.equal(check.ok, false)
+    assert.deepEqual(check.tampered, ['mock.js'])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('applied version is recorded in the stamp and read back (todo 34)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mockbird-test-'))
+  try {
+    mkdirSync(join(dir, 'design'))
+    syncProject(dir)
+    const packVersion = JSON.parse(readFileSync(join(PACK_ROOT, 'package.json'), 'utf8')).version
+    const stamp = readStamp(join(dir, 'design'))
+    assert.equal(stamp.version, packVersion, 'applied version recorded')
+    const check = verifyStamp(join(dir, 'design'))
+    assert.equal(check.version, packVersion, 'applied version read back')
+    assert.equal(check.ok, true)
+    assert.equal(stamp.status, 'ok')
+    assert.equal(stamp.integrity.ok, true)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('tampered MIRROR content signals .bak + LOG_FILE warning + inspector status (QA failure probe, todo 34)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mockbird-test-'))
+  try {
+    mkdirSync(join(dir, 'design'))
+    syncProject(dir)
+    const tampered = join(dir, 'design', 'mock.js')
+    writeFileSync(tampered, '// tampered local experiment')
+    writeFileSync(LOG_FILE, '') // silence is not a pass: the warning must fire
+    const summary = syncProject(dir)
+    assert.deepEqual(summary.updated, ['mock.js'])
+    assert.equal(readFileSync(`${tampered}.bak`, 'utf8'), '// tampered local experiment', '.bak keeps the tampered content')
+    assert.ok(summary.warnings.some((w) => w.includes('mock.js')), `warnings must name the file: ${JSON.stringify(summary.warnings)}`)
+    const log = readFileSync(LOG_FILE, 'utf8')
+    assert.match(log, /WARNING/)
+    assert.ok(log.includes('mock.js'), 'the LOG_FILE warning must name the tampered file')
+    assert.match(describe(summary), /WARNING: .*mock\.js/)
+    const stamp = readStamp(join(dir, 'design'))
+    assert.equal(stamp.status, 'warning')
+    assert.deepEqual(stamp.integrity.tampered, ['mock.js'])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
 
 test('loadCommands ships one slash command per skill', () => {

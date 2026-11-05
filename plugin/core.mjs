@@ -13,10 +13,16 @@
  *   - Stamp: every sync writes `design/.mockbird-version` (pack semver +
  *     SHA-256 of the mirrored MIRROR set + date). Diverging local content and
  *     any previous-stamp mismatch (drift) are recorded in the stamp itself.
+ *   - Integrity: every sync verifies the mirrored set against the previous
+ *     stamp (per-file checksums + composite hash) — see `verifyStamp`.
+ *   - Update policy (ADR-0008): the pack only moves to an approved pinned
+ *     semver tag (`mockbird.autoUpdate`); without it every update is refused
+ *     with zero git calls.
  */
 import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import {
+  appendFileSync,
   copyFileSync,
   existsSync,
   mkdirSync,
@@ -36,8 +42,18 @@ const DESIGN_SCRIPTS = join(SKILLS_DIR, "design", "scripts")
 /** Diagnostics: plugin console.log output is swallowed by OpenCode's log. */
 export const LOG_FILE = join(tmpdir(), "mockbird-plugin.log")
 
-/** Minimum interval between two `git pull` runs (ms). */
+/** Minimum interval between two pack update runs (ms). */
 export const PULL_INTERVAL_MS = 10 * 60 * 1000
+
+/**
+ * Config key gating every pack update (ADR-0008): the `autoUpdate` option of
+ * the `mockbird` plugin (`ctx.options`), named `mockbird.autoUpdate` in the
+ * config docs. Its value must be the pinned semver tag the checkout moves to.
+ */
+export const AUTO_UPDATE_KEY = "mockbird.autoUpdate"
+
+/** Pinned tag accepted as `mockbird.autoUpdate` (e.g. "v1.1.0" or "1.1.0"). */
+const SEMVER_TAG = /^v?\d+\.\d+\.\d+$/
 
 /**
  * Spawn options for external processes. `windowsHide: true` (CREATE_NO_WINDOW)
@@ -145,28 +161,49 @@ export function loadCommands() {
   return out.sort((a, b) => a.name.localeCompare(b.name))
 }
 
-export function hasRemote() {
+/**
+ * Runs `git <args>` inside the pack checkout and returns trimmed stdout.
+ * Injected in tests to record the git calls (acceptance: zero git calls while
+ * `mockbird.autoUpdate` is off).
+ */
+const runGit = (args, timeout = 10_000) =>
+  execFileSync("git", ["-C", PACK_ROOT, ...args], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    ...HIDDEN,
+    timeout,
+  }).trim()
+
+export function hasRemote(exec = runGit) {
   try {
-    return execFileSync("git", ["-C", PACK_ROOT, "remote"], { encoding: "utf8", ...HIDDEN, timeout: 10_000 }).trim().length > 0
+    return exec(["remote"]).length > 0
   } catch {
     return false
   }
 }
 
-/** Non-fatal `git pull --ff-only`: offline or conflicts keep the local version. */
-export function pullPack() {
-  if (!hasRemote()) return "git pull: no remote configured — using the local version"
+/**
+ * Opt-in, pinned pack update (ADR-0008). `mockbird.autoUpdate` must carry a
+ * pinned semver tag (`vX.Y.Z`/`X.Y.Z`): absent/false → refused with ZERO git
+ * calls; malformed values are refused the same way. When pinned, the update
+ * fetches tags and checks out exactly the pin — never a floating pull.
+ * Non-fatal: offline or conflicts keep the local version.
+ */
+export function pullPack(autoUpdate, exec = runGit) {
+  const pin = typeof autoUpdate === "string" ? autoUpdate.trim() : ""
+  const set = autoUpdate !== undefined && autoUpdate !== null && autoUpdate !== false && autoUpdate !== ""
+  if (!set || !SEMVER_TAG.test(pin)) {
+    const got = set ? JSON.stringify(autoUpdate) : "not set"
+    return { ok: false, applied: null, message: `update refused: ${AUTO_UPDATE_KEY}=${got} — updates only move to a pinned semver tag (vX.Y.Z); see docs/adr/ADR-0008-atualizacao-plugin.md` }
+  }
+  if (!hasRemote(exec)) return { ok: false, applied: null, message: "update: no remote configured — using the local version" }
   try {
-    execFileSync("git", ["-C", PACK_ROOT, "pull", "--ff-only", "--no-edit", "--quiet"], {
-      encoding: "utf8",
-      timeout: 60_000,
-      stdio: ["ignore", "pipe", "pipe"],
-      ...HIDDEN,
-    })
-    return "git pull: pack updated"
+    exec(["fetch", "--tags", "--quiet"], 60_000)
+    exec(["checkout", "--quiet", pin], 60_000)
+    return { ok: true, applied: pin, message: `update: pack pinned at ${pin}` }
   } catch (error) {
     const reason = (error.stderr || error.message || "unknown error").trim().split("\n")[0]
-    return `git pull failed (keeping the local version): ${reason}`
+    return { ok: false, applied: null, message: `update failed (keeping the local version): ${reason}` }
   }
 }
 
@@ -209,6 +246,39 @@ function readStamp(designDir) {
   }
 }
 
+/** Best-effort warning line in the plugin log — silence is not a pass. */
+function logWarning(message) {
+  const line = `[mockbird] ${new Date().toISOString()} WARNING ${message}`
+  try {
+    appendFileSync(LOG_FILE, line + "\n")
+  } catch { /* diagnostics are best-effort */ }
+}
+
+/**
+ * Integrity check of `design/.mockbird-version` for the inspector (todo 21):
+ * per-file SHA-256 of the mirrored set vs the recorded `files` checksums,
+ * plus the composite `mirrorHash` vs the record. Names tampered files (checksum
+ * mismatch) and deletions; `recordMismatch` flags an edited/stale record. A
+ * project without a stamp verifies vacuously (`version: null`).
+ */
+export function verifyStamp(designDir) {
+  const previous = readStamp(designDir)
+  const result = { version: previous?.version ?? null, ok: true, tampered: [], missing: [], recordMismatch: false }
+  if (!previous) return result
+  result.recordMismatch = hashFileSet(mirroredEntries(designDir)).mirrorHash !== previous.mirrorHash
+  for (const [dest, recorded] of Object.entries(previous.files ?? {})) {
+    const file = join(designDir, dest)
+    if (!existsSync(file)) {
+      result.missing.push(dest)
+      continue
+    }
+    const hex = createHash("sha256").update(readFileSync(file)).digest("hex")
+    if (hex !== recorded) result.tampered.push(dest)
+  }
+  result.ok = result.tampered.length === 0 && result.missing.length === 0 && !result.recordMismatch
+  return result
+}
+
 /** Compares the previous stamp against the mirrored set and the current kit. */
 function stampDrift(designDir, previous) {
   const mirrored = hashFileSet(mirroredEntries(designDir))
@@ -229,11 +299,12 @@ function stampDrift(designDir, previous) {
 export function syncProject(projectDir) {
   const designDir = join(projectDir, "design")
   if (!existsSync(designDir)) return null
-  const summary = { updated: [], added: [] }
+  const summary = { updated: [], added: [], warnings: [] }
   // Verify the previous stamp BEFORE the mirror loop restores anything, so
-  // hand edits and deletions are still visible in the drift record.
+  // hand edits, tampering and deletions are still visible in the records.
   const previous = readStamp(designDir)
   const drift = previous ? stampDrift(designDir, previous) : null
+  const integrity = verifyStamp(designDir)
   for (const [dest, src] of MIRROR) {
     if (!existsSync(src)) continue
     const target = join(designDir, dest)
@@ -257,8 +328,16 @@ export function syncProject(projectDir) {
     copyFileSync(src, target)
     summary.added.push(dest)
   }
+  // Divergence and integrity warnings: each .bak (above) and each checksum
+  // mismatch gets a LOG_FILE line — silence is never a pass (todo 34).
+  if (integrity.recordMismatch) summary.warnings.push(`integrity: ${STAMP_FILE} checksum does not match the mirrored set (edited or stale record)`)
+  for (const dest of integrity.tampered) summary.warnings.push(`integrity: design/${dest} does not match the checksum recorded in ${STAMP_FILE}`)
+  for (const dest of integrity.missing) summary.warnings.push(`integrity: design/${dest} was deleted since the last stamp — restored from the pack`)
+  for (const dest of summary.updated) summary.warnings.push(`divergence: design/${dest} updated to the pack version — local content kept as ${dest}.bak`)
+  for (const warning of summary.warnings) logWarning(warning)
   // Version stamp: which kit version + mirrored content created this design/.
-  // Divergences (each file also got its .bak) and drift are recorded here.
+  // Divergences (each file also got its .bak), drift and the verification
+  // result are recorded here — the inspector (todo 21) reads `status`.
   const stamped = hashFileSet(mirroredEntries(designDir))
   const version = JSON.parse(readFileSync(join(PACK_ROOT, "package.json"), "utf8")).version
   const stamp = {
@@ -266,6 +345,8 @@ export function syncProject(projectDir) {
     mirrorHash: stamped.mirrorHash,
     date: new Date().toISOString(),
     files: stamped.files,
+    status: summary.warnings.length > 0 ? "warning" : "ok",
+    integrity: { ok: integrity.ok, tampered: integrity.tampered, missing: integrity.missing, recordMismatch: integrity.recordMismatch },
   }
   if (summary.updated.length > 0) stamp.divergent = [...summary.updated]
   if (drift) stamp.drift = drift
@@ -277,5 +358,6 @@ export function describe(summary) {
   if (!summary) return "design/: no design/ folder in this project — nothing to sync"
   const updated = summary.updated.join(", ") || "none"
   const added = summary.added.join(", ") || "none"
-  return `design/: updated = ${updated}; added = ${added}`
+  const base = `design/: updated = ${updated}; added = ${added}`
+  return summary.warnings?.length ? `${base}; WARNING: ${summary.warnings.join(" | ")}` : base
 }

@@ -3,7 +3,8 @@
  *
  * On `setup()` (runs every time OpenCode opens a project) it:
  *
- *   1. updates this checkout with `git pull --ff-only` (throttled);
+ *   1. updates this checkout only when `mockbird.autoUpdate` pins a semver tag
+ *      (opt-in, throttled; every update is refused without the pin — ADR-0008);
  *   2. registers the skills straight from the repo via `ctx.skill.transform`
  *      — single source of truth, no copies in ~/.config/opencode/skill,
  *      ~/.agents/skills etc.;
@@ -35,6 +36,7 @@ export {
   loadSkills,
   pullPack,
   syncProject,
+  verifyStamp,
 } from "./core.mjs"
 
 interface PackSkill {
@@ -69,16 +71,22 @@ export default Plugin.define({
         log(`ERROR in ${phase}: ${(error as Error)?.message ?? error}`)
       }
     }
-    const interval = Number(ctx.options?.updateIntervalMs ?? PULL_INTERVAL_MS)
+    // config `mockbird.autoUpdate` = the `autoUpdate` option of the `mockbird`
+    // plugin (PluginOptions is a flat record); absent/off refuses every update.
+    const options = (ctx.options ?? {}) as Record<string, unknown>
+    const autoUpdate = options.autoUpdate
+    const interval = Number(options.updateIntervalMs ?? PULL_INTERVAL_MS)
     const projectDir = ctx.location.project?.directory ?? ctx.location.directory
     log(`setup: projectDir=${projectDir} location=${ctx.location.directory}`)
 
-    // 1. auto-update (throttled so every project start stays light)
+    // 1. auto-update (throttled so every project start stays light). Opt-in
+    //    and pinned (ADR-0008): without `mockbird.autoUpdate` = <semver tag>
+    //    pullPack refuses and performs zero git calls.
     await guard("auto-update", async () => {
       const lastPull = Number((await ctx.storage.get("lastPull")) ?? 0)
       if (!Number.isFinite(interval) || Date.now() - lastPull >= interval) {
         await ctx.storage.set("lastPull", Date.now())
-        log(pullPack())
+        log(pullPack(autoUpdate).message)
       }
     })
 
@@ -130,9 +138,9 @@ export default Plugin.define({
         }
         editor.add({
           name: "design-sync",
-          description: "Update Mockbird (git pull), reload the skills and mirror this project's design/ folder",
+          description: "Update Mockbird to the mockbird.autoUpdate pin (refused without a pinned version), reload the skills and mirror this project's design/ folder",
           execute: async ({ sessionID }) => {
-            const lines = [pullPack()]
+            const lines = [pullPack(autoUpdate).message]
             source.skills = loadSkills()
             source.commands = loadCommands()
             await ctx.skill.reload()
