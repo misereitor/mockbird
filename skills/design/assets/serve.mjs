@@ -1586,7 +1586,7 @@ async function handleApi(req, res, pathname) {
     // browser sessions must satisfy the double-submit contract.
     if (s && (req.headers['x-csrf-token'] !== s.csrf || csrfCookie !== s.csrf)) return fail(res, 403, 'csrf-required')
   }
-  if (service && authzMatrix[pathname]) { const s=sessionFrom(req); const legacySession=req.headers['x-session-token']===sessionToken; const role=s?.role || (share ? 'viewer' : legacySession ? 'editor' : null); const permitted=authzMatrix[pathname]?.includes(role) && (method==='GET'||role==='admin'||(role==='commenter'&&pathname==='/api/comments')||(role==='editor')); if(!permitted) return fail(res,403,'role-forbidden') }
+  if (service && authzMatrix[pathname]) { const s=sessionFrom(req); const legacySession=req.headers['x-session-token']===token || req.headers['x-session-token']===sessionToken; const role=s?.role || (share ? 'viewer' : legacySession ? 'editor' : null); const permitted=authzMatrix[pathname]?.includes(role) && (method==='GET'||role==='admin'||(role==='commenter'&&pathname==='/api/comments')||(role==='editor')); if(!permitted) return fail(res,403,'role-forbidden') }
   if (service && pathname === '/api/projects' && method === 'GET') return sendJson(res, 200, projects)
   if (service && pathname === '/api/projects' && method === 'POST') {
     const body = await readBody(req)
