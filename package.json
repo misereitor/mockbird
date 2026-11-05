@@ -22,6 +22,7 @@
     "visual": "node skills/design/scripts/visual-orchestrator.mjs --target skills/design/assets/example",
     "visual:gate": "node skills/design/scripts/visual-gate.mjs --target skills/design/assets/example",
     "contract-test": "node skills/design/scripts/contract-test.mjs --target skills/design/assets/example",
+    "interaction-audit": "node skills/design/scripts/interaction-map.mjs --target skills/design/assets/example --gate",
     "security": "node skills/design/scripts/fixtures/security-suite.mjs",
     "check:i18n": "node scripts/i18n-check.mjs",
     "test:mock": "node scripts/mock-check.mjs",
