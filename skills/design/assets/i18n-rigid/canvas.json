@@ -1,0 +1,4 @@
+{
+  "title": "I18n rigid overflow fixture",
+  "screens": [{ "id": "rigid", "name": "Rigid", "file": "01-rigid.html", "device": "mobile", "width": 390, "height": 844 }]
+}
