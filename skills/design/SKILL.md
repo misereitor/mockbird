@@ -9,6 +9,8 @@ description: Design screen mockups, UI prototypes, wireframes and landing pages 
 Regenerar as especificações, catálogo, fluxos Mermaid, tokens W3C e regras de
 interação diretamente dos artefatos reais com `npm run docs:design`. A saída é
 determinística; timestamps de auditorias não fazem parte dos documentos.
+Antes de declarar uma tela pronta, execute `npm run done:check -- --screen <id>`;
+o comando exige aprovação por hash, relatório visual atual, spec gerada e zero blockers.
 
 ## Exploração comparável (três direções)
 Quando o brief pedir exploração, gere exatamente três pastas em

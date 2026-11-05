@@ -34,7 +34,8 @@
     "critic:calibrate": "node skills/design/scripts/critic-calibrate.mjs",
     "docs:design": "node skills/design/scripts/export-spec.mjs --canvas skills/design/assets/example --out design/docs-geradas",
     "skills:check": "node skills/sync-check.mjs"
-    ,"experiment:compare": "node skills/design/scripts/experiment-compare.mjs"
+    ,"experiment:compare": "node skills/design/scripts/experiment-compare.mjs",
+    "done:check": "node skills/design/scripts/done-check.mjs"
   },
   "devDependencies": {
     "playwright-core": "1.64.1"

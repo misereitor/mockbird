@@ -1,0 +1,3 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'; import { tmpdir } from 'node:os'; import { join } from 'node:path'; import { execFile } from 'node:child_process';
+const run=(target,screen)=>new Promise(r=>execFile(process.execPath,['skills/design/scripts/done-check.mjs','--target',target,'--screen',screen],(error,stdout)=>r({error,stdout})))
+test('missing approval is not done',async()=>{const d=await mkdtemp(join(tmpdir(),'done-')); await mkdir(join(d,'.visual'),{recursive:true}); const x=await run(d,'login'); assert.notEqual(x.error,null); assert.match(x.stdout,/approval missing/)})
