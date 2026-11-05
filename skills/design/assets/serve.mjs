@@ -1711,6 +1711,8 @@ const server = createServer(async (req, res) => {
       res.setHeader('set-cookie', [`mockbird_session=${signedSession(id)}; HttpOnly; SameSite=Strict; Path=/`, `mockbird_csrf=${csrf}; SameSite=Strict; Path=/`]); return sendJson(res, 200, { authenticated: true, csrfToken: csrf })
     }
     if (service && pathname === '/api/admin/users' && req.method === 'GET') return sendJson(res, 200, loadUsers(dataDir).users.map(({passwordHash,inviteTokenHash,...u})=>u))
+    if (service && pathname === '/api/admin/role' && req.method === 'POST') { const body=await readBody(req); const p=JSON.parse(body.text||'{}'); const d=loadUsers(dataDir); const u=d.users.find(x=>x.id===p.id); if(!u||!['admin','editor','commenter','viewer'].includes(p.role)) return fail(res,400,'invalid-role'); u.role=p.role; saveUsers(dataDir,d); return sendJson(res,200,{user:u}) }
+    if (service && pathname === '/admin' && req.method === 'GET') { res.setHeader('content-type','text/html; charset=utf-8'); return res.end('<!doctype html><title>Mockbird Admin</title><main><h1>Users</h1><p>Use /api/admin/users to list, /api/admin/invite to invite, /api/admin/role to change role, and /api/admin/disable to disable.</p></main>') }
     if (service && pathname === '/api/admin/invite' && req.method === 'POST') { const body=await readBody(req); const p=JSON.parse(body.text||'{}'); return sendJson(res,201,{token:inviteUser(dataDir,p.email,p.role||'viewer')}) }
     if (service && pathname === '/api/admin/activate' && req.method === 'POST') { const body=await readBody(req); const p=JSON.parse(body.text||'{}'); return sendJson(res,200,{user:activateUser(dataDir,p.token,p.password)}) }
     if (service && pathname === '/api/session' && req.method === 'POST') {
