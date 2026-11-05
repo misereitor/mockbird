@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "audit": "auditoria-tecnica-mockbird",
-  "gitSHA": "fff38a8b9c0bfe8840c0228e01c0c2b890356c85",
-  "generatedAt": "2026-11-05T23:09:27.288Z",
+  "gitSHA": "361e77f3a16de6c1a3b26d9db23e4c86bae58504",
+  "generatedAt": "2026-11-05T23:15:44.271Z",
   "roots": [
     "plugin",
     "scripts",
@@ -37,8 +37,8 @@
     "classRule": "existe = capacidade implementada e coerente com o código; parcial = existe mas escopo/validação/fiação incompletos (nota diz o quê); refatorar = existe mas contém contradição, drift ou caminho inválido que exige reescrita; construir = capacidade inexistente citada pelo arquivo (reservado a placeholders; capacidades a construir estão no documento narrativo)."
   },
   "totals": {
-    "filesInFind": 754,
-    "fileEntries": 300,
+    "filesInFind": 753,
+    "fileEntries": 299,
     "fixtureGroupEntries": 33,
     "fixtureMembers": 428,
     "exclusions": 16
@@ -2834,7 +2834,7 @@
       "evidence": [
         {
           "ref": "skills/design/assets/example/explorations/01/pilot.html:1",
-          "text": "<!doctype html><meta charset=\"utf-8\"><title>Editorial direction</title><style>body{background:#f5efe3;color:#28231f;font:16px sans-serif;padding:48px}h1{font:64px Georgia;max-width:600px}p{max-width:460px;line-height:1.7}</style><main><h1>Clareza que permanece.</h1><p>Uma tela piloto editorial, leve e intencional, derivada do brief.</p></main>"
+          "text": "<!doctype html><meta charset=\"utf-8\"><title>Editorial direction</title><style>body{background:var(--color-bg);color:var(--color-text);font:16px sans-serif;padding:48px}h1{font:64px Georgia;max-width:600px}p{max-width:460px;line-height:1.7}</style><main><h1>Clareza que permanece.</h1><p>Uma tela piloto editorial, leve e intencional, derivada do brief.</p></main>"
         }
       ],
       "note": "adicionado na atualização incremental da auditoria",
@@ -2862,7 +2862,7 @@
       "evidence": [
         {
           "ref": "skills/design/assets/example/explorations/02/pilot.html:1",
-          "text": "<!doctype html><meta charset=\"utf-8\"><title>Modular direction</title><style>body{background:#101827;color:#d9f9ff;font:15px monospace;padding:28px}h1{font:48px sans-serif;max-width:500px}p{max-width:420px;line-height:1.5}</style><main><h1>Signal over noise.</h1><p>Uma tela piloto modular, densa e orientada a sistema.</p></main>"
+          "text": "<!doctype html><meta charset=\"utf-8\"><title>Modular direction</title><style>body{background:var(--color-bg);color:var(--color-text);font:15px monospace;padding:28px}h1{font:48px sans-serif;max-width:500px}p{max-width:420px;line-height:1.5}</style><main><h1>Signal over noise.</h1><p>Uma tela piloto modular, densa e orientada a sistema.</p></main>"
         }
       ],
       "note": "adicionado na atualização incremental da auditoria",
@@ -2890,7 +2890,7 @@
       "evidence": [
         {
           "ref": "skills/design/assets/example/explorations/03/pilot.html:1",
-          "text": "<!doctype html><meta charset=\"utf-8\"><title>Expressive direction</title><style>body{background:#edf2ff;color:#172554;font:17px Arial;padding:36px}h1{font:56px Georgia;max-width:560px}p{max-width:440px;line-height:1.6}</style><main><h1>Design with momentum.</h1><p>Uma tela piloto expressiva, equilibrada e orientada a ação.</p></main>"
+          "text": "<!doctype html><meta charset=\"utf-8\"><title>Expressive direction</title><style>body{background:var(--color-bg);color:var(--color-text);font:17px Arial;padding:36px}h1{font:56px Georgia;max-width:560px}p{max-width:440px;line-height:1.6}</style><main><h1>Design with momentum.</h1><p>Uma tela piloto expressiva, equilibrada e orientada a ação.</p></main>"
         }
       ],
       "note": "adicionado na atualização incremental da auditoria",
@@ -2909,20 +2909,6 @@
       ],
       "note": "adicionado na atualização incremental da auditoria",
       "lines": 63
-    },
-    {
-      "path": "skills/design/assets/example/tokens.w3c.json",
-      "layer": "Core",
-      "subsystem": 8,
-      "class": "existe",
-      "evidence": [
-        {
-          "ref": "skills/design/assets/example/tokens.w3c.json:1",
-          "text": "{"
-        }
-      ],
-      "note": "adicionado na atualização incremental da auditoria",
-      "lines": 462
     },
     {
       "path": "skills/design/assets/i18n-rigid/01-rigid.html",

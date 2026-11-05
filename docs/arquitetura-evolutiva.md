@@ -13,7 +13,7 @@ regressão: ambos devem permanecer verdes.
 > verdade para *o que existe*, *o que será construído* e *sob quais regras*.
 >
 > - **Base auditada (o que existe):** `docs/auditoria.json` + `docs/auditoria-tecnica.md`
->   (todo 1), no gitSHA auditado `fff38a8b9c0bfe8840c0228e01c0c2b890356c85`
+>   (todo 1), no gitSHA auditado `361e77f3a16de6c1a3b26d9db23e4c86bae58504`
 >   (`docs/auditoria.json#gitSHA`).
 > - **Base planejada (o que será construído):** plano `mockbird-evolution`
 >   (linhas IS/GAP do escopo, todos 1-62, ondas 0-10, verificadores finais

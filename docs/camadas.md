@@ -3,7 +3,7 @@
 > Todo 3 do plano `mockbird-evolution`. Fonte primária: `docs/auditoria.json`
 > (classificação por arquivo/grupo feita no todo 1; narrativa em
 > `docs/auditoria-tecnica.md`). **gitSHA auditado:**
-> `fff38a8b9c0bfe8840c0228e01c0c2b890356c85` — este mapa não reclassifica
+> `361e77f3a16de6c1a3b26d9db23e4c86bae58504` — este mapa não reclassifica
 > nada: camada e subsistema de cada arquivo saem do audit; o que o mapa faz é
 > agregar por diretório, fixar o **dono único por capacidade** e registrar as
 > fronteiras decididas. Verificação mecânica: `node docs/camadas.check.mjs`
