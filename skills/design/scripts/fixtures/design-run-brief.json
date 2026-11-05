@@ -1,0 +1,1 @@
+{"schemaVersion":1,"audience":"test users","goal":"complete a task","visualDirection":"clear","constraints":["offline"],"tone":"calm","platform":"web","must":["accessible"],"mustNot":["opaque"]}
