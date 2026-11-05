@@ -120,7 +120,7 @@ import { homedir, networkInterfaces, tmpdir } from 'node:os'
 import { basename, dirname, extname, join, normalize, relative, resolve, sep } from 'node:path'
 let createUserAdmin, loadUsers, inviteUser, activateUser, saveUsers, verifyUserPassword
 try { ({ createAdmin: createUserAdmin, load: loadUsers, invite: inviteUser, activate: activateUser, save: saveUsers, verifyPassword: verifyUserPassword } = await import('../scripts/users.mjs')) } catch {
-  ({ createAdmin: createUserAdmin, load: loadUsers, invite: inviteUser, activate: activateUser, save: saveUsers, verifyPassword: verifyUserPassword } = await import('./scripts/users.mjs'))
+  ({ createAdmin: createUserAdmin, load: loadUsers, invite: inviteUser, activate: activateUser, save: saveUsers, verifyPassword: verifyUserPassword } = await import('./users.mjs'))
 }
 
 const argv = process.argv.slice(2)

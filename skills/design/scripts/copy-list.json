@@ -14,7 +14,7 @@
     { "from": "assets/validate.config.json", "to": "validate.config.json" },
     { "from": "scripts/gen-tokens.mjs", "to": "scripts/gen-tokens.mjs" },
     { "from": "scripts/export-tokens.mjs", "to": "scripts/export-tokens.mjs" },
-    { "from": "scripts/users.mjs", "to": "scripts/users.mjs" },
+    { "from": "assets/users.mjs", "to": "users.mjs" },
     { "from": "scripts/service-persistence.mjs", "to": "scripts/service-persistence.mjs" },
     { "from": "scripts/sync-components.mjs", "to": "scripts/sync-components.mjs" },
     { "from": "scripts/codegen.mjs", "to": "scripts/codegen.mjs" },
