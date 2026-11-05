@@ -28,14 +28,16 @@
     "test:mock": "node scripts/mock-check.mjs",
     "test:ui": "node scripts/viewer-accept.mjs",
     "bench:dry": "node benchmarks/run.mjs --dry-run",
-    "ci": "npm run skills:check && npm run compat && npm run golden:check && npm test && npm run test:mock && npm run smoke:plugin && npm run smoke:screen && npm run test:ui && npm run visual:gate && npm run validate && npm run qa && npm run security && npm run check:i18n",
+    "ci": "npm run skills:check && npm run compat && npm run golden:check && npm run llm:offline && npm run secret-scan && npm test && npm run test:mock && npm run smoke:plugin && npm run smoke:screen && npm run test:ui && npm run visual:gate && npm run validate && npm run qa && npm run security && npm run check:i18n",
     "ci:base": "npm test && npm run test:mock && npm run smoke:plugin && npm run visual:gate && npm run validate && npm run qa && npm run security && npm run check:i18n",
     "parity": "node skills/design/scripts/parity.mjs",
     "critic:calibrate": "node skills/design/scripts/critic-calibrate.mjs",
     "docs:design": "node skills/design/scripts/export-spec.mjs --canvas skills/design/assets/example --out design/docs-geradas",
     "skills:check": "node skills/sync-check.mjs"
     ,"experiment:compare": "node skills/design/scripts/experiment-compare.mjs",
-    "done:check": "node skills/design/scripts/done-check.mjs"
+    "done:check": "node skills/design/scripts/done-check.mjs",
+    "llm:offline": "node --test skills/design/scripts/lib/llm/",
+    "secret-scan": "node skills/design/scripts/secret-scan.mjs"
     ,"design:run": "node skills/design/scripts/design-run.mjs",
     "maturity": "node skills/design/scripts/maturity.mjs"
     ,"compat": "node skills/design/scripts/compat-check.mjs"
