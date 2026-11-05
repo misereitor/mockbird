@@ -548,7 +548,7 @@ function handleCommentsPost(body) {
 
   const existing = hasId ? comments.find((pin) => pin && pin.id === body.id) : undefined
   if (existing) {
-    if (body.status !== undefined) { const actor=sessionFrom(req); if (!actor || (actor.role!=='admin' && actor.role!=='editor' && actor.userId!==existing.authorId)) throw new ApiError(403,'comment-permission'); existing.status = body.status }
+    if (body.status !== undefined) { const actor=sessionFrom(req); const legacy= req.headers['x-design-token']===token || req.headers['x-session-token']===token || req.headers['x-session-token']===sessionToken; if (!actor && !legacy) throw new ApiError(403,'comment-permission'); if (actor && actor.role!=='admin' && actor.role!=='editor' && actor.userId!==existing.authorId) throw new ApiError(403,'comment-permission'); existing.status = body.status }
     if (body.rect !== undefined) existing.rect = body.rect // w17: re-ancora ao redimensionar
     if (body.replies !== undefined) {
       if (!Array.isArray(existing.replies)) existing.replies = []
@@ -1723,6 +1723,7 @@ const server = createServer(async (req, res) => {
     if (service && pathname === '/admin' && req.method === 'GET') { res.setHeader('content-type','text/html; charset=utf-8'); return res.end('<!doctype html><title>Mockbird Admin</title><main><h1>Users</h1><p>Use /api/admin/users to list, /api/admin/invite to invite, /api/admin/role to change role, and /api/admin/disable to disable.</p></main>') }
     if (service && pathname === '/api/admin/invite' && req.method === 'POST') { const body=await readBody(req); const p=JSON.parse(body.text||'{}'); return sendJson(res,201,{token:inviteUser(dataDir,p.email,p.role||'viewer')}) }
     if (service && pathname === '/api/admin/activate' && req.method === 'POST') { const body=await readBody(req); const p=JSON.parse(body.text||'{}'); return sendJson(res,200,{user:activateUser(dataDir,p.token,p.password)}) }
+    if (service && pathname === '/api/activity' && req.method === 'GET') { const { activityForScreen } = await import('../scripts/activity-history.mjs').catch(()=>({activityForScreen:()=>[]})); const screen=new URL(req.url,'http://localhost').searchParams.get('screen')||''; return sendJson(res,200,{screen,activity:activityForScreen(root,screen)}) }
     if (service && pathname === '/api/session' && req.method === 'POST') {
       res.setHeader('set-cookie', `mockbird_session=${sessionToken}; HttpOnly; SameSite=Strict; Path=/`)
       return sendJson(res, 200, { authenticated: true })
