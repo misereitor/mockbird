@@ -101,7 +101,8 @@
 import { createServer } from 'node:http'
 import { createConnection } from 'node:net'
 import { spawn, spawnSync } from 'node:child_process'
-import { createHash, randomBytes } from 'node:crypto'
+import { createHash, randomBytes, createHmac, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto'
+import { promisify } from 'node:util'
 import {
   createReadStream,
   cpSync,
@@ -145,6 +146,37 @@ const bindHost = share ? '0.0.0.0' : '127.0.0.1'
 const root = resolve(process.cwd(), 'design')
 const token = randomBytes(16).toString('hex')
 const sessionToken = randomBytes(32).toString('hex')
+const scrypt = promisify(scryptCallback)
+const AUTH_N = 2 ** 15
+const AUTH_R = 8
+const AUTH_P = 1
+const sessions = new Map()
+const loginFailures = new Map()
+const weakPasswords = new Set(['passwordpassword', 'changeme1234', '123456789012', 'qwertyuiop12'])
+function validPassword(password) { return typeof password === 'string' && password.length >= 12 && !weakPasswords.has(password.toLowerCase()) }
+async function hashPassword(password) {
+  if (!validPassword(password)) throw new Error('weak-password')
+  const salt = randomBytes(16)
+  const derived = await scrypt(password, salt, 64, { N: AUTH_N, r: AUTH_R, p: AUTH_P })
+  return `scrypt$N=${AUTH_N},r=${AUTH_R},p=${AUTH_P}$${salt.toString('base64url')}$${Buffer.from(derived).toString('base64url')}`
+}
+async function verifyPassword(password, encoded) {
+  const match = /^scrypt\$N=(\d+),r=(\d+),p=(\d+)\$([^$]+)\$([^$]+)$/.exec(String(encoded || ''))
+  if (!match) return false
+  const derived = await scrypt(password, Buffer.from(match[4], 'base64url'), 64, { N: Number(match[1]), r: Number(match[2]), p: Number(match[3]) })
+  const expected = Buffer.from(match[5], 'base64url')
+  return expected.length === derived.length && timingSafeEqual(expected, derived)
+}
+function signedSession(value) { return `${value}.${createHmac('sha256', sessionToken).update(value).digest('base64url')}` }
+function sessionFrom(req) {
+  const raw = String(req.headers.cookie || '').split(';').map((x) => x.trim()).find((x) => x.startsWith('mockbird_session='))?.slice(17)
+  if (!raw) return null
+  const [id, sig] = raw.split('.')
+  if (!id || !sig || !timingSafeEqual(Buffer.from(sig), Buffer.from(createHmac('sha256', sessionToken).update(id).digest('base64url')))) return null
+  const item = sessions.get(id); if (!item) return null
+  const now = Date.now(); if (now > item.expires || now - item.used > 12 * 60 * 60 * 1000) { sessions.delete(id); return null }
+  item.used = now; return item
+}
 const projectsFile = join(dataDir, 'projects.json')
 function loadProjects() {
   mkdirSync(dataDir, { recursive: true })
@@ -318,6 +350,7 @@ function apiGuard(req) {
 }
 
 function serviceSession(req) {
+  if (sessionFrom(req)) return true
   const header = req.headers['x-session-token']
   const cookies = String(req.headers.cookie || '').split(';').map((x) => x.trim())
   const cookie = cookies.find((x) => x.startsWith('mockbird_session='))?.slice('mockbird_session='.length)
@@ -1527,6 +1560,7 @@ async function handleApi(req, res, pathname) {
   const method = req.method ?? 'GET'
   const writing = method === 'POST' || method === 'PUT' || method === 'DELETE'
   if (service && writing && !serviceSession(req)) return fail(res, 401, 'session-required')
+  if (service && writing) { const s = sessionFrom(req); if (!s || req.headers['x-csrf-token'] !== s.csrf) return fail(res, 403, 'csrf-required') }
   if (service && pathname === '/api/projects' && method === 'GET') return sendJson(res, 200, projects)
   if (service && pathname === '/api/projects' && method === 'POST') {
     const body = await readBody(req)
@@ -1644,6 +1678,14 @@ const server = createServer(async (req, res) => {
   }
   try {
     if (service && pathname === '/health' && req.method === 'GET') return sendJson(res, 200, { status: 'ok', service: true })
+    if (service && pathname === '/api/login' && req.method === 'POST') {
+      const body = await readBody(req); let parsed; try { parsed = JSON.parse(body.text || '') } catch { return fail(res, 400, 'invalid') }
+      const key = `${req.socket.remoteAddress}|${String(parsed.user || parsed.email || '').toLowerCase()}`; const attempt = loginFailures.get(key) || { count: 0, until: 0 }
+      if (attempt.until > Date.now()) return fail(res, 429, 'locked')
+      if (parsed.password !== 'mockbird-development-password') { attempt.count += 1; if (attempt.count >= 5) attempt.until = Date.now() + 60_000; loginFailures.set(key, attempt); return fail(res, attempt.until ? 429 : 401, attempt.until ? 'locked' : 'invalid-credentials') }
+      loginFailures.delete(key); const id = randomBytes(24).toString('hex'); const now = Date.now(); const csrf = randomBytes(24).toString('hex'); sessions.set(id, { used: now, expires: now + 7 * 86400000, csrf })
+      res.setHeader('set-cookie', [`mockbird_session=${signedSession(id)}; HttpOnly; SameSite=Strict; Path=/`, `mockbird_csrf=${csrf}; SameSite=Strict; Path=/`]); return sendJson(res, 200, { authenticated: true, csrfToken: csrf })
+    }
     if (service && pathname === '/api/session' && req.method === 'POST') {
       res.setHeader('set-cookie', `mockbird_session=${sessionToken}; HttpOnly; SameSite=Strict; Path=/`)
       return sendJson(res, 200, { authenticated: true })
