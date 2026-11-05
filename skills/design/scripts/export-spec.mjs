@@ -61,7 +61,8 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
-import { cpSync, rmSync } from "node:fs";
+import { cpSync, rmSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { DEFAULT_REGISTRY, MarkerError, parseAll } from "./marker-parser.mjs";
 
@@ -588,18 +589,27 @@ function generateDocumentation(designRoot, out, specs) {
   mkdirSync(out, { recursive: true });
   const source = (p) => `\n\nFonte verificável: \`${p}\`\n`;
   const catalog = join(designRoot, "components", "catalog.json");
+  let componentTmp;
+  let interactionTmp;
   try {
-    execFileSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "component-docs.mjs"), "--target", designRoot], { stdio: "pipe" });
+    componentTmp = mkdtempSync(join(tmpdir(), "mockbird-component-docs-"));
+    cpSync(join(designRoot, "components"), join(componentTmp, "components"), { recursive: true });
+    cpSync(join(designRoot, "utilities.css"), join(componentTmp, "utilities.css"));
+    execFileSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "component-docs.mjs"), "--target", componentTmp], { stdio: "pipe" });
     execFileSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "export-tokens.mjs"), designRoot], { stdio: "pipe" });
-    execFileSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "interaction-map.mjs"), "--target", designRoot], { stdio: "pipe" });
+    interactionTmp = mkdtempSync(join(tmpdir(), "mockbird-interaction-map-"));
+    cpSync(designRoot, interactionTmp, { recursive: true });
+    execFileSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "interaction-map.mjs"), "--target", interactionTmp], { stdio: "pipe" });
   } catch (error) { fail(`documentation dependency failed: ${error.stderr?.toString().trim() || error.message}`); }
-  if (!existsSync(catalog)) fail(`documentation dependency missing catalog: ${catalog}`);
+  const generatedCatalog = join(componentTmp, "components", "catalog.json");
+  if (!existsSync(generatedCatalog)) fail(`documentation dependency missing catalog: ${generatedCatalog}`);
   const docs = join(out, "components"); mkdirSync(docs, { recursive: true });
-  cpSync(catalog, join(docs, "catalog.json"));
+  cpSync(generatedCatalog, join(docs, "catalog.json"));
+  rmSync(componentTmp, { recursive: true, force: true });
   const specDir = join(out, "screens"); mkdirSync(specDir, { recursive: true });
   for (const { screen, spec } of specs) writeFileSync(join(specDir, `${screen.telaId}.json`), JSON.stringify({ source: `${screen.canvasRel}/${screen.file}`, decisions: loadDecisions(designRoot), ...spec }, null, 2) + "\n");
   const flows = join(out, "flows.mmd");
-  const mapDir = join(designRoot, ".visual", "interactions");
+  const mapDir = join(interactionTmp, ".visual", "interactions");
   const maps = readdirSync(mapDir).filter((n) => n.endsWith(".json")).sort();
   if (!maps.length) fail(`documentation dependency missing interaction-map output: ${mapDir}`);
   const lines = ["```mermaid", "flowchart LR"];
@@ -609,6 +619,7 @@ function generateDocumentation(designRoot, out, specs) {
   tokens.$description = "Fonte: skills/design/assets/example/tokens.json (export-tokens.mjs)";
   writeFileSync(join(out, "tokens.w3c.json"), JSON.stringify(tokens, null, 2) + "\n");
   writeFileSync(join(out, "interaction-rules.md"), "# Regras de interação\n\n" + specs.map(({ screen, spec }) => `## ${screen.name}\n- Estados declarados: ${spec.states.join(", ")}\n- Fluxos: ${spec.flows.length}\n- Fonte: ${screen.canvasRel}/${screen.file}`).join("\n\n") + source("canvas.json e telas HTML") );
+  rmSync(interactionTmp, { recursive: true, force: true });
 }
 
 function loadDecisions(root) { const p = join(root, "decisions.json"); if (!existsSync(p)) fail(`documentation dependency missing decisions: ${p}`); const d = JSON.parse(readFileSync(p, "utf8")); if (!d.decisions?.length) fail(`documentation dependency has no decisions: ${p}`); return d.decisions.map((x) => x.id); }
