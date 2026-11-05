@@ -120,6 +120,7 @@ import { homedir, networkInterfaces, tmpdir } from 'node:os'
 import { basename, dirname, extname, join, normalize, relative, resolve, sep } from 'node:path'
 let createUserAdmin, loadUsers, inviteUser, activateUser, saveUsers, verifyUserPassword
 try { ({ createAdmin: createUserAdmin, load: loadUsers, invite: inviteUser, activate: activateUser, save: saveUsers, verifyPassword: verifyUserPassword } = await import('../scripts/users.mjs')) } catch { ({ createAdmin: createUserAdmin, load: loadUsers, invite: inviteUser, activate: activateUser, save: saveUsers, verifyPassword: verifyUserPassword } = await import('./users.mjs').catch(() => ({ createAdmin:()=>{throw new Error('users store unavailable')}, load:()=>({users:[]}), invite:()=>{throw new Error('users store unavailable')}, activate:()=>{throw new Error('users store unavailable')}, save:()=>{}, verifyPassword:()=>false }))) }
+const { appendAudit } = await import('../scripts/service-persistence.mjs')
 
 const argv = process.argv.slice(2)
 const service = argv.includes('--service')
@@ -190,6 +191,7 @@ function loadProjects() {
   try { const value = JSON.parse(readFileSync(projectsFile, 'utf8')); return Array.isArray(value.projects) ? value : { projects: [] } } catch { return { projects: [] } }
 }
 let projects = service ? loadProjects() : { projects: [] }
+function audit(action, actor = 'system') { if (service) appendAudit(dataDir, action, actor) }
 function saveProjects() {
   mkdirSync(dataDir, { recursive: true })
   const temp = `${projectsFile}.${process.pid}.tmp`
@@ -555,6 +557,7 @@ function handleCommentsPost(body, req = null) {
       existing.replies.push(...normalizeReplies(body.replies))
     }
     saveComments(comments)
+    if (req) audit(body.status !== undefined ? 'comment-status' : 'comment-update', sessionFrom(req)?.userId || 'legacy')
     return comments
   }
 
@@ -583,6 +586,7 @@ function handleCommentsPost(body, req = null) {
   if (body._demo === true) pin._demo = true
   comments.push(pin)
   saveComments(comments)
+  if (req) audit('comment-create', sessionFrom(req)?.userId || 'legacy')
   return comments
 }
 
@@ -1712,7 +1716,7 @@ const server = createServer(async (req, res) => {
     if (service && pathname === '/api/login' && req.method === 'POST') {
       const body = await readBody(req); let parsed; try { parsed = JSON.parse(body.text || '') } catch { return fail(res, 400, 'invalid') }
       const account=loadUsers(dataDir).users.find(u=>u.email===String(parsed.email||parsed.user||'').toLowerCase()); if(account?.disabled) return fail(res,403,'user-disabled')
-      if (account) { if (!verifyUserPassword(String(parsed.password||''), account.passwordHash)) return fail(res,401,'invalid-credentials'); const id=randomBytes(24).toString('hex'); const now=Date.now(); const csrf=randomBytes(24).toString('hex'); sessions.set(id,{used:now,expires:now+7*86400000,csrf,userId:account.id,role:account.role}); res.setHeader('set-cookie',[`mockbird_session=${signedSession(id)}; HttpOnly; SameSite=Strict; Path=/`,`mockbird_csrf=${csrf}; SameSite=Strict; Path=/`]); return sendJson(res,200,{authenticated:true,csrfToken:csrf,user:{id:account.id,email:account.email,role:account.role}}) }
+      if (account) { if (!(await verifyPassword(String(parsed.password||''), account.passwordHash))) return fail(res,401,'invalid-credentials'); const id=randomBytes(24).toString('hex'); const now=Date.now(); const csrf=randomBytes(24).toString('hex'); sessions.set(id,{used:now,expires:now+7*86400000,csrf,userId:account.id,role:account.role}); audit('login', account.id); res.setHeader('set-cookie',[`mockbird_session=${signedSession(id)}; HttpOnly; SameSite=Strict; Path=/`,`mockbird_csrf=${csrf}; SameSite=Strict; Path=/`]); return sendJson(res,200,{authenticated:true,csrfToken:csrf,user:{id:account.id,email:account.email,role:account.role}}) }
       const key = `${req.socket.remoteAddress}|${String(parsed.user || parsed.email || '').toLowerCase()}`; const attempt = loginFailures.get(key) || { count: 0, until: 0 }
       if (attempt.until > Date.now()) return fail(res, 429, 'locked')
       if (parsed.password !== 'mockbird-development-password') { attempt.count += 1; if (attempt.count >= 6) attempt.until = Date.now() + 60_000; loginFailures.set(key, attempt); return fail(res, attempt.until ? 429 : 401, attempt.until ? 'locked' : 'invalid-credentials') }
@@ -1720,8 +1724,8 @@ const server = createServer(async (req, res) => {
       res.setHeader('set-cookie', [`mockbird_session=${signedSession(id)}; HttpOnly; SameSite=Strict; Path=/`, `mockbird_csrf=${csrf}; SameSite=Strict; Path=/`]); return sendJson(res, 200, { authenticated: true, csrfToken: csrf })
     }
     if (service && pathname === '/api/admin/users' && req.method === 'GET') return sendJson(res, 200, loadUsers(dataDir).users.map(({passwordHash,inviteTokenHash,...u})=>u))
-    if (service && pathname === '/api/admin/role' && req.method === 'POST') { const body=await readBody(req); const p=JSON.parse(body.text||'{}'); const d=loadUsers(dataDir); const u=d.users.find(x=>x.id===p.id); if(!u||!['admin','editor','commenter','viewer'].includes(p.role)) return fail(res,400,'invalid-role'); u.role=p.role; saveUsers(dataDir,d); return sendJson(res,200,{user:u}) }
-    if (service && pathname === '/api/admin/disable' && req.method === 'POST') { const body=await readBody(req); let p; try { p=JSON.parse(body.text||'{}') } catch { return fail(res,400,'invalid') } const d=loadUsers(dataDir); const u=d.users.find(x=>x.id===p.id); if(!u) return fail(res,404,'user-not-found'); if(u.role==='admin' && p.disabled===true && d.users.filter(x=>x.role==='admin'&&!x.disabled).length<=1) return fail(res,409,'last-admin'); u.disabled=p.disabled!==false; saveUsers(dataDir,d); return sendJson(res,200,{user:{id:u.id,email:u.email,role:u.role,disabled:u.disabled}}) }
+    if (service && pathname === '/api/admin/role' && req.method === 'POST') { const body=await readBody(req); const p=JSON.parse(body.text||'{}'); const d=loadUsers(dataDir); const u=d.users.find(x=>x.id===p.id); if(!u||!['admin','editor','commenter','viewer'].includes(p.role)) return fail(res,400,'invalid-role'); u.role=p.role; saveUsers(dataDir,d); audit('role-change', sessionFrom(req)?.userId||'admin'); return sendJson(res,200,{user:u}) }
+    if (service && pathname === '/api/admin/disable' && req.method === 'POST') { const body=await readBody(req); let p; try { p=JSON.parse(body.text||'{}') } catch { return fail(res,400,'invalid') } const d=loadUsers(dataDir); const u=d.users.find(x=>x.id===p.id); if(!u) return fail(res,404,'user-not-found'); if(u.role==='admin' && p.disabled===true && d.users.filter(x=>x.role==='admin'&&!x.disabled).length<=1) return fail(res,409,'last-admin'); u.disabled=p.disabled!==false; saveUsers(dataDir,d); audit(u.disabled ? 'user-disable' : 'user-enable', sessionFrom(req)?.userId||'admin'); return sendJson(res,200,{user:{id:u.id,email:u.email,role:u.role,disabled:u.disabled}}) }
     if (service && pathname === '/admin' && req.method === 'GET') { res.setHeader('content-type','text/html; charset=utf-8'); return res.end('<!doctype html><title>Mockbird Admin</title><main><h1>Users</h1><p>Use /api/admin/users to list, /api/admin/invite to invite, /api/admin/role to change role, and /api/admin/disable to disable.</p></main>') }
     if (service && pathname === '/api/admin/invite' && req.method === 'POST') { const body=await readBody(req); const p=JSON.parse(body.text||'{}'); return sendJson(res,201,{token:inviteUser(dataDir,p.email,p.role||'viewer')}) }
     if (service && pathname === '/api/admin/activate' && req.method === 'POST') { const body=await readBody(req); const p=JSON.parse(body.text||'{}'); return sendJson(res,200,{user:activateUser(dataDir,p.token,p.password)}) }
