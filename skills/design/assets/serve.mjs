@@ -172,7 +172,8 @@ function sessionFrom(req) {
   const raw = String(req.headers.cookie || '').split(';').map((x) => x.trim()).find((x) => x.startsWith('mockbird_session='))?.slice(17)
   if (!raw) return null
   const [id, sig] = raw.split('.')
-  if (!id || !sig || !timingSafeEqual(Buffer.from(sig), Buffer.from(createHmac('sha256', sessionToken).update(id).digest('base64url')))) return null
+  const expected = createHmac('sha256', sessionToken).update(id).digest('base64url')
+  if (!id || !sig || sig.length !== expected.length || !timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null
   const item = sessions.get(id); if (!item) return null
   const now = Date.now(); if (now > item.expires || now - item.used > 12 * 60 * 60 * 1000) { sessions.delete(id); return null }
   item.used = now; return item
@@ -1560,7 +1561,11 @@ async function handleApi(req, res, pathname) {
   const method = req.method ?? 'GET'
   const writing = method === 'POST' || method === 'PUT' || method === 'DELETE'
   if (service && writing && !serviceSession(req)) return fail(res, 401, 'session-required')
-  if (service && writing) { const s = sessionFrom(req); if (!s || req.headers['x-csrf-token'] !== s.csrf) return fail(res, 403, 'csrf-required') }
+  if (service && writing) {
+    const s = sessionFrom(req)
+    const csrfCookie = String(req.headers.cookie || '').split(';').map((x) => x.trim()).find((x) => x.startsWith('mockbird_csrf='))?.slice('mockbird_csrf='.length)
+    if (!s || req.headers['x-csrf-token'] !== s.csrf || csrfCookie !== s.csrf) return fail(res, 403, 'csrf-required')
+  }
   if (service && pathname === '/api/projects' && method === 'GET') return sendJson(res, 200, projects)
   if (service && pathname === '/api/projects' && method === 'POST') {
     const body = await readBody(req)
@@ -1689,6 +1694,16 @@ const server = createServer(async (req, res) => {
     if (service && pathname === '/api/session' && req.method === 'POST') {
       res.setHeader('set-cookie', `mockbird_session=${sessionToken}; HttpOnly; SameSite=Strict; Path=/`)
       return sendJson(res, 200, { authenticated: true })
+    }
+    if (service && pathname === '/api/logout' && req.method === 'POST') {
+      const session = sessionFrom(req)
+      if (session) {
+        const raw = String(req.headers.cookie || '').split(';').map((x) => x.trim()).find((x) => x.startsWith('mockbird_session='))?.slice('mockbird_session='.length)
+        const id = raw?.split('.')[0]
+        if (id) sessions.delete(id)
+      }
+      res.setHeader('set-cookie', ['mockbird_session=; Max-Age=0; HttpOnly; SameSite=Strict; Path=/', 'mockbird_csrf=; Max-Age=0; SameSite=Strict; Path=/'])
+      return sendJson(res, 200, { loggedOut: true })
     }
     if (pathname === '/api' || pathname.startsWith('/api/')) {
       return await handleApi(req, res, pathname)
