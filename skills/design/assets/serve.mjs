@@ -1124,7 +1124,7 @@ function runGenSyncValidate() {
   const steps = [
     [join(relRoot, 'scripts', 'gen-tokens.mjs')],
     [join(relRoot, 'scripts', 'sync-components.mjs'), relRoot],
-    [join(relRoot, 'validate.mjs'), relRoot],
+    [join(relRoot, 'validate.mjs'), relRoot, '--mark-stale'],
   ]
   for (const [script, ...args] of steps) {
     const run = spawnSync(process.execPath, [script, ...args], {
@@ -1310,13 +1310,9 @@ function handleRevert(res, body) {
   try {
     restoreSrc(snapDir, canvas)
     runGenSyncValidate()
-    // The token/component generators may touch shared design artifacts; restore
-    // the captured canvas manifest once more so snapshot revert is integral.
-    restoreSrc(snapDir, canvas)
     markStaleAfterRevert()
-    // Stale marking is allowed to rewrite shared files; keep the restored
-    // canvas manifest authoritative after the complete revert transaction.
-    restoreSrc(snapDir, canvas)
+    // The pipeline and stale marking may normalize shared files. The snapshot
+    // manifest is authoritative and is restored once as the final operation.
     const finalManifest = join(snapDir, 'src', 'canvas.json')
     if (existsSync(finalManifest)) writeFileSync(join(root, canvas, 'canvas.json'), readFileSync(finalManifest))
   } catch (error) {
