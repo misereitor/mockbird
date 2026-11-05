@@ -1,0 +1,394 @@
+{
+  "schemaVersion": 1,
+  "mode": "dry-run",
+  "model": null,
+  "adapter": null,
+  "gitSHA": "fc935ed59d13af02e9ef60af0976e15bb40cfc61",
+  "timestamp": "2026-11-04T23:46:35.149Z",
+  "platform": "linux",
+  "networkCalls": 0,
+  "spend": {
+    "budgetTokens": 0,
+    "usedTokens": 0,
+    "budgetRespected": true,
+    "accounting": "none"
+  },
+  "briefings": [
+    {
+      "id": "01",
+      "file": "benchmarks/briefings/01-dashboard.md",
+      "contentHash": "f4f8b222a52d0ab24994a6e9cc5982ceeec214f8b8ca4a805c99efedc74706f0",
+      "metrics": {
+        "design": {
+          "value": 46,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "ux": {
+          "value": 34,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "a11y": {
+          "value": 84,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "functional": {
+          "value": 52,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "consistency": {
+          "value": 82,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "tokens-compliance": {
+          "value": 62,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "execution-time": {
+          "value": 0,
+          "unit": "ms",
+          "source": "dry-stub"
+        },
+        "token-usage": {
+          "value": 0,
+          "unit": "tokens",
+          "source": "dry-stub"
+        }
+      }
+    },
+    {
+      "id": "02",
+      "file": "benchmarks/briefings/02-landing.md",
+      "contentHash": "6f7b7e5e2247f1577a752d88305aff7ab6369a5125834bb1b5c2153966a0f2c2",
+      "metrics": {
+        "design": {
+          "value": 68,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "ux": {
+          "value": 17,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "a11y": {
+          "value": 1,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "functional": {
+          "value": 54,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "consistency": {
+          "value": 8,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "tokens-compliance": {
+          "value": 92,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "execution-time": {
+          "value": 0,
+          "unit": "ms",
+          "source": "dry-stub"
+        },
+        "token-usage": {
+          "value": 0,
+          "unit": "tokens",
+          "source": "dry-stub"
+        }
+      }
+    },
+    {
+      "id": "03",
+      "file": "benchmarks/briefings/03-formulario-multi-etapa.md",
+      "contentHash": "57fdd29cd5190cbd2c69caabf0fedd30dde09f6116916dc553cbf6d572696125",
+      "metrics": {
+        "design": {
+          "value": 48,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "ux": {
+          "value": 53,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "a11y": {
+          "value": 76,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "functional": {
+          "value": 48,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "consistency": {
+          "value": 14,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "tokens-compliance": {
+          "value": 27,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "execution-time": {
+          "value": 0,
+          "unit": "ms",
+          "source": "dry-stub"
+        },
+        "token-usage": {
+          "value": 0,
+          "unit": "tokens",
+          "source": "dry-stub"
+        }
+      }
+    },
+    {
+      "id": "04",
+      "file": "benchmarks/briefings/04-ecommerce.md",
+      "contentHash": "d5eff4d3ab2da08ca3a5c0ce4edf7476bb942071834a603c200b545d10e97eab",
+      "metrics": {
+        "design": {
+          "value": 27,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "ux": {
+          "value": 48,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "a11y": {
+          "value": 87,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "functional": {
+          "value": 84,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "consistency": {
+          "value": 66,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "tokens-compliance": {
+          "value": 17,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "execution-time": {
+          "value": 0,
+          "unit": "ms",
+          "source": "dry-stub"
+        },
+        "token-usage": {
+          "value": 0,
+          "unit": "tokens",
+          "source": "dry-stub"
+        }
+      }
+    },
+    {
+      "id": "05",
+      "file": "benchmarks/briefings/05-mobile-first.md",
+      "contentHash": "2ab7c9a7397f3c91236d0fc0881e8e40f7451813bc12a47747d6bee94716d870",
+      "metrics": {
+        "design": {
+          "value": 8,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "ux": {
+          "value": 85,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "a11y": {
+          "value": 67,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "functional": {
+          "value": 43,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "consistency": {
+          "value": 77,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "tokens-compliance": {
+          "value": 90,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "execution-time": {
+          "value": 0,
+          "unit": "ms",
+          "source": "dry-stub"
+        },
+        "token-usage": {
+          "value": 0,
+          "unit": "tokens",
+          "source": "dry-stub"
+        }
+      }
+    },
+    {
+      "id": "06",
+      "file": "benchmarks/briefings/06-portal-dados.md",
+      "contentHash": "d227905e1ac4a148016b30078f98ab810ed9275004d8adfa446a82a6ff29160f",
+      "metrics": {
+        "design": {
+          "value": 18,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "ux": {
+          "value": 79,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "a11y": {
+          "value": 63,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "functional": {
+          "value": 100,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "consistency": {
+          "value": 76,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "tokens-compliance": {
+          "value": 13,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "execution-time": {
+          "value": 0,
+          "unit": "ms",
+          "source": "dry-stub"
+        },
+        "token-usage": {
+          "value": 0,
+          "unit": "tokens",
+          "source": "dry-stub"
+        }
+      }
+    },
+    {
+      "id": "07",
+      "file": "benchmarks/briefings/07-onboarding.md",
+      "contentHash": "3e67e5fa54508185785088f784fd858fea17dcd018842cac3bda5484b4fd96b2",
+      "metrics": {
+        "design": {
+          "value": 31,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "ux": {
+          "value": 20,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "a11y": {
+          "value": 12,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "functional": {
+          "value": 90,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "consistency": {
+          "value": 51,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "tokens-compliance": {
+          "value": 49,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "execution-time": {
+          "value": 0,
+          "unit": "ms",
+          "source": "dry-stub"
+        },
+        "token-usage": {
+          "value": 0,
+          "unit": "tokens",
+          "source": "dry-stub"
+        }
+      }
+    },
+    {
+      "id": "08",
+      "file": "benchmarks/briefings/08-redesign.md",
+      "contentHash": "8378aa998d6b4d8a3bdb0e7f5c8f67985fcfe7e82875a2a433a5ce78a19184ee",
+      "metrics": {
+        "design": {
+          "value": 68,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "ux": {
+          "value": 80,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "a11y": {
+          "value": 72,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "functional": {
+          "value": 78,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "consistency": {
+          "value": 65,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "tokens-compliance": {
+          "value": 8,
+          "unit": "score-0-100",
+          "source": "corpus-stub"
+        },
+        "execution-time": {
+          "value": 0,
+          "unit": "ms",
+          "source": "dry-stub"
+        },
+        "token-usage": {
+          "value": 0,
+          "unit": "tokens",
+          "source": "dry-stub"
+        }
+      }
+    }
+  ]
+}
