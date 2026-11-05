@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "audience": "público idoso (65+) de uma cooperativa de crédito",
+  "goal": "dashboard denso com todas as posições em uma tela só",
+  "visualDirection": "neon maximalista com animações GSAP por scroll",
+  "constraints": ["sem libs externas", "carregar em 3G"],
+  "tone": "sóbrio e contido",
+  "platform": "web desktop",
+  "must": ["densidade máxima de dados por tela"],
+  "mustNot": ["telas com poucos elementos"]
+}

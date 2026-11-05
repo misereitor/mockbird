@@ -292,6 +292,27 @@ drifted token paths (e.g. `motion.duration.fast`).
 | typography.heading | {"fontFamily":"system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif","fontSize":"28px","fontWeight":700,"lineHeight":1.2} | {"fontFamily":"system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif","fontSize":"28px","fontWeight":700,"lineHeight":1.2} |
 <!-- contract:end -->
 
+## Design brief (required before building screens)
+
+When the brief flow is active — `design/brief.json` exists or the user asks for
+the brief flow — NO screen may be created or edited before the brief validates
+clean. The brief is one JSON file (`design/brief.json`) with exactly
+`{schemaVersion, audience, goal, visualDirection, constraints, tone, platform,
+must, mustNot}` (schema: `assets/design-brief.schema.json`; `schemaVersion` is
+mandatory and unknown fields are flagged with a warning issue, never accepted
+silently). Validate it with:
+
+    node design/scripts/validate-brief.mjs design/brief.json
+
+(`npm run brief:check` validates `./design/brief.json`.) Exit 0 = coherent
+brief. Exit 1 lists issues with severity: schema problems plus cross-field
+contradictions — e.g. tone "sóbrio" vs visualDirection "neon maximalista", an
+elderly audience vs a data-dense dashboard, "sem libs" vs a direction that
+needs GSAP, or the same requirement in `must` and `mustNot`. Fix every issue
+and re-run until exit 0. A contradiction is resolved by rewriting the brief
+WITH the user — never by picking a side silently. While the flow is active,
+building a screen over a non-validating brief is prohibited.
+
 ## Workflow
 
 1. **Design system first.** Read `design/design-system.css` and
@@ -301,7 +322,9 @@ drifted token paths (e.g. `motion.duration.fast`).
    asking.
 2. **Ask only what is missing.** If the request is vague (which screens, which
    platform, what data), ask once; if it is clear, start.
-3. **Build the canvas.** Read `assets/craft.md` from this skill's folder first
+3. **Build the canvas.** Brief gate first: when the brief flow is active (see
+   *Design brief* above), no screen is built before `validate-brief.mjs`
+   exits 0 on the project brief. Read `assets/craft.md` from this skill's folder first
    (it fuses the sibling craft skills — taste, emil-design-eng, impeccable —
    into rules for canvas screens) and apply it to every screen. Then create
    `canvas.json` and the screens. Rules for every screen:

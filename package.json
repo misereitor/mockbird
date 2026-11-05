@@ -15,6 +15,7 @@
     "smoke:plugin": "node plugin/smoke.mjs",
     "smoke:screen": "node skills/design/scripts/smoke.mjs --design skills/design/assets/example --config skills/design/assets/validate.config.json",
     "validate": "node skills/design/scripts/validate.mjs --config skills/design/assets/validate.config.json skills/design/assets/example",
+    "brief:check": "node skills/design/scripts/validate-brief.mjs",
     "qa": "node skills/design/scripts/qa.mjs --config skills/design/assets/validate.config.json --target skills/design/assets/example",
     "score": "node skills/design/scripts/visual-score.mjs --target skills/design/assets/example",
     "visual": "node skills/design/scripts/visual-orchestrator.mjs --target skills/design/assets/example",

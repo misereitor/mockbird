@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "audience": "equipe de operações logísticas, 25-45 anos, uso diário em desktop",
+  "goal": "acompanhar as entregas do dia, identificar atrasos e agir sem sair do painel",
+  "visualDirection": "painel operacional com tabela central, métricas no topo e densidade alta para varredura rápida",
+  "constraints": ["sem libs externas — apenas HTML/CSS/JS nativo", "offline-first", "contraste AA"],
+  "tone": "sóbrio, direto e confiável",
+  "platform": "web desktop (1280px+)",
+  "must": ["tabela de entregas com filtro por status", "alerta visual de atraso", "estado vazio acionável"],
+  "mustNot": ["animações decorativas", "onboarding em modal", "qualquer dependência de CDN"]
+}

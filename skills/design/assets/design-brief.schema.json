@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mockbird://design/design-brief.schema.json",
+  "title": "Design brief",
+  "description": "Brief de design validado ANTES da construção de telas (plano todo 17, GAP-B1). Formato fixado por docs/arquitetura-evolutiva.md §5.2: {schemaVersion, audience, goal, visualDirection, constraints, tone, platform, must, mustNot}. additionalProperties=false — campo desconhecido nunca entra em silêncio: o validador emite issue (severity=warning) e o brief não passa. O validador (validate-brief.mjs) valida este shape E detecta contradições entre campos (category=contradiction) com severidade; enquanto o fluxo de brief estiver ativo, nenhuma tela é construída sobre brief inválido (regra registrada em skills/design/SKILL.md junto do schema).",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "audience",
+    "goal",
+    "visualDirection",
+    "constraints",
+    "tone",
+    "platform",
+    "must",
+    "mustNot"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "description": "Versão do formato do brief. Evolução aditiva preserva o número; incompatível sobe (§5.6). Obrigatório: consumidores verificam o campo antes de interpretar."
+    },
+    "audience": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Quem usa o produto: segmento, faixa etária, contexto de uso."
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Resultado que as telas devem entregar para a audiência."
+    },
+    "visualDirection": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Direção visual declarada: densidade, paleta, referência, movimento."
+    },
+    "constraints": {
+      "type": "array",
+      "description": "Restrições duras do projeto (ex.: \"sem libs externas\", \"offline-first\", \"contraste AA\").",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "tone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Tom da comunicação e da interface (ex.: \"sóbrio\", \"jovem e descontraído\")."
+    },
+    "platform": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Plataforma alvo (ex.: \"web desktop (1280px+)\", \"mobile-first\")."
+    },
+    "must": {
+      "type": "array",
+      "description": "Obrigatórios explícitos do brief. Sobreposição com mustNot é contradição — o validador acusa.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "mustNot": {
+      "type": "array",
+      "description": "Proibições explícitas do brief. Sobreposição com must é contradição — o validador acusa.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}
