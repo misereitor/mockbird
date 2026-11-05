@@ -8,9 +8,12 @@
       "reason": "O painel tem 6 seções; abas não cabem em 1280px sem overflow",
       "status": "superseded",
       "scope": "global",
-      "screens": ["dashboard.html"],
+      "screens": [
+        "dashboard.html"
+      ],
       "createdAt": "2026-11-01",
-      "supersedes": null
+      "supersedes": null,
+      "outcome": null
     },
     {
       "id": "DEC-002",
@@ -19,9 +22,13 @@
       "reason": "DEC-001 ocupava 240px fixos; telas densas precisam da largura",
       "status": "active",
       "scope": "global",
-      "screens": ["dashboard.html", "settings.html"],
+      "screens": [
+        "dashboard.html",
+        "settings.html"
+      ],
       "createdAt": "2026-11-03",
-      "supersedes": "DEC-001"
+      "supersedes": "DEC-001",
+      "outcome": null
     },
     {
       "id": "DEC-003",
@@ -30,9 +37,12 @@
       "reason": "Varredura rápida é a tarefa diária da audiência (brief)",
       "status": "active",
       "scope": "dashboard.html",
-      "screens": ["dashboard.html"],
+      "screens": [
+        "dashboard.html"
+      ],
       "createdAt": "2026-11-05",
-      "supersedes": null
+      "supersedes": null,
+      "outcome": null
     }
   ]
 }

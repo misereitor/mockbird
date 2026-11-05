@@ -63,7 +63,7 @@
           },
             "supersedes": {
             "type": ["string", "null"],
-            "pattern": "^DEC-\\d{3,}$",
+            "pattern": "^(?:[A-Za-z][A-Za-z0-9_-]*-)?DEC-\\d{3,}$",
               "description": "Id da decisão substituída por esta (null quando não supercede ninguém). O registro referenciado deve ficar com status \"superseded\" — o decisions.mjs valida esse par e rejeita estado inconsistente."
             },
             "outcome": {
