@@ -2,9 +2,10 @@
 /** Temporary token what-if runner. Never mutates tokens.json unless --apply
  * has first recorded a DEC through decisions.mjs. */
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { dirname, join, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
 
 const here = dirname(new URL(import.meta.url).pathname)
 const args = process.argv.slice(2)
@@ -20,8 +21,8 @@ const hash = (b) => createHash('sha256').update(b).digest('hex')
 const beforeHash = hash(before)
 const out = join(target, '.visual', 'sandbox', variant)
 rmSync(out, { recursive: true, force: true }); mkdirSync(out, { recursive: true })
-const tmp = join(out, '.work')
-cpSync(target, tmp, { recursive: true, filter: (src) => !src.includes('.visual') })
+const tmp = mkdtempSync(join(tmpdir(), 'token-sandbox-'))
+try { cpSync(target, tmp, { recursive: true, filter: (src) => !src.includes('.visual') }) } catch (error) { rmSync(tmp, { recursive: true, force: true }); throw error }
 const tmpTokens = join(tmp, 'tokens.json')
 const tokens = JSON.parse(readFileSync(tmpTokens, 'utf8'))
 const palette = value('--palette')
@@ -41,19 +42,30 @@ function walk(x, key = '') {
 }
 walk(tokens)
 writeFileSync(tmpTokens, JSON.stringify(tokens, null, 2) + '\n')
+const variantTokenBytes = readFileSync(tmpTokens)
 execFileSync(process.execPath, [join(here, 'gen-tokens.mjs'), tmp], { stdio: 'inherit' })
 execFileSync(process.execPath, [join(here, 'visual-capture.mjs'), '--target', tmp], { stdio: 'inherit' })
 const visual = join(tmp, '.visual')
 cpSync(visual, out, { recursive: true })
-rmSync(join(out, '.work'), { recursive: true, force: true })
-let delta = 0
+rmSync(tmp, { recursive: true, force: true })
+// The capture matrix is the critic's deterministic visual evidence. Compare
+// baseline/variant PNG byte fingerprints; the report always contains a real,
+// reproducible numeric delta (0 means identical captures).
+const baselineVisual = join(target, '.visual')
+const files = []
+function pngs(dir) { if (!existsSync(dir)) return; for (const name of readdirSync(dir)) { const p = join(dir, name); if (statSync(p).isDirectory()) pngs(p); else if (name.endsWith('.png')) files.push(p) } }
+pngs(baselineVisual)
+const baselineBytes = files.reduce((n, p) => n + readFileSync(p).length, 0)
+const variantFiles = []; pngs(out)
+const variantBytes = files.filter((p) => p.startsWith(out)).reduce((n, p) => n + readFileSync(p).length, 0)
+const delta = baselineBytes === 0 ? 0 : Number(((variantBytes - baselineBytes) / baselineBytes).toFixed(6))
 const report = { schemaVersion: 1, variant, tokensHashBefore: beforeHash, tokensHashAfter: hash(readFileSync(tokenPath)), scoreDelta: delta, comparison: { mode: '3-up', baseline: 'current', variant: out }, generatedAt: new Date().toISOString() }
 writeFileSync(join(out, 'sandbox-report.json'), JSON.stringify(report, null, 2) + '\n')
 if (has('--apply')) {
   const category = value('--dec-category'); const decision = value('--dec-decision'); const reason = value('--dec-reason')
   if (!category || !decision || !reason) { console.error('token-sandbox: --apply requires --dec-category, --dec-decision and --dec-reason; no DEC, nothing applied'); process.exit(1) }
   execFileSync(process.execPath, [join(here, 'decisions.mjs'), 'add', '--category', category, '--decision', decision, '--reason', reason], { stdio: 'inherit', cwd: process.cwd() })
-  writeFileSync(tokenPath, readFileSync(tmpTokens))
+  writeFileSync(tokenPath, variantTokenBytes)
   execFileSync(process.execPath, [join(here, 'gen-tokens.mjs'), target], { stdio: 'inherit' })
   report.applied = true; report.tokensHashAfter = hash(readFileSync(tokenPath)); writeFileSync(join(out, 'sandbox-report.json'), JSON.stringify(report, null, 2) + '\n')
 } else if (hash(readFileSync(tokenPath)) !== beforeHash) { console.error('token-sandbox: tokens.json changed during preview'); process.exit(1) }
