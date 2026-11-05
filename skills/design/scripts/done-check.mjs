@@ -22,7 +22,9 @@ const reportPath=join(root,'.visual','report.json')
 let report=null
 if(!existsSync(reportPath)) errors.push('visual report missing')
 else { try { report=JSON.parse(readFileSync(reportPath,'utf8')); if(report.gitSHA&&report.gitSHA!==git) errors.push('relatório obsoleto'); if((report.issues||report.critic?.issues||[]).some(i=>i.severity==='blocker')) errors.push('critic blocker') } catch { errors.push('visual report invalid') } }
-if(!existsSync(join(root,'spec',`${id}.json`))) errors.push('generated spec missing')
-const result={schemaVersion:1,screen:id,done:errors.length===0,gitSHA:git,checklist:{approval:!!approval,report:!!report,spec:existsSync(join(root,'spec',`${id}.json`)),blockers:false},errors}
+const specCandidates=[join(root,'spec',`${id}.json`),join(root,'spec',`${id.split('/')[0]}.json`),join(root,'spec',`${id.split('/').pop().replace(/\.html$/,'')}.json`)]
+const specPath=specCandidates.find(existsSync)
+if(!specPath) errors.push('generated spec missing')
+const result={schemaVersion:1,screen:id,done:errors.length===0,gitSHA:git,checklist:{approval:!!approval,report:!!report,spec:!!specPath,blockers:false},errors}
 const out=join(root,'.visual','done'); mkdirSync(out,{recursive:true}); const artifactName=id.replaceAll('/','__').replaceAll('\\','__').replace(/\.html$/,'')+'.json'; writeFileSync(join(out,artifactName),JSON.stringify(result,null,2)+'\n')
 console.log(JSON.stringify(result,null,2)); if(errors.length) process.exitCode=1
