@@ -300,6 +300,7 @@ function isLocalHost(name) {
 /** Host/Origin/token guards — enforced on /api/* ONLY. */
 function apiGuard(req) {
   if (share) return { code: 403, error: 'forbidden' }
+  if (service && serviceSession(req)) return null
   if (!isLocalHost(hostnameOf(req.headers.host))) return { code: 403, error: 'forbidden' }
   const origin = req.headers.origin
   if (origin !== undefined) {

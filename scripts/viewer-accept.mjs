@@ -27,6 +27,7 @@ try {
 }
 
 const PACK = join(dirname(fileURLToPath(import.meta.url)), '..', 'skills', 'design', 'assets')
+const serviceMode = process.argv.includes('--service')
 const ROOT = join(tmpdir(), 'opencode', 'viewer-accept')
 rmSync(ROOT, { recursive: true, force: true })
 mkdirSync(join(ROOT, 'design'), { recursive: true })
@@ -78,7 +79,11 @@ writeFileSync(join(ROOT, 'design', 'tokens.json'), JSON.stringify({ tokens: { co
   }, null, 2))
 }
 
-const server = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), '8796', '--no-open'], {
+const serviceData = join(ROOT, 'service-data')
+const serverArgs = serviceMode
+  ? [join(ROOT, 'design', 'serve.mjs'), '--service', '--data', serviceData, '0', '--no-open']
+  : [join(ROOT, 'design', 'serve.mjs'), '8796', '--no-open']
+const server = spawn(process.execPath, serverArgs, {
   cwd: ROOT,
   windowsHide: true,
   stdio: ['ignore', 'pipe', 'pipe'],
@@ -111,6 +116,12 @@ const browser = await chromium.launch({
   headless: true,
 })
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } })
+if (serviceMode) {
+  // Seed the service session for the real browser request path. The token is
+  // also required by the legacy API guard; the service prints it at startup.
+  await page.setExtraHTTPHeaders({ 'x-session-token': token })
+  await page.request.post(`${base}/api/session`)
+}
 const errors = []
 page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`))
 page.on('console', (message) => {
