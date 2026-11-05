@@ -548,7 +548,7 @@ function handleCommentsPost(body) {
 
   const existing = hasId ? comments.find((pin) => pin && pin.id === body.id) : undefined
   if (existing) {
-    if (body.status !== undefined) existing.status = body.status
+    if (body.status !== undefined) { const actor=sessionFrom(req); if (!actor || (actor.role!=='admin' && actor.role!=='editor' && actor.userId!==existing.authorId)) throw new ApiError(403,'comment-permission'); existing.status = body.status }
     if (body.rect !== undefined) existing.rect = body.rect // w17: re-ancora ao redimensionar
     if (body.replies !== undefined) {
       if (!Array.isArray(existing.replies)) existing.replies = []
