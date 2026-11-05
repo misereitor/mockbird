@@ -1,0 +1,2 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import { mkdtemp, writeFile } from 'node:fs/promises'; import { tmpdir } from 'node:os'; import { join } from 'node:path'; import { execFileSync } from 'node:child_process';
+test('contradictory brief rejected',async()=>{const d=await mkdtemp(join(tmpdir(),'run-'));const p=join(d,'b.json');await writeFile(p,JSON.stringify({contradictions:['x']}));assert.throws(()=>execFileSync(process.execPath,['skills/design/scripts/design-run.mjs','--brief',p,'--budget-tokens','10'],{encoding:'utf8'}))})
