@@ -274,7 +274,7 @@ async function runReal(model, budgetTokens, briefings) {
   const report = buildReport({
     mode: 'real',
     model,
-    adapter: adapter.id,
+    adapter: adapter.id ?? 'native-llm-connector',
     briefings,
     spend: { budgetTokens, usedTokens: used, budgetRespected: true, accounting: adapter.offline ? 'nominal' : 'real' },
     metricsOf: (b) => {
