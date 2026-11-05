@@ -604,8 +604,10 @@ function generateDocumentation(designRoot, out, specs) {
   if (!maps.length) fail(`documentation dependency missing interaction-map output: ${mapDir}`);
   const lines = ["```mermaid", "flowchart LR"];
   for (const name of maps) { const m = JSON.parse(readFileSync(join(mapDir, name), "utf8")); for (const a of m.actions || []) if (a.destination) lines.push(`  ${JSON.stringify(m.screen)} -->|${JSON.stringify(a.action)}| ${JSON.stringify(a.destination)}`); }
-  lines.push("```", source(".visual/interactions/*.json")); writeFileSync(flows, lines.join("\n") + "\n");
-  cpSync(join(designRoot, "tokens.w3c.json"), join(out, "tokens.w3c.json"));
+  lines.push("```", "%% Fonte: skills/design/assets/example/.visual/interactions/<tela>.json (interaction-map.mjs --target skills/design/assets/example)"); writeFileSync(flows, lines.join("\n") + "\n");
+  const tokens = JSON.parse(readFileSync(join(designRoot, "tokens.w3c.json"), "utf8"));
+  tokens.$description = "Fonte: skills/design/assets/example/tokens.json (export-tokens.mjs)";
+  writeFileSync(join(out, "tokens.w3c.json"), JSON.stringify(tokens, null, 2) + "\n");
   writeFileSync(join(out, "interaction-rules.md"), "# Regras de interação\n\n" + specs.map(({ screen, spec }) => `## ${screen.name}\n- Estados declarados: ${spec.states.join(", ")}\n- Fluxos: ${spec.flows.length}\n- Fonte: ${screen.canvasRel}/${screen.file}`).join("\n\n") + source("canvas.json e telas HTML") );
 }
 
