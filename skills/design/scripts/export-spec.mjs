@@ -60,7 +60,9 @@
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { execFileSync } from "node:child_process";
+import { cpSync, rmSync } from "node:fs";
+import { pathToFileURL, fileURLToPath } from "node:url";
 import { DEFAULT_REGISTRY, MarkerError, parseAll } from "./marker-parser.mjs";
 
 const usage = "usage: export-spec.mjs --design <design-root>";
@@ -446,6 +448,7 @@ function renderMd(spec, info, states) {
 
 function parseArgs(argv) {
   let design = null;
+  let out = null;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--design") {
@@ -453,16 +456,23 @@ function parseArgs(argv) {
       if (design !== null) fail(`--design given twice - ${usage}`);
       design = argv[i + 1];
       i += 1;
+    } else if (arg === "--out") {
+      if (i + 1 >= argv.length) fail(`--out requires a path - usage: export-spec.mjs --canvas <dir> --out <dir>`);
+      out = resolve(argv[++i]);
+    } else if (arg === "--canvas") {
+      if (design !== null) fail(`canvas/design given twice`);
+      design = argv[++i];
     } else {
       fail(`unknown argument "${arg}" - ${usage}`);
     }
   }
-  if (design === null) fail(`missing --design <design-root> - ${usage}`);
-  return resolve(design);
+  if (design === null) fail(`missing --design/--canvas <design-root> - ${usage}`);
+  return { root: resolve(design), out };
 }
 
 function main(argv) {
-  const root = parseArgs(argv);
+  const parsed = parseArgs(argv);
+  const root = parsed.root;
   if (!existsSync(root) || !statSync(root).isDirectory()) fail(`design root not found or not a directory: ${root}`);
   const canvases = discoverCanvases(root);
   if (canvases.length === 0) fail(`no canvas.json found under ${root}`);
@@ -569,9 +579,37 @@ function main(argv) {
     writeFileSync(join(specDir, `${screen.telaId}.json`), `${JSON.stringify(spec, null, 2)}\n`, "utf8");
     writeFileSync(join(specDir, `${screen.telaId}.md`), renderMd(spec, info, states), "utf8");
   }
+  if (parsed.out) generateDocumentation(designRoot, parsed.out, specs);
   process.stdout.write(`export-spec: wrote ${specs.length} screens (states/flows/texts/rules/parity) to ${specDir}\n`);
   return 0;
 }
+
+function generateDocumentation(designRoot, out, specs) {
+  mkdirSync(out, { recursive: true });
+  const source = (p) => `\n\nFonte verificável: \`${p}\`\n`;
+  const catalog = join(designRoot, "components", "catalog.json");
+  try {
+    execFileSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "component-docs.mjs"), "--target", designRoot], { stdio: "pipe" });
+    execFileSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "export-tokens.mjs"), designRoot], { stdio: "pipe" });
+    execFileSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "interaction-map.mjs"), "--target", designRoot], { stdio: "pipe" });
+  } catch (error) { fail(`documentation dependency failed: ${error.stderr?.toString().trim() || error.message}`); }
+  if (!existsSync(catalog)) fail(`documentation dependency missing catalog: ${catalog}`);
+  const docs = join(out, "components"); mkdirSync(docs, { recursive: true });
+  cpSync(catalog, join(docs, "catalog.json"));
+  const specDir = join(out, "screens"); mkdirSync(specDir, { recursive: true });
+  for (const { screen, spec } of specs) writeFileSync(join(specDir, `${screen.telaId}.json`), JSON.stringify({ source: `${screen.canvasRel}/${screen.file}`, decisions: loadDecisions(designRoot), ...spec }, null, 2) + "\n");
+  const flows = join(out, "flows.mmd");
+  const mapDir = join(designRoot, ".visual", "interactions");
+  const maps = readdirSync(mapDir).filter((n) => n.endsWith(".json")).sort();
+  if (!maps.length) fail(`documentation dependency missing interaction-map output: ${mapDir}`);
+  const lines = ["```mermaid", "flowchart LR"];
+  for (const name of maps) { const m = JSON.parse(readFileSync(join(mapDir, name), "utf8")); for (const a of m.actions || []) if (a.destination) lines.push(`  ${JSON.stringify(m.screen)} -->|${JSON.stringify(a.action)}| ${JSON.stringify(a.destination)}`); }
+  lines.push("```", source(".visual/interactions/*.json")); writeFileSync(flows, lines.join("\n") + "\n");
+  cpSync(join(designRoot, "tokens.w3c.json"), join(out, "tokens.w3c.json"));
+  writeFileSync(join(out, "interaction-rules.md"), "# Regras de interação\n\n" + specs.map(({ screen, spec }) => `## ${screen.name}\n- Estados declarados: ${spec.states.join(", ")}\n- Fluxos: ${spec.flows.length}\n- Fonte: ${screen.canvasRel}/${screen.file}`).join("\n\n") + source("canvas.json e telas HTML") );
+}
+
+function loadDecisions(root) { const p = join(root, "decisions.json"); if (!existsSync(p)) fail(`documentation dependency missing decisions: ${p}`); const d = JSON.parse(readFileSync(p, "utf8")); if (!d.decisions?.length) fail(`documentation dependency has no decisions: ${p}`); return d.decisions.map((x) => x.id); }
 
 // CLI entry point - guarded so rules/spec-undeclared.mjs can import
 // detectScreenStates without running the export (import-safe module).

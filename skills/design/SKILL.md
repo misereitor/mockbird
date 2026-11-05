@@ -5,6 +5,11 @@ description: Design screen mockups, UI prototypes, wireframes and landing pages 
 
 # Design canvas
 
+## Documentação gerada
+Regenerar as especificações, catálogo, fluxos Mermaid, tokens W3C e regras de
+interação diretamente dos artefatos reais com `npm run docs:design`. A saída é
+determinística; timestamps de auditorias não fazem parte dos documentos.
+
 ## Exploração comparável (três direções)
 Quando o brief pedir exploração, gere exatamente três pastas em
 `design/explorations/<NN>/`, cada uma com `direction.json` declarando `brief`,
