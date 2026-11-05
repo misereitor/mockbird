@@ -55,6 +55,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createDesignAgent } from '../skills/design/scripts/agent-adapters/stub-deterministic.mjs'
+import { createLLMConnector } from '../skills/design/scripts/lib/llm/connector.mjs'
 import { validateAgainstSchema } from '../skills/design/scripts/visual-critic.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -246,7 +247,7 @@ async function runReal(model, budgetTokens, briefings) {
   // Contrato DesignAgent (§5.5): único ponto de passe de modelo. O stub
   // determinístico (offline) é o único adapter deste checkout; adaptadores reais
   // são seam do todo 32 e entram pela mesma chamada.
-  const adapter = createDesignAgent()
+  const adapter = createLLMConnector({ provider: model === 'stub' ? 'stub' : model, env: process.env })
   let used = 0
   const entries = []
   for (const b of briefings) {
