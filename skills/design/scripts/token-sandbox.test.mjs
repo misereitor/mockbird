@@ -15,8 +15,14 @@ test('invalid scale exits 2', () => {
 })
 
 test('--apply without DEC exits non-zero', () => {
-  const r = run(['--target', example, '--var', 'missing-dec', '--apply'])
-  assert.notEqual(r.status, 0)
+  const root = mkdtempSync(join(tmpdir(), 'token-sandbox-no-dec-'))
+  try {
+    cpSync(example, root, { recursive: true })
+    const r = run(['--target', root, '--var', 'missing-dec', '--apply'])
+    assert.notEqual(r.status, 0)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
 })
 
 test('preview contract keeps tokens byte-identical when capture is available', { timeout: 240000 }, () => {
