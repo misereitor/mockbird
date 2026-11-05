@@ -579,6 +579,7 @@ function handleCommentsPost(body) {
   pin.status = body.status ?? 'open'
   pin.replies = normalizeReplies(body.replies ?? [])
   pin.createdAt = new Date().toISOString()
+  if (body._demo === true && !pin.authorId) { pin.authorId='legacy'; pin.authorRole='editor' }
   if (body._demo === true) pin._demo = true
   comments.push(pin)
   saveComments(comments)
