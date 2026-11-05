@@ -1463,7 +1463,7 @@ function registerViewerPanel(name, panel) { viewerPanels.set(name, panel) }
 async function activateViewerPanel(name) {
   const panel = viewerPanels.get(name)
   if (!panel) return
-  await panel.render({ state, root: $('contextBody'), screen: state.screens.find((s) => s.id === state.selectedId) })
+  await panel.render({ state, root: panel.root ? $(panel.root) : $('contextBody'), screen: state.screens.find((s) => s.id === state.selectedId) })
 }
 
 async function readContextJson(path) {
@@ -1493,6 +1493,28 @@ registerViewerPanel('context', { async render({ root, screen }) {
   root.append(contextList('Staleness', [stale]))
 } })
 
+function mountPreviewHook(root, previews) {
+  root.replaceChildren()
+  if (!Array.isArray(previews) || !previews.length) {
+    const empty = document.createElement('p'); empty.className = 'component-preview-error'; empty.textContent = 'Catálogo sem previews disponíveis.'; root.append(empty); return
+  }
+  const select = document.createElement('select'); select.setAttribute('aria-label', 'Variante')
+  previews.forEach((preview, index) => { const option = document.createElement('option'); option.value = String(index); option.textContent = preview.previewId || JSON.stringify(preview.variant || {}); select.append(option) })
+  const render = document.createElement('div'); render.className = 'component-preview-render'
+  const update = () => { render.innerHTML = previews[Number(select.value)]?.html || '' }
+  select.addEventListener('change', update); root.append(select, render); update()
+}
+window.mountPreviewHook = mountPreviewHook
+registerViewerPanel('components', { root: 'componentBody', async render({ root }) {
+  root.replaceChildren()
+  try {
+    const catalog = await readContextJson('components/catalog.json')
+    const components = Array.isArray(catalog.components) ? catalog.components : []
+    if (!components.length) throw new Error('components/catalog.json sem componentes')
+    components.forEach((component) => { const section = document.createElement('section'); section.className = 'component-preview'; const heading = document.createElement('h3'); heading.textContent = component.name || component.id; section.append(heading); mountPreviewHook(section, component.previews); root.append(section) })
+  } catch (error) { const p = document.createElement('p'); p.className = 'component-preview-error'; p.setAttribute('role', 'alert'); p.textContent = `Erro no catálogo components/catalog.json: ${error.message}`; root.append(p) }
+} })
+
 applyI18n()
 
 $('langBtn').addEventListener('click', () => {
@@ -1515,6 +1537,8 @@ const state = {
 
 $('contextBtn').addEventListener('click', async () => { $('contextPanel').hidden = false; await activateViewerPanel('context') })
 $('contextClose').addEventListener('click', () => { $('contextPanel').hidden = true })
+$('componentsBtn').addEventListener('click', async () => { $('componentPanel').hidden = false; await activateViewerPanel('components') })
+$('componentsClose').addEventListener('click', () => { $('componentPanel').hidden = true })
 
 /* ------------------------------------------ share-mode degradation (w4-20) */
 

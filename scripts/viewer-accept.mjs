@@ -40,6 +40,8 @@ for (const item of ['mock.js', 'mock.css', 'vendor', 'scripts', 'validate.mjs', 
     cpSync(join(PACK, item), join(ROOT, 'design', item), { recursive: true })
   } catch { /* optional file */ }
 }
+mkdirSync(join(ROOT, 'design', 'components'), { recursive: true })
+cpSync(join(process.cwd(), 'design', 'components', 'catalog.json'), join(ROOT, 'design', 'components', 'catalog.json'))
 // fixture: one open + one RESOLVED comment (resolved ones must stay visible)
 // w19: the THIRD screen drops BOTH size and device - "no size or device declared"
 // is the contract case that defaults to Desktop 1440x900 (README v1.0.23)
@@ -169,6 +171,26 @@ if (threeUpButton) {
   else fail('exploração 3-up', `mode=${threeUp.mode} rendered=${rendered} fixture=${fixtureDirections.length}`)
   await page.evaluate(() => { document.querySelector('#compareView').hidden = true; document.querySelector('#snapshotPanel').hidden = true })
 } else fail('exploração 3-up', 'botão #modeThree ausente')
+
+// Component previews: catalog-driven panel, variant selection, and rendered HTML.
+await page.click('#componentsBtn')
+await page.waitForTimeout(250)
+const previewState = await page.evaluate(() => ({
+  panel: !document.querySelector('#componentPanel').hidden,
+  sections: document.querySelectorAll('#componentBody .component-preview').length,
+  rendered: document.querySelector('#componentBody .component-preview-render button')?.textContent.trim() || '',
+  select: document.querySelector('#componentBody select'),
+}))
+if (previewState.panel && previewState.sections > 0 && previewState.rendered) ok('preview de componente renderiza catálogo')
+else fail('preview de componente', `panel=${previewState.panel} sections=${previewState.sections} rendered=${previewState.rendered}`)
+const previewSelect = await page.$('#componentBody select')
+if (previewSelect) {
+  await previewSelect.selectOption({ index: 1 })
+  const changed = await page.$eval('#componentBody .component-preview-render', (el) => el.textContent.trim())
+  if (changed) ok('preview seleciona variante do catálogo')
+  else fail('seleção de variante', 'preview vazio após seleção')
+} else fail('seleção de variante', 'seletor ausente')
+await page.click('#componentsClose')
 
 // 1. SELECT
 await page.click('#strip .card-overlay')
