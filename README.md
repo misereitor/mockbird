@@ -1,5 +1,19 @@
 # Mockbird
 
+## CLI descoberta
+
+Use a fachada sem reimplementar os comandos existentes:
+
+```bash
+node skills/design/scripts/cli.mjs help
+node skills/design/scripts/cli.mjs status
+node skills/design/scripts/cli.mjs validate --design skills/design/assets/example
+node skills/design/scripts/cli.mjs golden
+```
+
+`version` mostra a versão instalada; `status` mostra a versão e o último gate.
+Comandos desconhecidos falham com uma sugestão `did-you-mean`.
+
 [![CI](https://github.com/misereitor/mockbird/actions/workflows/ci.yml/badge.svg)](https://github.com/misereitor/mockbird/actions/workflows/ci.yml)
 
 > Language: **English** · [Português (BR)](README.pt-BR.md)

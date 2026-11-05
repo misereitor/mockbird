@@ -1,0 +1,2 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import { execFileSync } from 'node:child_process';
+test('facade exposes and delegates at least ten commands',()=>{const h=execFileSync(process.execPath,['skills/design/scripts/cli.mjs','help'],{encoding:'utf8'}); for(const c of ['serve','capture','diff','critic','score','visual','validate','qa','brief','decisions','approve','parity']) assert.match(h,new RegExp(`\\b${c}\\b`)); const s=execFileSync(process.execPath,['skills/design/scripts/cli.mjs','status'],{encoding:'utf8'}); assert.match(s,/version/)});

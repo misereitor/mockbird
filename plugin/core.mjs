@@ -75,6 +75,7 @@ export const MIRROR = [
   ["scripts/sync-components.mjs", join(DESIGN_SCRIPTS, "sync-components.mjs")],
   ["scripts/marker-parser.mjs", join(DESIGN_SCRIPTS, "marker-parser.mjs")],
   ["scripts/export-tokens.mjs", join(DESIGN_SCRIPTS, "export-tokens.mjs")],
+  ["scripts/cli.mjs", join(DESIGN_SCRIPTS, "cli.mjs")],
 ]
 
 /** Seed: only added when missing — never overwrites what a project evolved. */
