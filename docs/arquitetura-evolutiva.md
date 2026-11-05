@@ -13,7 +13,7 @@ regressão: ambos devem permanecer verdes.
 > verdade para *o que existe*, *o que será construído* e *sob quais regras*.
 >
 > - **Base auditada (o que existe):** `docs/auditoria.json` + `docs/auditoria-tecnica.md`
->   (todo 1), no gitSHA auditado `05131bec8813f3e06348e8772c8967fd83bda00b`
+>   (todo 1), no gitSHA auditado `fff38a8b9c0bfe8840c0228e01c0c2b890356c85`
 >   (`docs/auditoria.json#gitSHA`).
 > - **Base planejada (o que será construído):** plano `mockbird-evolution`
 >   (linhas IS/GAP do escopo, todos 1-62, ondas 0-10, verificadores finais
@@ -337,8 +337,8 @@ painel)` cadastra um módulo e `activateViewerPanel(nome)` ativa o painel pelo
 nome. O módulo recebe `{ state, root, screen }` e é responsável por renderizar
 seu conteúdo; o viewer permanece responsável apenas pelo ciclo de vida e pela
 área de ativação. O painel Contexto usa essa fronteira para ler
-`brief.json`, `tokens.json`, `decisions.json`, `approvals.json` e
-`comments.json`, exibindo estado vazio explícito quando não há dados e erro
+*brief.json*, *tokens.json*, *decisions.json*, *approvals.json* e
+*comments.json*, exibindo estado vazio explícito quando não há dados e erro
 identificando o arquivo quando um JSON é inválido. Painéis futuros (como
 comparação 3-up e previews) devem registrar módulos independentes, sem copiar
 markup ou reescrever o viewer.

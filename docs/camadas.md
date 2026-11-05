@@ -3,7 +3,7 @@
 > Todo 3 do plano `mockbird-evolution`. Fonte primária: `docs/auditoria.json`
 > (classificação por arquivo/grupo feita no todo 1; narrativa em
 > `docs/auditoria-tecnica.md`). **gitSHA auditado:**
-> `05131bec8813f3e06348e8772c8967fd83bda00b` — este mapa não reclassifica
+> `fff38a8b9c0bfe8840c0228e01c0c2b890356c85` — este mapa não reclassifica
 > nada: camada e subsistema de cada arquivo saem do audit; o que o mapa faz é
 > agregar por diretório, fixar o **dono único por capacidade** e registrar as
 > fronteiras decididas. Verificação mecânica: `node docs/camadas.check.mjs`
@@ -118,20 +118,21 @@ pelo audit; "(misto)" quando a subárvore tem mais de uma camada.
 | docs | Skills | 8 | `docs/migration-guide.md` | guias operacionais escritos à mão |
 | plugin | Adapters | 8 | `plugin/core.mjs` | adaptador OpenCode: MIRROR/SEED, pull, sync, carimbo |
 | scripts | Core | 2,8 | `scripts/mock-check.mjs` | suítes determinísticas fora do skill design |
+| skills | Core (misto) | 1,2,3,4,5,6,7,8 | `skills/sync-check.mjs` | verificações de sincronização |
 | skills/design | Core (misto) | 1,2,3,4,5,6,7,8 | `skills/design/SKILL.md` | skill principal; concentra 7 dos 8 subsistemas |
 | skills/design/scripts | Core | 2,3,4,6,7,8 | `skills/design/scripts/validate.mjs` | motoras determinísticas (validador, QA, smoke, codegen, spec, map) |
 | skills/design/scripts/fixtures | Core | 2,3,4,6,7,8 | `skills/design/scripts/fixtures/` | corpus de fixtures auditado por grupo (11 grupos) |
-| skills/design/scripts/lib | Core | 3,4 | `skills/design/scripts/lib/token-groups.mjs` | bibliotecas compartilhadas (viewport, token-groups) |
-| skills/design/scripts/rules | Core | 6 | `skills/design/scripts/rules/` | 10 regras do validador, carregadas por extensão |
-| skills/design/assets | Core (misto) | 1,2,3,4,5,6,7 | `skills/design/assets/viewer.html` | runtime + viewer + servidor + craft + contratos |
+| skills/design/scripts/lib | Core | 3,4,8 | `skills/design/scripts/lib/token-groups.mjs` | bibliotecas compartilhadas (viewport, token-groups) |
+| skills/design/scripts/rules | Core | 6,8 | `skills/design/scripts/rules/` | 10 regras do validador, carregadas por extensão |
+| skills/design/assets | Core (misto) | 1,2,3,4,5,6,7,8 | `skills/design/assets/viewer.html` | runtime + viewer + servidor + craft + contratos |
 | skills/design/assets/components | Core | 3 | `skills/design/assets/components/components.json` | 14 partials seed + registry schema v2 |
-| skills/design/assets/example | Core | 2,3,4,5,6,7 | `skills/design/assets/example/` | corpus de exemplo (telas, specs, snapshots, comments) |
+| skills/design/assets/example | Core | 2,3,4,5,6,7,8 | `skills/design/assets/example/` | corpus de exemplo (telas, specs, snapshots, comments) |
 | skills/design/assets/vendor | Adapters | 2 | `skills/design/assets/vendor/html-to-image.js` | bundle vendorizado de terceiros (export PNG) |
 | skills/emil-design-eng | Skills | 1 | `skills/emil-design-eng/SKILL.md` | instrução de engenharia de design |
 | skills/impeccable | Core (misto) | 5 | `skills/impeccable/SKILL.md` | skill de revisão/auditoria (v4.4.0) |
 | skills/impeccable/reference | Skills | 5 | `skills/impeccable/reference/` | 41 playbooks + papéis degraded |
 | skills/impeccable/scripts | Core (misto) | 5 | `skills/impeccable/scripts/live-browser.js` | live variant mode + launchers + bundle vendado |
-| skills/taste | Skills | 1 | `skills/taste/SKILL.md` | instrução de gosto/anti-slop |
+| skills/taste | Skills | 1,8 | `skills/taste/SKILL.md` | instrução de gosto/anti-slop |
 
 ## 4. Fronteiras de camada decididas (com evidência)
 
