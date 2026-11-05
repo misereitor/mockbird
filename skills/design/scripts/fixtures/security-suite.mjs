@@ -50,9 +50,31 @@
  *   11 traversal-hardening: route params — encoded traversal, null bytes and
  *     broken percent-encoding never disclose files (403/400), on static AND
  *     /api routes
- *   12 csp-headers: /viewer.html and /docs.html carry Content-Security-Policy
- *     (script-src 'self' + sha256 inline hashes) plus X-Content-Type-Options
- *     and Referrer-Policy
+ *   12 csp-headers: /viewer.html and /docs.html carry an ENFORCED
+ *     Content-Security-Policy (never report-only) with no 'unsafe-inline' —
+ *     script-src 'self' + sha256 hashes, style-src 'self' 'unsafe-hashes' +
+ *     sha256 hashes — plus X-Content-Type-Options and Referrer-Policy
+ *   13 method-route-guard: wrong verb on a known /api route -> 405
+ *     method-not-allowed (+Allow); .history/.backups are never served
+ *     statically (404) while regular static files keep answering 200
+ *   14 declared-payloads: write bodies with undeclared top-level keys, extra
+ *     reply keys or non-numeric rect fields -> 400 invalid; a fully declared
+ *     body still writes (200)
+ *   15 iframe-sandbox: every <iframe> of every served HTML page carries
+ *     sandbox flags — a bare fixture iframe gets the server-injected default
+ *     and the viewer's own frames keep theirs
+ *   16 config-schema-version: revert against a validate.config.json with an
+ *     unknown schemaVersion -> 400 config-schema and design/.backups/ gains
+ *     NOTHING (the root is untouched before the pipeline)
+ *   17 backup-retention: revert writes design/.backups/<ts>/ BEFORE
+ *     restore/sync (the backup holds the pre-revert file with its marker
+ *     while the live one is restored), retention keeps exactly 5 entries
+ *     across 7 reverts and a post-prune recheck confirms the survivors are
+ *     complete
+ *   18 localhost-default: the printed URL binds 127.0.0.1 and the LAN address
+ *     refuses the port (no exposure beyond localhost without --share)
+ *   19 rate-limit: a burst past 300 calls/minute answers 429
+ *     {"error":"rate-limited"} (run LAST — it consumes the window budget)
  *
  * Output ends with `SECURITY-SUITE: PASS (N/N)` or `SECURITY-SUITE: FAIL
  * (k/N)`. Exit codes: 0 all asserts pass | 1 any failure | 2 bad usage.
@@ -61,11 +83,11 @@
  * Output is ASCII-only on purpose (console codepage safety).
  */
 import { spawn } from 'node:child_process'
-import { cpSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { request as httpRequest } from 'node:http'
-import { createServer as createNetServer } from 'node:net'
+import { createConnection, createServer as createNetServer } from 'node:net'
 import { dirname, join, resolve } from 'node:path'
-import { tmpdir } from 'node:os'
+import { networkInterfaces, tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 const USAGE = 'uso: node skills/design/scripts/fixtures/security-suite.mjs [--url <base> --token <tok>]'
@@ -185,22 +207,40 @@ function rawGet(hostHeader, port, path) {
 
 // ---------- spawn helpers ----------
 
+/** Probe fixture for assert 15: one bare <iframe> (the server must sandbox
+ * it) and one that declares its own sandbox (must stay byte-untouched). Lives
+ * under snapshots/ so the validate walker never sees it. */
+const PROBE_HTML =
+  '<!doctype html><title>probe</title>' +
+  '<iframe id="bare" src="01-login.html"></iframe>' +
+  '<iframe id="declared" sandbox="allow-scripts" src="02-cadastro.html"></iframe>'
+
 function mountDesign() {
   rmSync(TMP, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 })
   mkdirSync(DESIGN, { recursive: true })
   for (const entry of readdirSync(join(ASSETS, 'example'))) {
     cpSync(join(ASSETS, 'example', entry), join(DESIGN, entry), { recursive: true })
   }
-  for (const file of ['viewer.html', 'serve.mjs', 'mock.js', 'mock.css', 'docs.html']) {
+  for (const file of ['viewer.html', 'serve.mjs', 'mock.js', 'mock.css', 'docs.html', 'validate.config.json']) {
     cpSync(join(ASSETS, file), join(DESIGN, file))
   }
   cpSync(join(ASSETS, 'vendor'), join(DESIGN, 'vendor'), { recursive: true })
   cpSync(join(ASSETS, 'components'), join(DESIGN, 'components'), { recursive: true })
+  // full scripts tree (minus fixtures/): the revert pipeline runs
+  // gen-tokens -> sync-components -> validate and pulls lib/ + codegen.mjs
   mkdirSync(join(DESIGN, 'scripts'), { recursive: true })
-  for (const file of ['gen-tokens.mjs', 'sync-components.mjs', 'marker-parser.mjs']) {
-    cpSync(join(SCRIPTS, file), join(DESIGN, 'scripts', file))
+  for (const entry of readdirSync(SCRIPTS)) {
+    if (entry === 'fixtures') continue
+    cpSync(join(SCRIPTS, entry), join(DESIGN, 'scripts', entry), { recursive: true })
   }
   cpSync(join(SCRIPTS, 'validate.mjs'), join(DESIGN, 'validate.mjs'))
+  // toolchainScripts of the mounted config resolve relative to design/ -> TMP/scripts/
+  mkdirSync(join(TMP, 'scripts'), { recursive: true })
+  for (const file of ['validate.mjs', 'sync-components.mjs', 'marker-parser.mjs', 'gen-tokens.mjs', 'export-tokens.mjs']) {
+    cpSync(join(SCRIPTS, file), join(TMP, 'scripts', file))
+  }
+  mkdirSync(join(DESIGN, 'snapshots'), { recursive: true })
+  writeFileSync(join(DESIGN, 'snapshots', 'security-probe.html'), PROBE_HTML)
 }
 
 function freePort() {
@@ -551,29 +591,34 @@ async function traversalHardening(port, base, token) {
   )
 }
 
-/** assert 12: viewer/docs carry the hardening headers — CSP (script-src
- *  'self' + sha256 hashes for the inline runtime), nosniff, no-referrer. */
+/** assert 12: viewer/docs carry the hardening headers — ENFORCED CSP (never
+ *  report-only) with no 'unsafe-inline': script-src 'self' + sha256 hashes for
+ *  the inline runtime, style-src 'self' 'unsafe-hashes' + sha256 hashes for
+ *  inline styles/attrs, nosniff, no-referrer. */
 async function cspHeaders(base) {
   const checks = []
   for (const path of ['/viewer.html', '/docs.html']) {
     const res = await fetch(base + path)
     const csp = res.headers.get('content-security-policy') ?? ''
+    const reportOnly = res.headers.get('content-security-policy-report-only')
     const nosniff = res.headers.get('x-content-type-options') ?? ''
     const referrer = res.headers.get('referrer-policy') ?? ''
     checks.push({
       name: path,
       ok:
         res.status === 200 &&
+        reportOnly === null &&
         csp.includes("script-src 'self'") &&
         csp.includes("'sha256-") &&
-        csp.includes("style-src 'self' 'unsafe-inline'") &&
+        !csp.includes('unsafe-inline') &&
+        csp.includes("style-src 'self' 'unsafe-hashes'") &&
         csp.includes("img-src 'self' data:") &&
         csp.includes("frame-src 'self'") &&
         csp.includes("object-src 'none'") &&
         csp.includes("base-uri 'none'") &&
         nosniff === 'nosniff' &&
         referrer === 'no-referrer',
-      got: `${res.status} csp=${JSON.stringify(csp.slice(0, 120))} nosniff=${nosniff} referrer=${referrer}`,
+      got: `${res.status} csp=${JSON.stringify(csp.slice(0, 120))} report-only=${reportOnly !== null} nosniff=${nosniff} referrer=${referrer}`,
     })
   }
   const bad = checks.filter((c) => !c.ok)
@@ -582,6 +627,288 @@ async function cspHeaders(base) {
     'csp-headers',
     bad.length === 0,
     `${checks.map((c) => `${c.name} ${c.ok ? 'ok' : c.got}`).join(' | ')} | want CSP+nosniff+no-referrer em viewer e docs`,
+  )
+}
+
+// ---------- asserts 13-19 (todo 35: rotas, payloads, iframe, config, backup) ----------
+
+/** Sorted directory names of design/.backups/ (the persistent pre-sync
+ *  backups; stray files never count). */
+function listBackups() {
+  const dir = join(DESIGN, '.backups')
+  if (!existsSync(dir)) return []
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort()
+}
+
+/** assert 13: wrong verb on a known /api route -> 405 method-not-allowed (+the
+ *  declared verbs on Allow); .history/.backups are server state and never
+ *  served (probe files placed there must answer 404) while regular static
+ *  files keep working. Removing the method allow-list or the hidden-dir guard
+ *  makes this assert FAIL. */
+async function methodRouteGuard(base, token) {
+  const probes = []
+  const expect = async (name, res, wantCode, wantError) => {
+    const text = await res.text()
+    probes.push({
+      name,
+      ok: res.status === wantCode && safeError(text) === wantError,
+      got: `${res.status} ${safeError(text)}`,
+    })
+  }
+  await expect('put-comments', await api(base, '/api/comments', { method: 'PUT', token, body: { id: 'p' } }), 405, 'method-not-allowed')
+  await expect('patch-snapshot', await api(base, '/api/snapshot', { method: 'PATCH', token, body: { canvas: 'login', label: 'x' } }), 405, 'method-not-allowed')
+  await expect('delete-snapshot', await api(base, '/api/snapshot', { method: 'DELETE', token, body: { canvas: 'login', label: 'x' } }), 405, 'method-not-allowed')
+  await expect('get-revert', await api(base, '/api/revert', { token }), 405, 'method-not-allowed')
+  await expect('post-snapshots', await api(base, '/api/snapshots', { method: 'POST', token, body: {} }), 405, 'method-not-allowed')
+  // hidden-state dirs: probe files with real content (404 without the guard
+  // would be a fake pass — the file MUST exist to prove the guard)
+  for (const [dir, name] of [['.backups', 'probe-secret.txt'], ['.history', 'probe-secret.txt']]) {
+    const full = join(DESIGN, dir, name)
+    mkdirSync(join(DESIGN, dir), { recursive: true })
+    writeFileSync(full, 'secret-canary')
+    const res = await fetch(base + `/${dir}/${name}`)
+    const text = await res.text()
+    probes.push({
+      name: `${dir}-static`,
+      ok: res.status === 404 && !text.includes('secret-canary'),
+      got: `${res.status} leak=${text.includes('secret-canary')}`,
+    })
+    rmSync(full, { force: true })
+  }
+  const staticRes = await fetch(base + '/comments.json')
+  probes.push({ name: 'static-alive', ok: staticRes.status === 200, got: String(staticRes.status) })
+  const bad = probes.filter((p) => !p.ok)
+  record(
+    13,
+    'method-route-guard',
+    bad.length === 0,
+    `${probes.map((p) => `${p.name} ${p.got}${p.ok ? '' : ' (!)'}`).join(' + ')} | want 405 method-not-allowed nas rotas de escrita + 404 sem vazamento em .history/.backups + 200 estatico`,
+  )
+}
+
+/** assert 14: write bodies carry ONLY the keys their route declares — an
+ *  undeclared top-level key, an undeclared reply key or a non-numeric rect
+ *  field is refused 400, while a fully declared body still writes (200).
+ *  Removing the whitelist makes this assert FAIL. */
+async function declaredPayloads(base, token) {
+  const probes = []
+  const expect400 = async (name, path, body) => {
+    const res = await api(base, path, { method: 'POST', token, body })
+    const text = await res.text()
+    probes.push({ name, ok: res.status === 400 && safeError(text) === 'invalid', got: `${res.status} ${safeError(text)}` })
+  }
+  await expect400('undeclared-key', '/api/comments', { canvas: 'login', file: '01-login.html', evil: 'x' })
+  await expect400('rect-undeclared', '/api/comments', { canvas: 'login', file: '01-login.html', rect: { x: 1, evil: 2 } })
+  await expect400('rect-nonnumeric', '/api/comments', { canvas: 'login', file: '01-login.html', rect: { x: 1, y: 2, width: 3, height: '4' } })
+  await expect400('reply-undeclared', '/api/comments', { canvas: 'login', file: '01-login.html', replies: [{ text: 'ok', evil: 1 }] })
+  await expect400('screen-size-undeclared', '/api/screen-size', { canvas: 'login', file: '01-login.html', width: 1234, height: 900, evil: 1 })
+  const okRes = await api(base, '/api/comments', {
+    method: 'POST',
+    token,
+    body: { canvas: 'login', file: '01-login.html', replies: [{ text: 'payload-ok' }] },
+  })
+  const okText = await okRes.text()
+  probes.push({ name: 'declared-still-writes', ok: okRes.status === 200 && okText.includes('payload-ok'), got: `${okRes.status}` })
+  const bad = probes.filter((p) => !p.ok)
+  record(
+    14,
+    'declared-payloads',
+    bad.length === 0,
+    `${probes.map((p) => `${p.name} ${p.got}${p.ok ? '' : ' (!)'}`).join(' + ')} | want 400 invalid fora do payload declarado + 200 no declarado`,
+  )
+}
+
+/** assert 15: every <iframe> of every served HTML page carries sandbox flags.
+ *  The bare fixture iframe gets the server-injected default, the one that
+ *  declares its own sandbox stays byte-untouched, and the viewer's preview
+ *  frames keep theirs. Removing the sweep makes this assert FAIL. */
+async function iframeSandbox(base) {
+  const probes = []
+  const probeRes = await fetch(base + '/snapshots/security-probe.html')
+  const probeText = await probeRes.text()
+  probes.push({
+    name: 'bare-gains-sandbox',
+    ok: probeRes.status === 200 && /<iframe id="bare"[^>]*sandbox="allow-scripts allow-same-origin allow-forms"/.test(probeText),
+    got: String(probeRes.status),
+  })
+  probes.push({
+    name: 'declared-untouched',
+    ok: /<iframe id="declared" sandbox="allow-scripts" src="02-cadastro.html">/.test(probeText),
+    got: String((probeText.match(/sandbox=/g) ?? []).length),
+  })
+  const viewerRes = await fetch(base + '/viewer.html')
+  const viewerText = await viewerRes.text()
+  const tags = [...viewerText.matchAll(/<iframe\b[^>]*>/gi)].map((m) => m[0])
+  probes.push({
+    name: 'viewer-frames',
+    ok: viewerRes.status === 200 && tags.length > 0 && tags.every((tag) => /sandbox="/.test(tag)),
+    got: `${tags.length} iframes, ${tags.filter((tag) => /sandbox="/.test(tag)).length} sandboxed`,
+  })
+  const bad = probes.filter((p) => !p.ok)
+  record(
+    15,
+    'iframe-sandbox',
+    bad.length === 0,
+    `${probes.map((p) => `${p.name} ${p.got}${p.ok ? '' : ' (!)'}`).join(' + ')} | want sandbox em todo <iframe> servido`,
+  )
+}
+
+/** asserts 16+17: config schemaVersion gate + pre-sync backups with retention.
+ *  Removing either protection makes the matching assert FAIL. */
+async function configAndBackup(base, token) {
+  // prep: a snapshot to revert to (write endpoint, must be 200)
+  const snap = await api(base, '/api/snapshot', { method: 'POST', token, body: { canvas: 'login', label: 'qa-b' } })
+  await snap.text()
+  const snapOk = snap.status === 200
+
+  // -- assert 16: unknown config schemaVersion is refused BEFORE any write --
+  const configPath = join(DESIGN, 'validate.config.json')
+  const goodConfig = readFileSync(configPath, 'utf8')
+  const backupsBefore = listBackups()
+  writeFileSync(configPath, `${JSON.stringify({ schemaVersion: 99 }, null, 2)}\n`)
+  const badRevert = await api(base, '/api/revert', { method: 'POST', token, body: { canvas: 'login', label: 'qa-b' } })
+  const badText = await badRevert.text()
+  const backupsAfterBad = listBackups()
+  writeFileSync(configPath, goodConfig)
+  record(
+    16,
+    'config-schema-version',
+    snapOk &&
+      badRevert.status === 400 &&
+      safeError(badText) === 'config-schema' &&
+      backupsAfterBad.length === backupsBefore.length,
+    `got snapshot ${snap.status} + revert ${badRevert.status} ${safeError(badText)} + backups ${backupsBefore.length}->${backupsAfterBad.length} | want 400 {"error":"config-schema"} com .backups/ intocado`,
+  )
+
+  // -- assert 17: backup BEFORE restore/sync + N-version retention --
+  // marker: the live canvas.json diverges from the snapshot BEFORE the revert
+  await api(base, '/api/screen-size', {
+    method: 'POST',
+    token,
+    body: { canvas: 'login', file: '01-login.html', width: 1234, height: 900 },
+  })
+  const markerIn = (dir) => {
+    try {
+      const manifest = JSON.parse(readFileSync(join(DESIGN, dir, 'login', 'canvas.json'), 'utf8'))
+      const screen = (manifest.screens ?? []).find((s) => s && s.file === '01-login.html')
+      return screen?.width === 1234
+    } catch {
+      return false
+    }
+  }
+  let revertOk = true
+  const revert = async () => {
+    const res = await api(base, '/api/revert', { method: 'POST', token, body: { canvas: 'login', label: 'qa-b' } })
+    await res.text()
+    if (res.status !== 200) revertOk = false
+  }
+  await revert() // revert #1: the backup must hold the PRE-revert marker state
+  const afterFirst = listBackups()
+  const newest = afterFirst.at(-1) ?? ''
+  const backupHoldsMarker = markerIn(join('.backups', newest))
+  const liveRestored = !markerIn('.')
+  for (let i = 0; i < 6; i++) await revert() // reverts #2-#7 -> retention must prune
+  const retained = listBackups()
+  const complete = retained.every((name) => {
+    try {
+      return (
+        existsSync(join(DESIGN, '.backups', name, 'comments.json')) &&
+        existsSync(join(DESIGN, '.backups', name, 'login', 'canvas.json'))
+      )
+    } catch {
+      return false
+    }
+  })
+  // stale-state recheck: one more revert and the count must STAY at 5, with
+  // the survivors still complete (the pruned oldest is never silently missed)
+  await revert()
+  const rechecked = listBackups()
+  record(
+    17,
+    'backup-retention',
+    snapOk &&
+      revertOk &&
+      afterFirst.length >= 1 &&
+      backupHoldsMarker &&
+      liveRestored &&
+      retained.length === 5 &&
+      complete &&
+      rechecked.length === 5,
+    `got snapshot ${snap.status}, backups ${afterFirst.length} -> ${retained.length} -> ${rechecked.length} (recheck), marker-no-backup=${backupHoldsMarker} live-restored=${liveRestored} completos=${complete} | want backup pre-sync + 5 retidos + recheck estavel`,
+  )
+}
+
+/** assert 18: localhost binding is the DEFAULT — the printed URL is
+ *  127.0.0.1 and the LAN address refuses the port (only --share binds
+ *  0.0.0.0). */
+async function localhostDefault(base, port) {
+  const urlOk = base.startsWith('http://127.0.0.1:')
+  let lan = null
+  for (const entries of Object.values(networkInterfaces())) {
+    for (const entry of entries ?? []) {
+      if (entry.family === 'IPv4' && !entry.internal) {
+        lan = entry.address
+        break
+      }
+    }
+    if (lan) break
+  }
+  let lanRefused = true
+  let lanNote = 'sem IP externo'
+  if (lan) {
+    lanRefused = await new Promise((done) => {
+      const probe = createConnection({ host: lan, port })
+      probe.setTimeout(1500)
+      probe.once('connect', () => {
+        probe.destroy()
+        done(false)
+      })
+      probe.once('error', () => {
+        probe.destroy()
+        done(true)
+      })
+      probe.once('timeout', () => {
+        probe.destroy()
+        done(true)
+      })
+    })
+    lanNote = `${lan}:${port} ${lanRefused ? 'recusado' : 'ACEITO (!)'}`
+  }
+  record(
+    18,
+    'localhost-default',
+    urlOk && lanRefused,
+    `URL ${base} (127.0.0.1=${urlOk}) + LAN ${lanNote} | want bind 127.0.0.1 por default`,
+  )
+}
+
+/** assert 19 (LAST): burst past the budget -> 429 {"error":"rate-limited"} on
+ *  later calls while the first still answers 200. Removing the limiter makes
+ *  this assert FAIL (nothing ever answers 429). */
+async function rateLimit(base, token) {
+  const burst = 340
+  let first = 0
+  let last = 0
+  let limited = 0
+  let limitedError = ''
+  for (let i = 0; i < burst; i += 1) {
+    const res = await api(base, '/api/comments', { token })
+    const text = await res.text()
+    if (i === 0) first = res.status
+    if (res.status === 429) {
+      limited += 1
+      limitedError = safeError(text)
+    }
+    last = res.status
+  }
+  record(
+    19,
+    'rate-limit',
+    first === 200 && limited >= 1 && limitedError === 'rate-limited' && last === 429,
+    `got burst ${burst}: first ${first}, ${limited}x 429 (${limitedError || '-'}), last ${last} | want 200 no inicio e 429 {"error":"rate-limited"} no fim`,
   )
 }
 
@@ -629,7 +956,7 @@ async function main() {
     await battery(externalUrl, externalToken)
     console.log('SKIP #6 share: modo externo — o assert roda so no auto-spawn (segundo spawn --share)')
     await staticWeirdHost(extPort)
-    console.log('SKIP #10/#11/#12: modo externo — os asserts novos (XSS/traversal/CSP) rodam so no auto-spawn')
+    console.log('SKIP #10-#19: modo externo — XSS/traversal/CSP/rotas/payloads/iframe/config/backup/localhost/rate-limit rodam so no auto-spawn')
     process.exitCode = summary() ? 0 : 1
     return
   }
@@ -654,9 +981,15 @@ async function main() {
     await agentSendGuard(mainServer.base, mainServer.token, shareServer.base, shareServer.token)
     await historyGuard(mainServer.base, mainServer.token, shareServer.base, shareServer.token)
     await staticWeirdHost(port1)
+    await methodRouteGuard(mainServer.base, mainServer.token)
+    await declaredPayloads(mainServer.base, mainServer.token)
+    await iframeSandbox(mainServer.base)
+    await configAndBackup(mainServer.base, mainServer.token)
+    await localhostDefault(mainServer.base, port1)
     await xssCommentSanitized(mainServer.base, mainServer.token)
     await traversalHardening(port1, mainServer.base, mainServer.token)
     await cspHeaders(mainServer.base)
+    await rateLimit(mainServer.base, mainServer.token) // LAST: consumes the window budget
   } catch (error) {
     recordFail(0, 'harness', `infra error: ${error.message}`)
   } finally {

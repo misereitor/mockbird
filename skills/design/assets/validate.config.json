@@ -1,5 +1,6 @@
 {
-  "exemptDirs": ["vendor", "scripts", "snapshots", ".history"],
+  "schemaVersion": 1,
+  "exemptDirs": ["vendor", "scripts", "snapshots", ".history", ".backups"],
   "exemptFiles": ["design-system.css", "utilities.css", "mock.css", "viewer.html", "docs.html", "mock.js", "tokens.w3c.json"],
   "exemptFilesSync": ["viewer.html", "docs.html", "mock.js"],
   "componentVariantKeys": ["size", "tone", "state", "device"],

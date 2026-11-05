@@ -51,11 +51,43 @@
  *   - canvas|label|id must match /^[a-z0-9-]+$/
  *   - traversal-shaped input (.., /, \) -> 403
  *   - body > 256KB -> 413
+ *   - route method must be the declared one -> 405 (write routes accept only
+ *     their own verb; token is required on top of that)
+ *   - simple rate limit: 300 /api/* calls per minute per remote address ->
+ *     429 (Retry-After carries the wait)
+ *   - declared payloads only: a write body carries just the keys its route
+ *     declares (plus {text,at,createdAt} reply items and numeric
+ *     {x,y,width,height} rects) — undeclared keys -> 400, so design/ writes
+ *     land only in declared fields
+ *   - .history/ and .backups/ are server state, never served statically
  * Error taxonomy: traversal 403 | schema 400 | too large 413 | missing 404 |
- * duplicate snapshot label 409 | invalid/desynced snapshot manifest 400
+ * wrong method 405 | rate-limited 429 | duplicate snapshot label 409 |
+ * unsupported config schema 400 | invalid/desynced snapshot manifest 400
  * (checked BEFORE any restore, never touching the root) | write/pipeline
  * failure 500 + FULL rollback to the pre-revert state (backup taken before
  * the swap).
+ *
+ * Config versioning (todo 35): before the revert pipeline may run
+ * gen -> sync -> validate, design/validate.config.json (validate.mjs's own
+ * discovery chain) must declare a schemaVersion this server understands.
+ * Absent = legacy config, still accepted; non-integer/unknown -> 400 with the
+ * root untouched.
+ *
+ * Backups (todo 35): every revert takes design/.backups/<timestamp>/ with the
+ * root as it was BEFORE restore/sync rewrote it (snapshots/, .history/ and
+ * .backups/ excluded). The newest 5 survive; older entries are pruned.
+ *
+ * Iframe isolation (todo 35): every served HTML page gets explicit sandbox
+ * flags on <iframe> tags that lack them (allow-scripts allow-same-origin
+ * allow-forms — the same trio the viewer declares on its own preview frames),
+ * so authored previews cannot grant themselves top navigation, popups or
+ * downloads. Script/style/comment interiors are never rewritten.
+ *
+ * CSP (todo 16 base + todo 35): viewer/docs ship an ENFORCED policy (never
+ * report-only) with no 'unsafe-inline': inline <script>/<style> blocks and
+ * inline style attributes are allowed per-value via sha256 hashes computed on
+ * the SERVED bytes (post-rewrite), style attributes under 'unsafe-hashes'.
+ * The report-only -> enforce decision is recorded in ADR-0009.
  *
  * The viewer gets the token via in-memory response rewrite: the placeholder
  * `window.__DESIGN_TOKEN__ = null` inside viewer.html is substituted at serve
@@ -165,23 +197,55 @@ function isTraversal(value) {
   return value.includes('..') || value.includes('/') || value.includes('\\')
 }
 
-/** CSP for viewer/docs (todo 16): scripts only from this server, plus a sha256
- * allow-list for each inline <script> — computed on the SERVED bytes, so the
- * viewer token rewrite is covered. Inline <style>/style attrs stay allowed
- * (viewer styles); images may be data: (export previews). */
+/** One sha256 CSP hash source for the exact text. */
+function hash256(text) {
+  return `'sha256-${createHash('sha256').update(text).digest('base64')}'`
+}
+
+/** CSP for viewer/docs (todo 16 base, todo 35 hardening): scripts and styles
+ * only from this server, plus a sha256 allow-list computed on the SERVED bytes
+ * (post token-rewrite and iframe sweep) — inline <script>/<style> blocks hash
+ * their text, inline style= attributes hash their value under 'unsafe-hashes'
+ * (CSP3). 'unsafe-inline' is gone from both script-src and style-src. Inline
+ * <style>/style attrs were previously blanket-allowed; per-value hashes keep
+ * the viewer working while unlisted inline code/styles stay blocked. Images
+ * may be data: (export previews). */
 function cspFor(html) {
-  const hashes = []
-  const blocks = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
-  let match
-  while ((match = blocks.exec(html)) !== null) {
+  const scripts = []
+  const styles = []
+  for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     if (/\bsrc\s*=/i.test(match[1])) continue
-    hashes.push(`'sha256-${createHash('sha256').update(match[2]).digest('base64')}'`)
+    scripts.push(hash256(match[2]))
   }
-  const inline = hashes.length ? ` ${hashes.join(' ')}` : ''
+  for (const match of html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) {
+    styles.push(hash256(match[1]))
+  }
+  for (const match of html.matchAll(/(?<![\w-])style\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)) {
+    const value = match[1] ?? match[2] ?? ''
+    if (value.trim() === '') continue
+    styles.push(hash256(value))
+  }
+  const inline = (list) => (list.length ? ` ${list.join(' ')}` : '')
   return (
-    `script-src 'self'${inline}; style-src 'self' 'unsafe-inline'; ` +
+    `script-src 'self'${inline(scripts)}; ` +
+    `style-src 'self' 'unsafe-hashes'${inline(styles)}; ` +
     `img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'none'`
   )
+}
+
+/** Iframe isolation (todo 35): every <iframe> of a served HTML page that lacks
+ * a sandbox attribute gains the viewer's own preview trio. Tag interiors of
+ * <script>/<style>/comments are skipped so JS strings and CSS stay byte-exact. */
+const IFRAME_SANDBOX = 'allow-scripts allow-same-origin allow-forms'
+const IFRAME_SWEEP =
+  /(<script\b[^>]*>[\s\S]*?<\/script\s*>|<style\b[^>]*>[\s\S]*?<\/style\s*>|<!--[\s\S]*?-->)|<iframe\b([^>]*?)\/?>/gi
+
+function sandboxIframes(html) {
+  return html.replace(IFRAME_SWEEP, (whole, skip, attrs) => {
+    if (skip !== undefined) return skip
+    if (/(?<![\w-])sandbox\s*=/.test(attrs)) return whole
+    return `<iframe${attrs.replace(/\s*\/$/, '')} sandbox="${IFRAME_SANDBOX}">`
+  })
 }
 
 /** Comment text sanitization (todo 16): strip HTML tags and inert-encode the
@@ -229,6 +293,86 @@ function apiGuard(req) {
   const given = req.headers['x-design-token']
   if (typeof given !== 'string' || given !== token) return { code: 403, error: 'forbidden' }
   return null
+}
+
+// ---------- rate limit (todo 35) ----------
+/* Simple fixed window per remote address over /api/*: RATE_MAX calls per
+ * RATE_WINDOW_MS, then 429 until the window rolls. Counts every /api/* hit
+ * (valid or not) so token probing and write floods share one budget. */
+
+const RATE_WINDOW_MS = 60_000
+const RATE_MAX = 300
+const rateWindows = new Map() // remoteAddress -> { start, count }
+
+/** Seconds to wait when over budget, or 0 when the call may proceed. */
+function rateRetryAfter(req) {
+  const address = req.socket.remoteAddress ?? '?'
+  const now = Date.now()
+  const win = rateWindows.get(address)
+  if (!win || now - win.start >= RATE_WINDOW_MS) {
+    if (rateWindows.size > 1024) {
+      for (const [key, entry] of rateWindows) {
+        if (now - entry.start >= RATE_WINDOW_MS) rateWindows.delete(key)
+      }
+    }
+    rateWindows.set(address, { start: now, count: 1 })
+    return 0
+  }
+  win.count += 1
+  return win.count > RATE_MAX ? Math.max(1, Math.ceil((win.start + RATE_WINDOW_MS - now) / 1000)) : 0
+}
+
+// ---------- declared payloads + method allow-list (todo 35) ----------
+/* Write bodies carry ONLY the keys their route declares: anything else is
+ * refused 400 before a handler runs, so design/ writes land solely in declared
+ * fields (reply items and rects get the same treatment one level down). */
+
+const PAYLOAD_KEYS = {
+  comments: ['id', 'canvas', 'file', 'selector', 'snippet', 'rect', 'status', 'replies', '_demo'],
+  snapshot: ['canvas', 'label'],
+  revert: ['canvas', 'label'],
+  'agent-send': ['text'],
+  'history-restore': ['file', 'revision'],
+  'screen-size': ['canvas', 'file', 'width', 'height'],
+}
+const REPLY_KEYS = ['text', 'at', 'createdAt']
+const RECT_KEYS = ['x', 'y', 'width', 'height']
+
+function checkDeclaredPayload(route, body) {
+  const declared = PAYLOAD_KEYS[route]
+  if (!declared) return
+  for (const key of Object.keys(body)) {
+    if (!declared.includes(key)) throw new ApiError(400, 'invalid')
+  }
+  if (body.replies !== undefined) {
+    if (!Array.isArray(body.replies)) throw new ApiError(400, 'invalid')
+    for (const reply of body.replies) {
+      if (!reply || typeof reply !== 'object' || Array.isArray(reply)) throw new ApiError(400, 'invalid')
+      for (const key of Object.keys(reply)) {
+        if (!REPLY_KEYS.includes(key)) throw new ApiError(400, 'invalid')
+      }
+    }
+  }
+  if (body.rect !== undefined) {
+    const rect = body.rect
+    if (!rect || typeof rect !== 'object' || Array.isArray(rect)) throw new ApiError(400, 'invalid')
+    for (const key of Object.keys(rect)) {
+      if (!RECT_KEYS.includes(key) || typeof rect[key] !== 'number' || !Number.isFinite(rect[key])) {
+        throw new ApiError(400, 'invalid')
+      }
+    }
+  }
+}
+
+const ROUTE_METHODS = {
+  comments: ['GET', 'POST', 'DELETE'],
+  snapshots: ['GET'],
+  snapshot: ['POST'],
+  revert: ['POST'],
+  'agent-send': ['POST'],
+  history: ['GET'],
+  'history-restore': ['POST'],
+  'screen-size': ['POST'],
 }
 
 /** Reads the request body, discarding past MAX_BODY; resolves {text} | {error}. */
@@ -1005,11 +1149,68 @@ function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+// ---------- config versioning + pre-sync backups (todo 35) ----------
+
+const CONFIG_SCHEMA = 1
+const BACKUP_KEEP = 5
+
+/** validate.mjs's own discovery chain (validated root -> CWD), mirrored here. */
+function configPathFor() {
+  return [join(root, 'validate.config.json'), join(process.cwd(), 'validate.config.json')].find((file) =>
+    existsSync(file),
+  )
+}
+
+/** Unknown config schemas never reach the gen -> sync -> validate pipeline:
+ * absent schemaVersion = legacy (pre-versioning) config, still accepted. */
+function checkConfigSchema() {
+  const file = configPathFor()
+  if (!file) return
+  let parsed
+  try {
+    parsed = JSON.parse(readFileSync(file, 'utf8'))
+  } catch {
+    throw new ApiError(400, 'config-schema')
+  }
+  const version =
+    parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed.schemaVersion : undefined
+  if (version === undefined) return // legacy config — accepted
+  if (!Number.isInteger(version) || version < 1 || version > CONFIG_SCHEMA) {
+    throw new ApiError(400, 'config-schema')
+  }
+}
+
+/** Persistent pre-sync/mirror backup: design/.backups/<timestamp>/ keeps the
+ * root as it was BEFORE restore -> gen -> sync -> validate rewrote it.
+ * snapshots/, .history/ and .backups/ itself are never copied; the newest
+ * BACKUP_KEEP entries survive and older ones are pruned. */
+function backupDesign() {
+  const backups = join(root, '.backups')
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  let dest = join(backups, stamp)
+  for (let n = 2; existsSync(dest); n++) dest = join(backups, `${stamp}-${n}`)
+  mkdirSync(dest, { recursive: true })
+  for (const entry of readdirSync(root)) {
+    if (entry === 'snapshots' || entry === '.history' || entry === '.backups') continue
+    cpSync(join(root, entry), join(dest, entry), { recursive: true })
+  }
+  const kept = readdirSync(backups, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort()
+  for (const old of kept.slice(0, Math.max(0, kept.length - BACKUP_KEEP))) {
+    rmSync(join(backups, old), { recursive: true, force: true })
+  }
+  return dest
+}
+
 /**
  * POST /api/revert {canvas,label} — restores the snapshot's src/ (integral
  * REPLACE) and ALWAYS reruns gen -> sync -> validate.
  *   400 invalid    manifest.json invalid/schema-broken/desynced — checked
  *                  BEFORE any write; the root is never touched on this path
+ *   400 config-schema  validate.config.json declares a schemaVersion this
+ *                  server does not understand — root untouched
  *   404 not-found  snapshot (or its manifest.json) missing
  *   500 internal   restore/pipeline failure — FULL rollback to the pre-revert
  *                  state (pre-swap backup taken before the replace)
@@ -1031,7 +1232,9 @@ function handleRevert(res, body) {
   if (!manifest) throw new ApiError(404, 'not-found')
   if (manifestDesynced(snapDir, manifest, label)) throw new ApiError(400, 'invalid')
   if (!existsSync(join(snapDir, 'src'))) throw new ApiError(400, 'invalid')
+  checkConfigSchema() // unknown config schema -> 400, root untouched
 
+  backupDesign() // persistent pre-sync/mirror copy (design/.backups/, newest 5)
   const backup = backupRoot()
   try {
     restoreSrc(snapDir, canvas)
@@ -1284,6 +1487,11 @@ async function handleAgentSend(res, parsed) {
 // ---------- routing ----------
 
 async function handleApi(req, res, pathname) {
+  const retryAfter = rateRetryAfter(req)
+  if (retryAfter > 0) {
+    res.setHeader('retry-after', String(retryAfter))
+    return fail(res, 429, 'rate-limited')
+  }
   const guard = apiGuard(req)
   if (guard) return fail(res, guard.code, guard.error)
 
@@ -1307,6 +1515,12 @@ async function handleApi(req, res, pathname) {
                     ? 'screen-size'
                     : null
   if (!route) return fail(res, 404, 'not-found')
+  const allowed = ROUTE_METHODS[route]
+  if (!allowed.includes(method)) {
+    // wrong verb on a known route: 405 + Allow, never the handler
+    res.setHeader('allow', allowed.join(', '))
+    return fail(res, 405, 'method-not-allowed')
+  }
 
   try {
     if (route === 'comments' && method === 'GET') {
@@ -1330,9 +1544,9 @@ async function handleApi(req, res, pathname) {
       } catch {
         return fail(res, 400, 'invalid')
       }
+      if (parsed) checkDeclaredPayload(route, parsed)
       return sendJson(res, 200, { comments: handleCommentsDelete(parsed) })
     }
-    if (method !== 'POST') return fail(res, 404, 'not-found')
 
     const body = await readBody(req)
     if (body.error === 413) return fail(res, 413, 'too-large')
@@ -1357,6 +1571,7 @@ async function handleApi(req, res, pathname) {
         if (value.includes('\0')) return fail(res, 400, 'invalid')
         if (isTraversal(value)) return fail(res, 403, 'traversal')
       }
+      checkDeclaredPayload(route, parsed)
     }
 
     if (route === 'revert') return handleRevert(res, parsed)
@@ -1396,6 +1611,15 @@ const server = createServer(async (req, res) => {
       res.writeHead(403, { 'content-type': 'text/plain' })
       return res.end('forbidden')
     }
+    // .history/.backups are server state (revisions/pre-sync copies), not
+    // preview content — never served statically (the /api surface is the
+    // interface to them)
+    const rel = relative(root, file)
+    const top = rel.split(sep)[0]
+    if (top === '.history' || top === '.backups') {
+      res.writeHead(404, { 'content-type': 'text/plain' })
+      return res.end('not found')
+    }
 
     let st = null
     try {
@@ -1408,19 +1632,28 @@ const server = createServer(async (req, res) => {
       if (name === 'viewer.html' || name === 'docs.html') {
         // in-memory rewrite (viewer): the disk file keeps window.__DESIGN_TOKEN__ = null
         // and window.__DESIGN_READONLY = false; share flips the readonly flag.
-        // CSP hashes the inline scripts of the SERVED bytes (post-rewrite).
+        // CSP hashes the inline scripts/styles of the SERVED bytes (post-rewrite
+        // and post iframe-sandbox sweep).
         let html = readFileSync(file, 'utf8')
         if (name === 'viewer.html') {
           html = html
             .split(TOKEN_PLACEHOLDER).join(share ? TOKEN_SHARE : TOKEN_INJECTED)
             .split(READONLY_PLACEHOLDER).join(share ? READONLY_INJECTED : READONLY_PLACEHOLDER)
         }
+        html = sandboxIframes(html)
         res.writeHead(200, {
           'content-type': type,
           'cache-control': 'no-store',
           'last-modified': st.mtime.toUTCString(),
           'content-security-policy': cspFor(html),
         })
+        if (req.method === 'HEAD') return res.end()
+        return res.end(html)
+      }
+      if (type.startsWith('text/html')) {
+        // authored pages (screens, render/ exports): iframe sandbox sweep only
+        const html = sandboxIframes(readFileSync(file, 'utf8'))
+        res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store', 'last-modified': st.mtime.toUTCString() })
         if (req.method === 'HEAD') return res.end()
         return res.end(html)
       }
@@ -1435,7 +1668,7 @@ const server = createServer(async (req, res) => {
         return res.end()
       }
       const entries = readdirSync(file, { withFileTypes: true })
-        .filter((entry) => entry.name !== '.')
+        .filter((entry) => entry.name !== '.' && entry.name !== '.history' && entry.name !== '.backups')
         .map((entry) => `${entry.name}${entry.isDirectory() ? '/' : ''}`)
         .sort()
       const items = ['../', ...entries].map((name) => `<li><a href="${name}">${name}</a></li>`)
