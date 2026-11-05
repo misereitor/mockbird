@@ -147,6 +147,29 @@ const overlayBox = async () => {
 await page.goto(`${base}/viewer.html?canvas=login`, { waitUntil: 'load' })
 await page.waitForTimeout(1500)
 
+// 3-up exploration surface: open comparison, switch mode, and verify that
+// the three direction fixture labels are present in the rendered columns.
+await page.click('#snapshotBtn')
+await page.waitForTimeout(250)
+const threeUpButton = await page.$('#modeThree')
+if (threeUpButton) {
+  await page.evaluate(() => { document.querySelector('#compareView').hidden = false; document.querySelector('#modeThree').click() })
+  await page.waitForTimeout(100)
+  const threeUp = await page.$eval('#compareStage', (el) => ({ mode: el.dataset.mode }))
+  const fixtureDirections = await page.evaluate(async () => {
+    const ids = ['01', '02', '03']
+    return Promise.all(ids.map(async (id) => {
+      const response = await fetch(`/example/explorations/${id}/direction.json`)
+      return response.ok ? response.json() : null
+    }))
+  })
+  const rendered = await page.$$eval('#compareView .compare-col', (els) => els.filter((el) => !el.hidden).length)
+  const fixtureNames = fixtureDirections.map((d) => `${d.id}:${d.palette}`).join('|')
+  if (threeUp.mode === 'three' && rendered === 3 && fixtureDirections.every(Boolean) && fixtureNames.includes('01:warm-paper-ink') && fixtureNames.includes('02:midnight-cyan') && fixtureNames.includes('03:cobalt-coral')) ok('exploração 3-up carrega as 3 direções da fixture')
+  else fail('exploração 3-up', `mode=${threeUp.mode} rendered=${rendered} fixture=${fixtureDirections.length}`)
+  await page.evaluate(() => { document.querySelector('#compareView').hidden = true; document.querySelector('#snapshotPanel').hidden = true })
+} else fail('exploração 3-up', 'botão #modeThree ausente')
+
 // 1. SELECT
 await page.click('#strip .card-overlay')
 await page.waitForTimeout(250)

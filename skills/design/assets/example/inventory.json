@@ -21,6 +21,7 @@
     "dashboard/data.json",
     "data/estoque.json",
     "data/usuarios.json",
+    "decisions.json",
     "design-system.css",
     "explorations/01/direction.json",
     "explorations/01/pilot.html",
