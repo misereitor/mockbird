@@ -572,6 +572,7 @@ function handleCommentsPost(body) {
     canvas,
     file,
   }
+  const currentUser=sessionFrom(req); if (currentUser) { pin.authorId=currentUser.userId||'session'; pin.authorRole=currentUser.role||'editor' }
   if (typeof body.selector === 'string') pin.selector = body.selector
   if (typeof body.snippet === 'string') pin.snippet = body.snippet
   if (body.rect !== undefined) pin.rect = body.rect
