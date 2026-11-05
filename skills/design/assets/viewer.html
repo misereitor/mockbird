@@ -89,6 +89,15 @@
   .card-head { display: flex; align-items: baseline; gap: 10px; }
   .card-name { font-weight: 600; }
   .card-size { color: var(--ui-muted); font-size: 12px; }
+  /* approval surface (todo 27): badge de status + aprovar/reprovar por tela */
+  .card-approval { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+  .approval-status { font-size: 11px; padding: 1px 6px; border-radius: 8px; border: 1px solid var(--ui-muted); color: var(--ui-muted); white-space: nowrap; }
+  .approval-status[data-status="approved"], .approval-status[data-status="implemented"] { color: #14713d; border-color: #14713d; }
+  .approval-status[data-status="changes-requested"] { color: #b3261e; border-color: #b3261e; }
+  .approval-status.stale { color: #b3261e; border-color: #b3261e; text-decoration: underline; }
+  .approval-actions { display: inline-flex; gap: 2px; }
+  .approval-actions button { font-size: 11px; line-height: 1; padding: 2px 4px; cursor: pointer; border: 1px solid var(--ui-muted); border-radius: 6px; background: transparent; color: inherit; }
+  .approval-actions button:hover { border-color: var(--ui-accent); color: var(--ui-accent); }
   /* w18: controle unico de tamanho (estilo barra de dispositivos do Chrome) */
   .size-ctl {
     display: inline-flex; align-items: center; gap: 4px;
@@ -900,6 +909,15 @@ const I18N = {
     chipsBtn: '🧩 Components',
     chipsBtnTitle: 'Show id/variant chips over each component (inspector)',
     commentScreenBtn: '💬 Comment this screen',
+    // approval status surface (todo 27)
+    approvalDraft: 'draft',
+    approvalReview: 'review',
+    approvalChangesRequested: 'changes requested',
+    approvalApproved: 'approved',
+    approvalImplemented: 'implemented',
+    approvalStale: 'content changed — reopened to {status}',
+    approvalApproveTitle: 'Request approval of this screen (composes the approve.mjs set-status command for the agent)',
+    approvalRejectTitle: 'Request changes on this screen (composes the approve.mjs set-status changes-requested command for the agent)',
     commentsCount: '⧉ Comments ({count})',
     copyAllBtnTitle: 'View/copy every element comment',
     pendingBtn: '💬 Pending',
@@ -1158,6 +1176,15 @@ const I18N = {
     chipsBtn: '🧩 Componentes',
     chipsBtnTitle: 'Mostrar chips de id/variante sobre cada componente (inspetor)',
     commentScreenBtn: '💬 Comentar esta tela',
+    // superfície de aprovação (todo 27)
+    approvalDraft: 'rascunho',
+    approvalReview: 'em revisão',
+    approvalChangesRequested: 'alterações solicitadas',
+    approvalApproved: 'aprovado',
+    approvalImplemented: 'implementado',
+    approvalStale: 'conteúdo mudou — reaberto para {status}',
+    approvalApproveTitle: 'Solicitar aprovação desta tela (compõe o comando approve.mjs set-status para o agente)',
+    approvalRejectTitle: 'Solicitar alterações nesta tela (compõe o comando approve.mjs set-status changes-requested para o agente)',
     commentsCount: '⧉ Comentários ({count})',
     copyAllBtnTitle: 'Ver/copiar todos os comentários de elemento',
     pendingBtn: '💬 Pendentes',
@@ -1419,6 +1446,7 @@ const state = {
   zoom: 1, x: 0, y: 0,
   screens: [], selectedId: null, selectedIds: [], bust: 0,
   inspect: false, comments: [],
+  approvals: new Map(),
   chips: false, grid: false, bezel: false,
   scenario: '', problems: [],
   allComments: [], sweepIndex: -1,
@@ -1503,6 +1531,7 @@ async function loadCanvas() {
   await loadScenarioSelect()
   await loadCanvasSelect()
   await loadComments()
+  await loadApprovals()
   renderStrip()
 }
 
@@ -1705,6 +1734,114 @@ function resolveAnchor(doc, pin) {
     }
   }
   return null
+}
+
+/* ---------------------------- approval status surface (todo 27) */
+
+/** Rótulo do status (5 statuses do registro) — literal para o check:i18n. */
+function approvalLabel(entry) {
+  const label =
+    entry.status === 'draft' ? t('approvalDraft')
+      : entry.status === 'changes-requested' ? t('approvalChangesRequested')
+        : entry.status === 'approved' ? t('approvalApproved')
+          : entry.status === 'implemented' ? t('approvalImplemented')
+            : t('approvalReview')
+  return entry._stale ? t('approvalStale', { status: label }) : label
+}
+
+/** Entrada da tela no registro: caminho "canvas/arquivo" (join com o
+ *  approve.mjs), com fallback pelo nome do arquivo. */
+function approvalEntryFor(screen) {
+  const file = String(screen.file).split('?')[0]
+  return state.approvals.get(`${state.canvas}/${file}`) ?? state.approvals.get(file) ?? null
+}
+
+/** Badge de status + ações aprovar/reprovar por tela. Aprovar/reprovar só
+ *  COMPÕE o comando approve.mjs e abre o modal de envio (w14: o modal nunca
+ *  envia sozinho) — a escrita em approvals.json acontece exclusivamente via
+ *  approve.mjs, onde a regra do hash e o join de DEC-ids são incontornáveis. */
+function applyApprovalBadge(container, screen) {
+  container.innerHTML = ''
+  const entry = approvalEntryFor(screen)
+  if (!entry) return
+  const badge = document.createElement('span')
+  badge.className = `approval-status${entry._stale ? ' stale' : ''}`
+  badge.dataset.status = entry.status
+  badge.textContent = approvalLabel(entry)
+  badge.title = `${entry.status} — ${entry.at}${entry.decIds?.length ? ` · ${entry.decIds.join(', ')}` : ''}`
+  const actions = document.createElement('span')
+  actions.className = 'approval-actions'
+  actions.setAttribute('data-share-hide', '')
+  for (const [cls, status, symbol] of [
+    ['approval-approve', 'approved', '✓'],
+    ['approval-reject', 'changes-requested', '✗'],
+  ]) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = cls
+    button.textContent = symbol
+    button.title = status === 'approved' ? t('approvalApproveTitle') : t('approvalRejectTitle')
+    button.addEventListener('click', (event) => {
+      event.stopPropagation()
+      openSendModal(approvalMessage(screen, status))
+    })
+    actions.appendChild(button)
+  }
+  if (isReadonly()) actions.hidden = true // share: ação de escrita some
+  container.append(badge, actions)
+}
+
+function applyApprovalBadges() {
+  for (const card of document.querySelectorAll('#strip .card')) {
+    const screen = state.screens.find((s) => s.id === card.dataset.id)
+    const container = card.querySelector('.card-approval')
+    if (screen && container) applyApprovalBadge(container, screen)
+  }
+}
+
+/** Regra central visível: approved|implemented cujo hash atual (sha256 do
+ *  arquivo da tela) difere do registrado aparece como reaberto. Só o rótulo —
+ *  o auto-downgrade de verdade é do `approve.mjs verify`. */
+async function applyApprovalHashes() {
+  if (!globalThis.crypto?.subtle) return // contexto não-seguro: sem hash no cliente (declarado)
+  for (const screen of state.screens) {
+    const entry = approvalEntryFor(screen)
+    if (!entry || !['approved', 'implemented'].includes(entry.status)) continue
+    try {
+      const response = await fetch(`${state.canvas}/${screen.file}`, { cache: 'no-store' })
+      if (!response.ok) continue
+      const digest = await crypto.subtle.digest('SHA-256', await response.arrayBuffer())
+      const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
+      entry._stale = hex !== String(entry.contentHash).toLowerCase()
+    } catch { /* sem rede/sem hash: badge fica só com o status */ }
+  }
+  applyApprovalBadges()
+}
+
+function approvalMessage(screen, status) {
+  return annotationMessage({
+    screenId: screen.id,
+    name: screen.name,
+    file: screen.file,
+    text: `approval ${status} — rodar: node skills/design/scripts/approve.mjs set-status ${state.canvas}/${screen.id} ${status} --reviewed-by <seu-nome>`,
+  })
+}
+
+/** Registro de aprovações na raiz servida (design/approvals.json). Ausente ou
+ *  ilegível = superfície some (degradação declarada, nunca quebra). */
+async function loadApprovals() {
+  state.approvals = new Map()
+  try {
+    const response = await fetch('approvals.json', { cache: 'no-store' })
+    if (response.ok) {
+      const doc = await response.json()
+      for (const entry of Array.isArray(doc?.approvals) ? doc.approvals : []) {
+        if (entry && typeof entry.screen === 'string') state.approvals.set(entry.screen.split('\\').join('/'), entry)
+      }
+    }
+  } catch { /* sem registro — sem badges */ }
+  applyApprovalBadges()
+  applyApprovalHashes()
 }
 
 /** GET /api/comments -> pins of this canvas. Corrupt comments.json answers 400:
@@ -2809,6 +2946,9 @@ function cardFor(screen) {
   const size = document.createElement('span')
   size.className = 'card-size'
   size.textContent = sizeLabel(screen, width, height)
+  const approval = document.createElement('span')
+  approval.className = 'card-approval'
+  applyApprovalBadge(approval, screen)
   const reset = document.createElement('button')
   reset.className = 'card-reset'
   reset.type = 'button'
@@ -2816,7 +2956,7 @@ function cardFor(screen) {
   reset.title = t('resetStartTitle')
   reset.hidden = true
   reset.addEventListener('click', () => { iframe.src = origSrc })
-  head.append(name, size, reset)
+  head.append(name, size, approval, reset)
 
   const frame = document.createElement('div')
   frame.className = 'card-frame'

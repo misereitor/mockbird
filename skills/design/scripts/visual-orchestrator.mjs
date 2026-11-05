@@ -48,6 +48,10 @@
  * visual-critic.mjs: decide o exit code pela presença de blockers): com --gate,
  * exit 0 somente com veredito delegado pass E blockers 0.
  *
+ * approval (todo 27): quando design/approvals.json existe, o veredito de
+ * `approve.mjs verify` é ecoado no stdout com prefixo `approval: ` — consumo
+ * puro; exit code, blockers e a forma do relatório não mudam.
+ *
  * Sem verde parcial (proibição "relatório parcial mascarado como completo"):
  * etapa ausente, falha ou sem evidência para QUALQUER tela aborta com exit ≠ 0
  * nomeando a etapa ("etapa ausente: <etapa>") e o relatório NÃO é emitido. O
@@ -80,6 +84,7 @@ const CAPTURE = join(HERE, 'visual-capture.mjs')
 const CRITIC = join(HERE, 'visual-critic.mjs')
 const SCORE = join(HERE, 'visual-score.mjs')
 const GATE = join(HERE, 'visual-gate.mjs')
+const APPROVE = join(HERE, 'approve.mjs')
 const VALIDATE = join(HERE, 'validate.mjs')
 const IMAGE_DIFF = join(HERE, 'lib', 'image-diff.mjs')
 const A11Y_RULE = join(HERE, 'rules', 'a11y.mjs')
@@ -642,6 +647,24 @@ for (const entry of reportScreens) {
 }
 console.log(`resumo: blockers ${blockers} | issues ${issues} | gate ${gate}`)
 console.log(`visual-orchestrator: relatório -> ${normalizePath(relative(process.cwd(), reportPath)) || reportPath}`)
+
+// ---------------------------------------------------------------------------
+// approval (todo 27): consumo do `approve.mjs verify` — emite o veredito no
+// stdout e NADA mais: exit code, blockers, gate e a forma do relatório ficam
+// intocados (a semântica de bloqueio continua 100% delegada ao visual-gate).
+// Registro ausente = silêncio (aprovação ainda não é recurso do projeto).
+// ---------------------------------------------------------------------------
+{
+  const approvals = resolve(process.cwd(), 'design', 'approvals.json')
+  if (existsSync(approvals)) {
+    const run = spawnSync(process.execPath, [APPROVE, 'verify', '--target', opts.target], { cwd: process.cwd(), encoding: 'utf8' })
+    const output = run.error ? `verificação de aprovação não executada — ${String(run.error.message)}` : `${run.stdout ?? ''}${run.stderr ?? ''}`.trim()
+    for (const line of output.split('\n')) {
+      if (line.trim()) console.log(`approval: ${line.trim()}`)
+    }
+  }
+}
+
 if (opts.gate && gate === 'fail') {
   console.error(
     'visual-orchestrator: BLOQUEADO — veredito delegado ao visual-gate.mjs (a semântica de gate é do todo 12); com --gate, blockers nunca saem com exit 0'

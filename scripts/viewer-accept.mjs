@@ -10,6 +10,7 @@
  *   node scripts/viewer-accept.mjs
  */
 import { spawn } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -58,6 +59,19 @@ writeFileSync(join(ROOT, 'design', 'comments.json'), JSON.stringify({
     { id: 'p-done1', canvas: 'login', file: '01-login.html', selector: 'body', snippet: 'y', rect: { x: 10, y: 40, width: 20, height: 20 }, status: 'resolved', replies: [{ text: 'resolvido', createdAt: '2026-01-01T00:00:00.000Z' }], createdAt: '2026-01-01T00:00:00.000Z' },
   ],
 }, null, 2))
+// fixture: approval status surface (todo 27) — aprovado+bate, aprovado+stale
+// (hash errado = regra central visível) e em revisão
+{
+  const sha = (rel) => createHash('sha256').update(readFileSync(join(ROOT, 'design', rel))).digest('hex')
+  writeFileSync(join(ROOT, 'design', 'approvals.json'), JSON.stringify({
+    schemaVersion: 1,
+    approvals: [
+      { screen: 'login/01-login.html', contentHash: sha('login/01-login.html'), status: 'approved', decIds: ['DEC-001'], reviewedBy: 'qa', at: '2026-01-01T00:00:00.000Z' },
+      { screen: 'login/02-cadastro.html', contentHash: '0'.repeat(64), status: 'approved', decIds: [], reviewedBy: 'qa', at: '2026-01-01T00:00:00.000Z' },
+      { screen: 'login/03-modal.html', contentHash: sha('login/03-modal.html'), status: 'review', decIds: [], reviewedBy: 'qa', at: '2026-01-01T00:00:00.000Z' },
+    ],
+  }, null, 2))
+}
 
 const server = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), '8796', '--no-open'], {
   cwd: ROOT,
@@ -137,6 +151,33 @@ const selected = await page.$$eval('.card.selected', (els) => els.length)
 const commentEnabled = await page.$eval('#commentBtn', (el) => !el.disabled)
 if (selected >= 1 && commentEnabled) ok('selecionar tela (clique)')
 else fail('selecionar tela', `selected=${selected} commentBtn.disabled=${!commentEnabled}`)
+
+// 1.4 APPROVAL STATUS SURFACE (todo 27): badge de status por tela, regra do
+// hash visível (aprovado + conteúdo divergente = reaberto) e aprovar/reprovar
+await page.waitForTimeout(600) // hash de staleness (crypto.subtle) é assíncrono
+const approvalBadges = await page.$$eval('.card .approval-status', (els) =>
+  els.map((e) => ({ text: e.textContent, stale: e.classList.contains('stale') })))
+if (approvalBadges.length >= 3) ok(`status de aprovação por tela (${approvalBadges.length} badges)`)
+else fail('status de aprovação', `badges=${approvalBadges.length}`)
+const badgeText = approvalBadges.map((b) => b.text).join(' | ')
+if (/approved|aprovado/i.test(badgeText) && /review|revis/i.test(badgeText)) ok('statuses refletem approvals.json (approved + review)')
+else fail('statuses do registro', JSON.stringify(badgeText))
+const staleBadge = approvalBadges.find((b) => b.stale)
+if (staleBadge && /mudou|changed/i.test(staleBadge.text)) ok(`hash divergente aparece como reaberto (${staleBadge.text.trim()})`)
+else fail('badge stale', JSON.stringify(approvalBadges))
+const approvalBtns = await page.$$eval('.card .approval-actions button', (els) => els.length)
+if (approvalBtns >= 2) ok('aprovar/reprovar por tela presentes')
+else fail('aprovar/reprovar', `botoes=${approvalBtns}`)
+await page.click('.card .approval-approve')
+await page.waitForTimeout(300)
+const approvalModal = await page.$eval('#clipboard', (el) => !el.hidden)
+const approvalMsg = await page.$eval('#clipboardMsg', (el) => el.textContent)
+if (approvalModal && /approve\.mjs set-status/.test(approvalMsg) && /approved/.test(approvalMsg)) ok('aprovar compõe o comando approve.mjs (modal abre sem enviar)')
+else fail('aprovar compõe comando', `modal=${approvalModal} msg=${JSON.stringify(approvalMsg.slice(0, 120))}`)
+await page.keyboard.press('Escape')
+await page.waitForTimeout(150)
+if (await page.$eval('#clipboard', (el) => el.hidden)) ok('modal de aprovação fecha (Esc)')
+else fail('fechar modal aprovação', 'ainda aberto')
 
 // 2. COMMENT screen: Enter saves, Shift+Enter breaks the line (w16)
 await page.click('#commentBtn')
@@ -478,6 +519,11 @@ const bannerVisible = await page.$eval('#shareBanner', (el) => !el.hidden)
 const commentsHidden = await page.$eval('#commentBtn', (el) => el.hidden)
 if (bannerVisible && commentsHidden) ok('modo leitura: banner visivel e acoes de escrita escondidas')
 else fail('modo leitura', `banner=${bannerVisible} commentBtn.hidden=${commentsHidden}`)
+// share: aprovar/reprovar é ação de escrita — some; o indicador de status fica
+const shareApprovalActions = await page.$$eval('.card .approval-actions', (els) => els.every((e) => e.hidden || !e.offsetParent))
+const shareApprovalBadges = await page.$$eval('.card .approval-status', (els) => els.length)
+if (shareApprovalActions && shareApprovalBadges >= 3) ok('modo leitura: aprovar/reprovar escondido, status visivel')
+else fail('aprovação no share', `acoes escondidas=${shareApprovalActions} badges=${shareApprovalBadges}`)
 await page.click('#strip .card-overlay', { button: 'right' })
 await page.waitForTimeout(300)
 const toastText = await page.$eval('#toast', (el) => el.textContent)

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "approvals": [
+    {
+      "screen": "login/01-login.html",
+      "contentHash": "cdea8335d4db331852c6e5f80b5993b0fd902e5582a75c28e20ab38186ffe36b",
+      "status": "approved",
+      "decIds": [
+        "DEC-001"
+      ],
+      "reviewedBy": "task-27-qa",
+      "at": "2026-11-05T12:14:16.519Z"
+    }
+  ]
+}
