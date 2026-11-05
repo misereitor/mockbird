@@ -1,0 +1,9 @@
+{
+  "fallback": "stub",
+  "providers": [
+    { "id": "openai", "type": "openai", "baseUrl": "https://api.openai.com/v1", "model": "gpt-4o-mini", "apiKeyEnv": "OPENAI_API_KEY" },
+    { "id": "anthropic", "type": "anthropic", "baseUrl": "https://api.anthropic.com/v1", "model": "claude-3-5-haiku-latest", "apiKeyEnv": "ANTHROPIC_API_KEY" },
+    { "id": "google", "type": "google-genai", "baseUrl": "https://generativelanguage.googleapis.com/v1beta", "model": "gemini-2.5-flash", "apiKeyEnv": "GOOGLE_API_KEY" },
+    { "id": "custom", "type": "custom", "baseUrl": "http://localhost:11434/v1", "model": "llama3", "apiKeyEnv": "CUSTOM_LLM_API_KEY" }
+  ]
+}
