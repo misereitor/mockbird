@@ -1,5 +1,13 @@
 # Arquitetura evolutiva do Mockbird
 
+## Confiabilidade do Visual Critic
+
+O Visual Critic só é considerado confiável quando o recall determinístico é
+medido contra um corpus de falhas isoladas. `npm run critic:calibrate` calcula o
+recall a partir dos resultados emitidos pelo crítico; `--gate` rejeita qualquer
+categoria abaixo de 0,8. O corpus e o relatório não substituem os fixtures de
+regressão: ambos devem permanecer verdes.
+
 > Todo 2 do plano `mockbird-evolution`. Este documento consolida a auditoria do
 > todo 1 e fixa os contratos que os próximos todos implementam. Ele é a fonte de
 > verdade para *o que existe*, *o que será construído* e *sob quais regras*.
