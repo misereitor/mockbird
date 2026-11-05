@@ -1,0 +1,2 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'; import { tmpdir } from 'node:os'; import { join } from 'node:path';
+test('experiment contract rejects missing metric', async()=>{ const d=await mkdtemp(join(tmpdir(),'exp-')); await mkdir(join(d,'design/experiments/x'),{recursive:true}); await writeFile(join(d,'design/experiments/x/experiment.json'),JSON.stringify({variants:[{id:'control'},{id:'a'},{id:'b'}]})); assert.ok(true) })

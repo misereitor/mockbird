@@ -313,7 +313,7 @@ function runCheck(file) {
 const schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'))
 
 const args = process.argv.slice(2)
-const flags = { dryRun: false, model: null, budget: null, check: null }
+const flags = { dryRun: false, model: null, budget: null, check: null, experiment: null }
 for (let i = 0; i < args.length; i += 1) {
   const arg = args[i]
   const needsValue = (name) => {
@@ -333,6 +333,7 @@ for (let i = 0; i < args.length; i += 1) {
     flags.budget = needsValue('--budget-tokens')
   } else if (arg === '--check') {
     flags.check = needsValue('--check')
+  } else if (arg === '--experiment') flags.experiment = needsValue('--experiment')
   } else {
     fail(`flag desconhecida: ${arg} (use --help)`)
   }
@@ -343,6 +344,7 @@ if (flags.check !== null) {
   runCheck(flags.check)
 } else if (flags.dryRun) {
   if (flags.model !== null || flags.budget !== null) fail('--dry-run não se combina com --model/--budget-tokens (runs pagos são opt-in)')
+  if (flags.experiment) { const p=resolve('design/experiments',flags.experiment,'experiment.json'); if(!existsSync(p)) fail(`experiment not found: ${flags.experiment}`); const e=JSON.parse(readFileSync(p,'utf8')); if(!e.metric||!Array.isArray(e.variants)||e.variants.length<3) fail('experiment requires metric and control plus two variants') }
   runDry(loadCorpus())
 } else if (flags.model === null && flags.budget === null) {
   fail(`${REQUIRED_MESSAGE} (use --dry-run para o stub determinístico sem custo, ou --help)`)
