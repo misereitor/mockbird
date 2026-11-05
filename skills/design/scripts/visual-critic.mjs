@@ -50,9 +50,12 @@
  *                                  Exceção inline (links dentro de texto).
  *
  * Passe de vision-LLM OPT-IN (só com --vision --budget-tokens N; proibido sem
- * as DUAS flags): adapter DesignAgent (seam do todo 32 — docs/arquitetura-
- * evolutiva.md §5.5) com stub determinístico offline incluso
- * (agent-adapters/stub-deterministic.mjs). O passe só EMITE issues — nunca
+ * as DUAS flags): adapter DesignAgent (contrato do todo 32 — docs/arquitetura-
+ * evolutiva.md §5.5; skills/design/assets/design-agent.contract.md) com stub
+ * determinístico offline incluso (agent-adapters/stub-deterministic.mjs).
+ * Seleção de adapter: --adapter <id> (default stub; openai-compatible e
+ * google-genai são opt-in e exigem chave em variável de ambiente — sem chave o
+ * run falha com exit 2 nomeando a variável). O passe só EMITE issues — nunca
  * escreve arquivos — e o critic rejeita adapter que estoure o teto declarado.
  *
  * CONFINAMENTO da renderização: Playwright (playwright-core) servindo o target
@@ -71,11 +74,16 @@
  *   exit code pela presença de blockers (0=report-only, 1=com blockers).
  *
  * Usage: node skills/design/scripts/visual-critic.mjs [target] [--target <dir>]
- *          [--out <dir>] [--gate] [--vision --budget-tokens <N>] [--help]
+ *          [--out <dir>] [--gate] [--vision --budget-tokens <N>]
+ *          [--adapter <id>] [--help]
  *   target = design-root ou canvas (com canvas.json); ./design por padrão.
  *   --out  sink dos relatórios (padrão: <target>/.visual/critic).
+ *   --adapter <id> adapter DesignAgent do passe de visão (stub por padrão;
+ *                  ids: stub | openai-compatible | google-genai — os últimos
+ *                  exigem OPENAI_API_KEY/GOOGLE_API_KEY; exige --vision).
  *   Exit codes: 0 = relatório emitido (report-only), 1 = --gate com blockers,
- *               2 = erro de uso/entrada guiado (nomeia a tela; sem stack trace).
+ *               2 = erro de uso/entrada/guiado (tela, flags, config de adapter;
+ *               sem stack trace).
  */
 import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -144,7 +152,7 @@ const CAPS = Object.freeze({
 
 const usage =
   'usage: node skills/design/scripts/visual-critic.mjs [target] [--target <dir>] [--out <dir>] ' +
-  '[--gate] [--vision --budget-tokens <N>] [--help]'
+  '[--gate] [--vision --budget-tokens <N>] [--adapter <id>] [--help]'
 
 const INTERACTIVE_SEL =
   'a[href], button, input:not([type=hidden]), select, textarea, summary, ' +
@@ -1090,7 +1098,17 @@ function gitShaOf(absPath) {
 // ---------------------------------------------------------------------------
 // API programática (usada pelo CLI e por critic.test.mjs).
 // ---------------------------------------------------------------------------
-export async function runCritic({ target, outDir, gate = false, vision = false, budgetTokens = null, adapter = null }) {
+
+/** Seleciona o adapter DesignAgent (seam do todo 32); config inválida => erro guiado. */
+function createSelectedAgent(adapterId) {
+  try {
+    return createDesignAgent({ adapter: adapterId })
+  } catch (err) {
+    die(`visual-critic: ${err instanceof Error ? err.message : String(err)}`)
+  }
+}
+
+export async function runCritic({ target, outDir, gate = false, vision = false, budgetTokens = null, adapter = null, adapterId = null }) {
   if (vision && (!Number.isInteger(budgetTokens) || budgetTokens < 1)) {
     die('visual-critic: --vision exige --budget-tokens <N> com N inteiro >= 1 (passes pagos nunca sem teto)')
   }
@@ -1104,7 +1122,7 @@ export async function runCritic({ target, outDir, gate = false, vision = false, 
   } catch {
     die('visual-critic: critic-report.schema.json ausente ou inválido em skills/design/assets/')
   }
-  const agent = adapter ?? (vision ? createDesignAgent() : null)
+  const agent = adapter ?? (vision ? createSelectedAgent(adapterId) : null)
   const { server, port } = await startServer(targetDir)
   const browser = await launchBrowser()
   const reports = []
@@ -1144,7 +1162,7 @@ export async function runCritic({ target, outDir, gate = false, vision = false, 
 // CLI
 // ---------------------------------------------------------------------------
 function parseArgs(argv) {
-  const opts = { target: null, outDir: null, gate: false, vision: false, budgetTokens: null }
+  const opts = { target: null, outDir: null, gate: false, vision: false, budgetTokens: null, adapterId: null }
   const positional = []
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]
@@ -1169,6 +1187,10 @@ function parseArgs(argv) {
       if (!Number.isInteger(n)) die(`--budget-tokens requer um número inteiro — ${usage}`)
       opts.budgetTokens = n
       i += 1
+    } else if (arg === '--adapter') {
+      if (i + 1 >= argv.length) die(`--adapter requer um id de adaptador — ${usage}`)
+      opts.adapterId = argv[i + 1]
+      i += 1
     } else if (arg.startsWith('-')) {
       die(`flag desconhecida "${arg}" — ${usage}`)
     } else {
@@ -1180,6 +1202,7 @@ function parseArgs(argv) {
   opts.target = opts.target ?? positional[0] ?? 'design'
   if (opts.vision && opts.budgetTokens === null) die(`--vision exige --budget-tokens <N> — passes pagos nunca sem teto — ${usage}`)
   if (!opts.vision && opts.budgetTokens !== null) die(`--budget-tokens só faz sentido com --vision — ${usage}`)
+  if (opts.adapterId !== null && !opts.vision) die(`--adapter só faz sentido com --vision (passe de modelo opt-in) — ${usage}`)
   return opts
 }
 

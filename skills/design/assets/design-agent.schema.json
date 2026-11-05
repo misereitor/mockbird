@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mockbird://design/design-agent.schema.json",
+  "title": "DesignAgent — contrato model-agnostic (generate/review/improve)",
+  "description": "Contrato de integração de papéis de IA do Mockbird (plano todo 32, GAP-E2; docs/arquitetura-evolutiva.md §5.5). Define o descritor do agente {role, capabilities} e os payloads JSON das operações generate(request) -> screens, review(reportSchema) -> issues e improve(issues) -> patch, todos com campo schemaVersion obrigatório, independentes de provedor. VERSIONAMENTO (§5.6): evolução aditiva (campo novo opcional) preserva schemaVersion=1; mudança incompatível sobe o número e gera seção de migração em docs/migration-guide.md. Consumidores verificam schemaVersion ANTES de interpretar e recusam qualquer valor diferente de 1 — estado obsoleto ou futuro nunca é interpretado silenciosamente. Validação: validar cada payload contra o $def correspondente (GenerateRequest, GenerateResponse, ReviewRequest, ReviewResponse, ImproveRequest, ImproveResponse, AgentDescriptor) via validate.mjs#validatePayload, que nomeia o campo inválido com o caminho JSON (ex.: $.issues[0].severity).",
+  "type": "object",
+  "required": ["schemaVersion"],
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "description": "Versão do contrato DesignAgent. Aditivo preserva 1; incompatível sobe e migra via docs/migration-guide.md (§5.6). Todo payload (request e response) carrega o campo e consumidores recusam valores != 1."
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/AgentDescriptor" },
+    { "$ref": "#/$defs/GenerateRequest" },
+    { "$ref": "#/$defs/GenerateResponse" },
+    { "$ref": "#/$defs/ReviewRequest" },
+    { "$ref": "#/$defs/ReviewResponse" },
+    { "$ref": "#/$defs/ImproveRequest" },
+    { "$ref": "#/$defs/ImproveResponse" }
+  ],
+  "$defs": {
+    "AgentDescriptor": {
+      "type": "object",
+      "title": "Descritor do agente",
+      "description": "Interface nominal do contrato: {role, capabilities, generate, review, improve}. O descritor declara o papel e as operações suportadas; o envelope de cada resposta ({schemaVersion, operation, adapter, model, tokensUsed}) é de responsabilidade do runtime do adaptador, nunca do texto externo do modelo.",
+      "required": ["role", "capabilities"],
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Papel desempenhado pelo agente (ex.: critic-vision, design-architect, ui-designer, ux-reviewer). Livre por provedor; os papéis do sistema são os do orquestrador (todo 33)."
+        },
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "enum": ["generate", "review", "improve"] },
+          "description": "Operações implementadas. Toda capacidade declarada precisa ser exercitável com IO schema-válido (contract.test.mjs prova para o stub)."
+        }
+      }
+    },
+    "Issue": {
+      "type": "object",
+      "title": "Issue de revisão",
+      "description": "Issue em formato compatível com skills/design/assets/critic-report.schema.json — review(reportSchema) -> issues devolve exatamente este shape.",
+      "required": ["severity", "category", "element", "problem", "suggestion", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "severity": { "enum": ["blocker", "major", "minor"], "description": "Tríade fixa de severidade (§5.1)." },
+        "category": {
+          "enum": ["hierarquia", "composicao", "tipografia", "espacamento", "consistencia", "responsividade", "acessibilidade", "microinteracao"],
+          "description": "Os 8 critérios reconciliados (§5.1)."
+        },
+        "element": { "type": "string", "minLength": 1, "description": "Elemento/área afetada." },
+        "problem": { "type": "string", "minLength": 1, "description": "Problema observado." },
+        "suggestion": { "type": "string", "minLength": 1, "description": "Correção sugerida." },
+        "evidence": { "type": "string", "minLength": 1, "description": "Evidência rastreável (fonte do diagnóstico)." }
+      }
+    },
+    "Brief": {
+      "type": "object",
+      "title": "Brief de geração",
+      "description": "Recorte do brief validado (§5.2, design-brief.schema.json) usado por generate().",
+      "required": ["goal"],
+      "additionalProperties": false,
+      "properties": {
+        "goal": { "type": "string", "minLength": 1, "description": "Objetivo da tela/experiência." },
+        "audience": { "type": "string", "minLength": 1, "description": "Público-alvo." },
+        "visualDirection": { "type": "string", "minLength": 1, "description": "Direção visual." },
+        "constraints": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Restrições." },
+        "tone": { "type": "string", "minLength": 1, "description": "Tom." },
+        "platform": { "type": "string", "minLength": 1, "description": "Plataforma alvo." },
+        "must": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Obrigatórios." },
+        "mustNot": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Proibições." }
+      }
+    },
+    "ScreenRequest": {
+      "type": "object",
+      "required": ["screen"],
+      "additionalProperties": false,
+      "properties": {
+        "screen": { "type": "string", "minLength": 1, "description": "Identificador da tela solicitada." },
+        "viewport": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Viewport WxH." },
+        "state": { "type": "string", "minLength": 1, "description": "Estado a renderizar (matriz §5.1)." }
+      }
+    },
+    "GenerateRequest": {
+      "type": "object",
+      "title": "generate(request) — entrada",
+      "required": ["schemaVersion", "operation", "brief", "screens", "budgetTokens"],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "operation": { "const": "generate" },
+        "brief": { "$ref": "#/$defs/Brief" },
+        "screens": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/ScreenRequest" }, "description": "Telas solicitadas." },
+        "budgetTokens": { "type": "integer", "minimum": 1, "description": "Teto de tokens da operação (§5.6: passe de modelo nunca sem teto)." }
+      }
+    },
+    "GenerateResponse": {
+      "type": "object",
+      "title": "generate(request) -> screens",
+      "required": ["schemaVersion", "operation", "adapter", "model", "tokensUsed", "screens"],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "operation": { "const": "generate" },
+        "adapter": { "type": "string", "minLength": 1, "description": "Id do adaptador executante (preenchido pelo runtime)." },
+        "model": { "type": "string", "minLength": 1, "description": "Modelo executante (preenchido pelo runtime)." },
+        "tokensUsed": { "type": "integer", "minimum": 0, "description": "Consumo contabilizado; precisa ser <= budgetTokens do request." },
+        "screens": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["screen", "html"],
+            "additionalProperties": false,
+            "properties": {
+              "screen": { "type": "string", "minLength": 1, "description": "Id da tela gerada (1:1 com o request)." },
+              "html": { "type": "string", "minLength": 1, "description": "HTML autocontido da tela." }
+            }
+          },
+          "description": "screens: saída nominal de generate(request) -> screens."
+        }
+      }
+    },
+    "ReviewRequest": {
+      "type": "object",
+      "title": "review(reportSchema) — entrada",
+      "description": "Payload de análise no formato de relatório (recorte de critic-report.schema.json: screen/viewport/state/html/screenshotPng) mais o teto de orçamento.",
+      "required": ["schemaVersion", "operation", "screen", "html", "budgetTokens"],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "operation": { "const": "review" },
+        "screen": { "type": "string", "minLength": 1, "description": "Caminho/id da tela analisada." },
+        "viewport": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Viewport WxH." },
+        "state": { "type": "string", "minLength": 1, "description": "Estado analisado." },
+        "html": { "type": "string", "minLength": 1, "description": "HTML da tela." },
+        "screenshotPng": { "type": "string", "description": "Screenshot PNG codificado em base64 (JSON IO); string vazia ou ausente quando não há screenshot." },
+        "budgetTokens": { "type": "integer", "minimum": 1, "description": "Teto de tokens da operação." }
+      }
+    },
+    "ReviewResponse": {
+      "type": "object",
+      "title": "review(reportSchema) -> issues",
+      "required": ["schemaVersion", "operation", "adapter", "model", "tokensUsed", "issues"],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "operation": { "const": "review" },
+        "adapter": { "type": "string", "minLength": 1, "description": "Id do adaptador executante (preenchido pelo runtime)." },
+        "model": { "type": "string", "minLength": 1, "description": "Modelo executante (preenchido pelo runtime)." },
+        "tokensUsed": { "type": "integer", "minimum": 0, "description": "Consumo contabilizado; precisa ser <= budgetTokens do request." },
+        "issues": { "type": "array", "items": { "$ref": "#/$defs/Issue" }, "description": "issues: saída nominal de review(reportSchema) -> issues. Ordem do emissor; consumidores ordenam pelo comparador fixo (§5.1)." }
+      }
+    },
+    "ImproveRequest": {
+      "type": "object",
+      "title": "improve(issues) — entrada",
+      "required": ["schemaVersion", "operation", "screen", "html", "issues", "budgetTokens"],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "operation": { "const": "improve" },
+        "screen": { "type": "string", "minLength": 1, "description": "Caminho/id da tela a melhorar." },
+        "html": { "type": "string", "minLength": 1, "description": "HTML atual da tela." },
+        "issues": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Issue" }, "description": "Issues a tratar (saída de review)." },
+        "budgetTokens": { "type": "integer", "minimum": 1, "description": "Teto de tokens da operação." }
+      }
+    },
+    "ImproveResponse": {
+      "type": "object",
+      "title": "improve(issues) -> patch",
+      "required": ["schemaVersion", "operation", "adapter", "model", "tokensUsed", "patch"],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "operation": { "const": "improve" },
+        "adapter": { "type": "string", "minLength": 1, "description": "Id do adaptador executante (preenchido pelo runtime)." },
+        "model": { "type": "string", "minLength": 1, "description": "Modelo executante (preenchido pelo runtime)." },
+        "tokensUsed": { "type": "integer", "minimum": 0, "description": "Consumo contabilizado; precisa ser <= budgetTokens do request." },
+        "patch": { "$ref": "#/$defs/Patch", "description": "patch: saída nominal de improve(issues) -> patch." }
+      }
+    },
+    "Patch": {
+      "type": "object",
+      "title": "Patch de melhoria",
+      "description": "Patch sempre acompanhado de why (rationale) — melhoria sem explicação é rejeitada (regra de evolução do todo 31 / §5.3).",
+      "required": ["screen", "html", "rationale"],
+      "additionalProperties": false,
+      "properties": {
+        "screen": { "type": "string", "minLength": 1, "description": "Tela do patch (1:1 com o request)." },
+        "html": { "type": "string", "minLength": 1, "description": "HTML da tela após a melhoria." },
+        "rationale": { "type": "string", "minLength": 1, "description": "Por que o patch muda o que muda (obrigatório)." },
+        "decIds": { "type": "array", "items": { "type": "string", "pattern": "^DEC-[0-9]+$" }, "description": "DEC-ids relacionados (§5.3); vazio quando a melhoria não tem decisão registrada." }
+      }
+    }
+  }
+}
