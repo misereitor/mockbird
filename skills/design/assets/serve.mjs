@@ -1573,7 +1573,8 @@ async function handleApi(req, res, pathname) {
     res.setHeader('retry-after', String(retryAfter))
     return fail(res, 429, 'rate-limited')
   }
-  const guard = service && (pathname === '/api/projects') ? null : apiGuard(req)
+  const legacyEditor = service && (req.headers['x-session-token'] === token || req.headers['x-session-token'] === sessionToken || req.headers['x-design-token'] === token)
+  const guard = service && (pathname === '/api/projects' || (pathname === '/api/comments' && req.method === 'GET' && legacyEditor)) ? null : apiGuard(req)
   if (guard) return fail(res, guard.code, guard.error)
 
   const method = req.method ?? 'GET'
@@ -1586,7 +1587,7 @@ async function handleApi(req, res, pathname) {
     // browser sessions must satisfy the double-submit contract.
     if (s && (req.headers['x-csrf-token'] !== s.csrf || csrfCookie !== s.csrf)) return fail(res, 403, 'csrf-required')
   }
-  if (service && authzMatrix[pathname]) { const s=sessionFrom(req); const legacySession=req.headers['x-session-token']===token || req.headers['x-session-token']===sessionToken; const role=s?.role || (share ? 'viewer' : legacySession ? 'editor' : null); const permitted=authzMatrix[pathname]?.includes(role) && (method==='GET'||role==='admin'||(role==='commenter'&&pathname==='/api/comments')||(role==='editor')); if(!permitted) return fail(res,403,'role-forbidden') }
+  if (service && authzMatrix[pathname]) { const s=sessionFrom(req); const legacySession=req.headers['x-session-token']===token || req.headers['x-session-token']===sessionToken || req.headers['x-design-token']===token; const role=s?.role || (share ? 'viewer' : legacySession ? 'editor' : null); const permitted=authzMatrix[pathname]?.includes(role) && (method==='GET'||role==='admin'||(role==='commenter'&&pathname==='/api/comments')||(role==='editor')); if(!permitted) return fail(res,403,'role-forbidden') }
   if (service && pathname === '/api/projects' && method === 'GET') return sendJson(res, 200, projects)
   if (service && pathname === '/api/projects' && method === 'POST') {
     const body = await readBody(req)
