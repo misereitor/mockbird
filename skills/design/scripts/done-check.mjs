@@ -9,7 +9,7 @@ const id=process.argv[process.argv.indexOf('--screen')+1]
 if(!id){console.error('usage: done-check.mjs --screen <id> [--target <design>]');process.exit(2)}
 const errors=[]
 const sha=p=>createHash('sha256').update(readFileSync(p)).digest('hex')
-const git=execSync('git rev-parse HEAD',{cwd:root,encoding:'utf8'}).trim()
+let git='unknown'; try { git=execSync('git rev-parse HEAD',{cwd:root,encoding:'utf8'}).trim() } catch { git=execSync('git rev-parse HEAD',{encoding:'utf8'}).trim() }
 let approvals=[]
 try { approvals=JSON.parse(readFileSync(join(root,'approvals.json'),'utf8')).approvals||[] } catch { errors.push('approval missing') }
 const approval=approvals.find(a=>a.screen.endsWith(`${id}.html`)||a.screen===id)
