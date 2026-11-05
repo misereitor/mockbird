@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "metric": "design",
+  "control": "control",
+  "variants": [
+    { "id": "control", "metric": 60 },
+    { "id": "variant-a", "metric": 72 },
+    { "id": "variant-b", "metric": 68 }
+  ],
+  "winner": "variant-a",
+  "evidence": "benchmarks/results/dry-fixture.json",
+  "decId": "DEC-EXPERIMENT-FIXTURE"
+}

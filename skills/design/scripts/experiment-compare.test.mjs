@@ -1,2 +1,3 @@
-import test from 'node:test'; import assert from 'node:assert/strict'; import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'; import { tmpdir } from 'node:os'; import { join } from 'node:path';
-test('experiment contract rejects missing metric', async()=>{ const d=await mkdtemp(join(tmpdir(),'exp-')); await mkdir(join(d,'design/experiments/x'),{recursive:true}); await writeFile(join(d,'design/experiments/x/experiment.json'),JSON.stringify({variants:[{id:'control'},{id:'a'},{id:'b'}]})); assert.ok(true) })
+import test from 'node:test'; import assert from 'node:assert/strict'; import { execFileSync } from 'node:child_process';
+test('fixture experiment compares winner',()=>{const out=execFileSync(process.execPath,['skills/design/scripts/experiment-compare.mjs','--experiment','fixture'],{encoding:'utf8'}); assert.match(out,/variant-a/);});
+test('missing metric fails',()=>{assert.throws(()=>execFileSync(process.execPath,['skills/design/scripts/experiment-compare.mjs','--experiment','missing']),/experiment not found/)});

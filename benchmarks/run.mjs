@@ -333,7 +333,8 @@ for (let i = 0; i < args.length; i += 1) {
     flags.budget = needsValue('--budget-tokens')
   } else if (arg === '--check') {
     flags.check = needsValue('--check')
-  } else if (arg === '--experiment') flags.experiment = needsValue('--experiment')
+  } else if (arg === '--experiment') {
+    flags.experiment = needsValue('--experiment')
   } else {
     fail(`flag desconhecida: ${arg} (use --help)`)
   }
