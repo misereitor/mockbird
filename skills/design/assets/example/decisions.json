@@ -12,7 +12,8 @@
         "explorations/01/pilot.html"
       ],
       "createdAt": "2026-11-05",
-      "supersedes": null
+      "supersedes": null,
+      "outcome": null
     }
   ]
 }

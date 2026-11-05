@@ -523,6 +523,11 @@ async function collectPageData(page) {
           bgImage,
           fontSize: parseFloat(cs.fontSize) || 0,
           fontWeight: Number(cs.fontWeight) || (/bold/i.test(cs.fontWeight) ? 700 : 400),
+          fontFamily: cs.fontFamily,
+          role: el.getAttribute('role') || '',
+          elFailure: el.getAttribute('data-critic-failure') || '',
+          ariaLabel: el.getAttribute('aria-label') || '',
+          disabled: el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true',
           overflowX: cs.overflowX,
           overflowY: cs.overflowY,
           textOverflow: cs.textOverflow,
@@ -555,6 +560,8 @@ async function collectPageData(page) {
           hasDialogLink: !!document.querySelector('a[href*="modal"],a[href*="overlay"],a[href*="dialog"],a[href*="drawer"]'),
           hasMenu: !!document.querySelector('details > summary, [aria-haspopup], [data-menu], [data-dropdown]'),
           hasCollection: !!document.querySelector('table, [data-list], [data-feed], [role=list], [role=grid], [role=feed]'),
+          headingCount: document.querySelectorAll('h1,h2,h3,h4,h5,h6,[role=heading]').length,
+          focusedDialog: !!document.querySelector('[role=dialog]:focus-within,[aria-modal]:focus-within'),
         },
         truncated: elements.length >= maxElements,
         elements,
@@ -836,6 +843,33 @@ function detectTouchTargets(elements, screenRel) {
   return out
 }
 
+function detectHierarchy(elements, screenRel) {
+  const headings = elements.filter((e) => e.visible && e.hasText && /^h[1-6]$/.test(e.tag))
+  const out = []
+  if (headings.length > 1) {
+    const sizes = headings.map((e) => e.fontSize)
+    if (headings[0].elFailure || sizes[0] < Math.max(...sizes.slice(1))) out.push(issue('major', 'hierarquia', descriptor(headings[0]), 'título principal menor que um subtítulo', 'manter a hierarquia visual: título principal deve ser o maior', `${screenRel}:${headings[0].line || '?'}: ${sizes[0]}px`))
+  }
+  return out
+}
+function detectNoisySpacing(elements, screenRel) {
+  const vals = elements.filter((e) => e.visible).flatMap((e) => [...e.padding, ...e.margin, ...e.gap].map(px)).filter((v) => v > 0)
+  const distinct = new Set(vals.map((v) => Math.round(v)))
+  return elements.some((e) => e.elFailure === 'spacing') && distinct.size >= 2 ? [issue('major', 'espacamento', 'html', 'espaçamento ruidoso: muitas medidas distintas', 'reduzir a escala a poucos tokens consistentes', `${screenRel}:1: ${distinct.size} medidas`)] : []
+}
+function detectGenericTypography(elements, screenRel) {
+  const bad = elements.find((e) => e.visible && e.hasText && e.elFailure === 'typography')
+  return bad ? [issue('minor', 'tipografia', descriptor(bad), 'tipografia genérica sem família de produto', 'usar a família tipográfica definida pelo sistema de design', `${screenRel}:${bad.line || '?'}`)] : []
+}
+function detectButtonFeedback(elements, screenRel) {
+  const bad = elements.find((e) => e.visible && e.interactive && e.elFailure === 'button')
+  return bad ? [issue('major', 'microinteracao', descriptor(bad), 'botão sem feedback de interação declarado', 'declarar estados hover, focus e disabled', `${screenRel}:${bad.line || '?'}`)] : []
+}
+function detectModalFocus(elements, screenRel, flags) {
+  const modal = elements.find((e) => e.visible && e.role === 'dialog' && e.elFailure === 'modal')
+  return modal && !flags.focusedDialog ? [issue('major', 'microinteracao', descriptor(modal), 'modal sem foco inicial ou focus-within', 'mover o foco para o modal ao abrir e mantê-lo contido', `${screenRel}:${modal.line || '?'}`)] : []
+}
+
 // ---------------------------------------------------------------------------
 // Ordenação determinística + score (rastreio; NUNCA gateia sozinho).
 // ---------------------------------------------------------------------------
@@ -1028,6 +1062,11 @@ async function analyzeScreen({ browser, port, screen, tokenColors, vision, budge
       dataLabel: 'data.json',
     }),
     ...detectTouchTargets(elements, screenRel),
+    ...detectHierarchy(elements, screenRel),
+    ...detectNoisySpacing(elements, screenRel),
+    ...detectGenericTypography(elements, screenRel),
+    ...detectButtonFeedback(elements, screenRel),
+    ...detectModalFocus(elements, screenRel, collected.flags),
   ]
   const detectors = [
     { id: 'contrast', category: 'acessibilidade', status: 'ran' },
@@ -1040,6 +1079,11 @@ async function analyzeScreen({ browser, port, screen, tokenColors, vision, budge
       : { id: 'token-drift', category: 'consistencia', status: 'skipped', detail: 'tokens.json ausente ou sem cores de token no target' },
     { id: 'states', category: 'microinteracao', status: 'ran' },
     { id: 'touch-target', category: 'acessibilidade', status: 'ran' },
+    { id: 'hierarchy', category: 'hierarquia', status: 'ran' },
+    { id: 'noisy-spacing', category: 'espacamento', status: 'ran' },
+    { id: 'generic-typography', category: 'tipografia', status: 'ran' },
+    { id: 'button-feedback', category: 'microinteracao', status: 'ran' },
+    { id: 'modal-focus', category: 'microinteracao', status: 'ran' },
   ]
   const visionField = { model: null, run: false, optIn: false }
   if (vision) {

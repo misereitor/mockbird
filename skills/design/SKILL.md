@@ -353,6 +353,11 @@ screen without a governing decision in the register is prohibited.
 
 ## Workflow
 
+### Consultar lições entre projetos
+Antes de registrar uma nova decisão, consulte lições exportadas de outros projetos:
+`node design/scripts/decisions.mjs import --source lessons.json --origin projeto`.
+O import é manual, prefixa os DEC-ids e nunca sobrescreve decisões existentes.
+
 1. **Design system first.** Read `design/design-system.css` and
    `design/design-system.md`. If they do not exist, ask the user for the brand
    (primary color, typeface feel, tone; offer a neutral palette as one option),

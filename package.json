@@ -30,7 +30,8 @@
     "bench:dry": "node benchmarks/run.mjs --dry-run",
     "ci": "npm test && npm run test:mock && npm run smoke:plugin && npm run smoke:screen && npm run test:ui && npm run visual:gate && npm run validate && npm run qa && npm run security && npm run check:i18n",
     "ci:base": "npm test && npm run test:mock && npm run smoke:plugin && npm run visual:gate && npm run validate && npm run qa && npm run security && npm run check:i18n",
-    "parity": "node skills/design/scripts/parity.mjs"
+    "parity": "node skills/design/scripts/parity.mjs",
+    "critic:calibrate": "node skills/design/scripts/critic-calibrate.mjs"
   },
   "devDependencies": {
     "playwright-core": "1.64.1"

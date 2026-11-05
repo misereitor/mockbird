@@ -34,7 +34,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const usage = 'usage: node decisions.mjs <add|list|query|impact> [args] [--file <path>]'
+const usage = 'usage: node decisions.mjs <add|list|query|impact|export|import> [args] [--file <path>]'
 const SHAPE = '{schemaVersion, decisions: [{id: "DEC-001", category, decision, reason, status, scope, screens: [], createdAt, supersedes}]}'
 
 function fatal(message) {
@@ -77,13 +77,15 @@ function isPlainObject(value) {
 // ---------------------------------------------------------------------------
 // CLI contract (mirrors validate-brief.mjs: unknown flags/extra args = exit 2).
 // ---------------------------------------------------------------------------
-const COMMANDS = new Set(['add', 'list', 'query', 'impact'])
+const COMMANDS = new Set(['add', 'list', 'query', 'impact', 'export', 'import'])
 const DELETE_COMMANDS = new Set(['delete', 'remove', 'rm'])
 const COMMAND_FLAGS = {
   add: new Set(['--file', '--category', '--decision', '--reason', '--scope', '--screens', '--supersedes']),
   list: new Set(['--file', '--status']),
   query: new Set(['--file']),
   impact: new Set(['--file']),
+  export: new Set(['--file', '--out', '--product-type', '--audience']),
+  import: new Set(['--file', '--source', '--origin']),
 }
 
 const argv = process.argv.slice(2)
@@ -394,6 +396,7 @@ function cmdAdd() {
       .filter((s) => s !== ''),
     createdAt: new Date().toISOString().slice(0, 10),
     supersedes,
+    outcome: null,
   }
   if (target !== null) target.status = 'superseded'
   store.decisions.push(entry)
@@ -407,6 +410,37 @@ function cmdAdd() {
   if (target !== null) console.log(`superseded ${escapeOut(target.id)}: status "superseded" (superseded by ${escapeOut(entry.id)})`)
   console.log(`${fileLabel}: ${store.decisions.length} decision(s)`)
   process.exit(0)
+}
+
+function cmdExport() {
+  const store = loadStore(storePath, fileLabel)
+  checkStore(store)
+  if (issues.length > 0) printIssuesAndExit()
+  const out = flags['--out']
+  if (!out) fatal('export requires --out <path>')
+  const lessons = { schemaVersion: 1, source: { productType: flags['--product-type'] ?? 'unknown', audience: flags['--audience'] ?? 'unknown' }, decisions: store.decisions }
+  writeFileSync(resolve(process.cwd(), out), JSON.stringify(lessons, null, 2) + '\n')
+  console.log(`exported ${lessons.decisions.length} lesson(s) to ${escapeOut(out)}`)
+  process.exit(0)
+}
+
+function cmdImport() {
+  const source = flags['--source']; const origin = flags['--origin']
+  if (!source || !origin) fatal('import requires --source <lessons.json> --origin <prefix>')
+  if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(origin)) fatal('--origin must be a safe prefix')
+  const incoming = JSON.parse(readFileSync(resolve(process.cwd(), source), 'utf8'))
+  if (!isPlainObject(incoming) || incoming.schemaVersion !== 1 || !Array.isArray(incoming.decisions)) fatal('lessons file is invalid: expected schemaVersion 1 and decisions')
+  const store = existsSync(storePath) ? loadStore(storePath, fileLabel) : { schemaVersion: 1, decisions: [] }
+  checkStore(store); if (issues.length > 0) printIssuesAndExit()
+  const existing = new Set(store.decisions.map((d) => d.id)); let added = 0; let skipped = 0
+  for (const decision of incoming.decisions) {
+    const copy = structuredClone(decision); copy.id = `${origin}-${decision.id}`; copy.supersedes = decision.supersedes ? `${origin}-${decision.supersedes}` : null; copy.outcome ??= null
+    if (existing.has(copy.id)) { console.warn(`import: duplicate ${copy.id}, skipped`); skipped++; continue }
+    store.decisions.push(copy); existing.add(copy.id); added++
+  }
+  checkStore(store); if (issues.length > 0) printIssuesAndExit()
+  mkdirSync(dirname(storePath), { recursive: true }); writeFileSync(storePath, JSON.stringify(store, null, 2) + '\n')
+  console.log(`imported ${added} lesson(s); skipped ${skipped} duplicate(s)`); process.exit(0)
 }
 
 // ---------------------------------------------------------------------------
@@ -514,4 +548,6 @@ function cmdImpact() {
 if (command === 'add') cmdAdd()
 else if (command === 'list') cmdList()
 else if (command === 'query') cmdQuery()
-else cmdImpact()
+else if (command === 'impact') cmdImpact()
+else if (command === 'export') cmdExport()
+else cmdImport()

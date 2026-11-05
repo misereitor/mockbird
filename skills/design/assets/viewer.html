@@ -428,6 +428,12 @@
     box-shadow: -12px 0 32px rgb(15 23 42 / .18);
   }
   #contextPanel { position: fixed; right: 0; top: 0; bottom: 0; width: min(380px, 92vw); z-index: 18; overflow: auto; background: var(--ui-bg); border-left: 1px solid var(--ui-border); box-shadow: -4px 0 18px #0003; }
+  #componentPanel { position: fixed; right: 0; top: 0; bottom: 0; width: min(520px, 92vw); z-index: 18; overflow: auto; background: var(--ui-bg); border-left: 1px solid var(--ui-border); box-shadow: -4px 0 18px #0003; }
+  .component-preview { margin: 12px 16px; padding: 12px; background: var(--ui-surface); border: 1px solid var(--ui-border); border-radius: 8px; }
+  .component-preview h3 { margin: 0 0 8px; font-size: 14px; }
+  .component-preview select { margin-bottom: 10px; max-width: 100%; }
+  .component-preview-render { min-height: 52px; display: flex; align-items: center; padding: 12px; background: var(--ui-bg); border-radius: 6px; overflow: auto; }
+  .component-preview-error { margin: 16px; padding: 12px; color: var(--ui-danger); border: 1px solid var(--ui-danger); border-radius: 8px; }
   #contextBody { padding: 12px; } #contextBody h3 { margin: 14px 0 4px; } #contextBody ul { margin: 4px 0 8px; padding-left: 20px; }
   #snapshotForm, #historyForm { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--ui-border); }
   #snapshotLabel { flex: 1; }
@@ -583,6 +589,7 @@
     <button id="snapshotBtn" data-share-hide data-i18n-title="snapshotBtnTitle" title="Save a snapshot of this canvas (src/ + flat render/) and see the saved snapshots" data-i18n="snapshotBtn">Save snapshot</button>
     <button id="historyBtn" data-share-hide data-i18n-title="historyBtnTitle" title="Restore any recorded version of a file (rescue)" data-i18n="historyBtn">🕘 History</button>
     <button id="contextBtn" type="button" title="Inspect design context">🧭 Contexto</button>
+    <button id="componentsBtn" type="button" title="Open component previews">🧩 Previews</button>
     <button id="exportBtn" disabled data-i18n="exportScreenBtn">⬇ Screen PNG</button>
     <button id="exportAllBtn" data-i18n="exportCanvasBtn">⬇ Canvas PNG</button>
     <button id="langBtn" data-i18n-title="languageTitle" title="Switch language (reloads the page)">🌐 Português</button>
@@ -854,6 +861,10 @@
 <aside id="contextPanel" class="context-panel" hidden aria-label="Design context">
   <div class="pending-top"><strong>Contexto</strong><button id="contextClose" type="button" title="Close panel">×</button></div>
   <div id="contextBody"></div>
+</aside>
+<aside id="componentPanel" hidden aria-label="Component previews">
+  <div class="pending-top"><strong>Previews de componentes</strong><button id="componentsClose" type="button" title="Close panel">×</button></div>
+  <div id="componentBody"></div>
 </aside>
 
 <script>
