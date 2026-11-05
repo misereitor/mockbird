@@ -519,7 +519,7 @@ function handleCommentsDelete(body) {
 }
 
 /** POST /api/comments - create or update pin status+replies. */
-function handleCommentsPost(body) {
+function handleCommentsPost(body, req = null) {
   const comments = loadComments()
   const hasId = body.id !== undefined
   if (hasId && (typeof body.id !== 'string' || !SAFE_ID.test(body.id))) {
@@ -548,7 +548,7 @@ function handleCommentsPost(body) {
 
   const existing = hasId ? comments.find((pin) => pin && pin.id === body.id) : undefined
   if (existing) {
-    if (body.status !== undefined) { const actor=sessionFrom(req); const legacy= req.headers['x-design-token']===token || req.headers['x-session-token']===token || req.headers['x-session-token']===sessionToken; if (!actor && !legacy) throw new ApiError(403,'comment-permission'); if (actor && actor.role!=='admin' && actor.role!=='editor' && actor.userId!==existing.authorId) throw new ApiError(403,'comment-permission'); existing.status = body.status }
+    if (body.status !== undefined) { const actor=req&&sessionFrom(req); const legacy=!!req&&(req.headers['x-design-token']===token || req.headers['x-session-token']===token || req.headers['x-session-token']===sessionToken); if (!actor && !legacy) throw new ApiError(403,'comment-permission'); if (actor && actor.role!=='admin' && actor.role!=='editor' && actor.userId!==existing.authorId) throw new ApiError(403,'comment-permission'); existing.status = body.status }
     if (body.rect !== undefined) existing.rect = body.rect // w17: re-ancora ao redimensionar
     if (body.replies !== undefined) {
       if (!Array.isArray(existing.replies)) existing.replies = []
@@ -1683,7 +1683,7 @@ async function handleApi(req, res, pathname) {
     if (route === 'agent-send') return handleAgentSend(res, parsed)
     if (route === 'history-restore') return handleHistoryRestore(res, parsed)
     if (route === 'screen-size') return sendJson(res, 200, handleScreenSize(parsed))
-    if (route === 'comments') return sendJson(res, 200, { comments: handleCommentsPost(parsed) })
+    if (route === 'comments') return sendJson(res, 200, { comments: handleCommentsPost(parsed, req) })
     return sendJson(res, 200, { snapshot: handleSnapshot(parsed) })
   } catch (error) {
     return apiFail(res, error)
