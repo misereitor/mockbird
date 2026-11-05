@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "timestamp": "2026-11-05T16:10:40.187Z",
+      "markup": "/opt/mockbird-wt/mockbird-evolution-w2/skills/design/scripts/fixtures/discovery-button.html",
+      "recommendation": "reuse",
+      "component": "button",
+      "justification": "markup matches button structure, tokens/classes, and marker args",
+      "similarity": 1,
+      "catalogSha256": "5088711af416060c49f54bdcfce2357fa58e0d1349a2b87d3165ec47666bbe67",
+      "gitSHA": "f9edf8f7deacab09383549be9333eb14d4dc0a12"
+    }
+  ]
+}

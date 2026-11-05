@@ -566,6 +566,9 @@ API. Never edit `comments.json` by hand. Validate again after any edit.
    (`<nome>.jsx`, `<nome>.html`, `tokens-used.json`); the variants note then
    records "no component registry entry" instead of variant enums.
 
+### Regra: discovery obrigatório antes de criar componente novo
+Antes de criar um componente novo, execute `node design/scripts/component-discovery.mjs --markup <arquivo>`; a decisão deve ficar registrada em `design/components/discovery-log.json`.
+
 ## Ações e acessibilidade
 
 Interactive screens act through ONE closed vocabulary dispatched at a single

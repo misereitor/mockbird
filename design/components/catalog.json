@@ -1,0 +1,2451 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "skills/design/scripts/component-docs.mjs",
+  "registry": "components/components.json",
+  "mountPreviewHook": {
+    "name": "mountPreviewHook",
+    "signature": "mountPreviewHook(root: HTMLElement, previews: Preview[]) -> void",
+    "contract": "Monta os previews de variante/estado de um componente num painel do viewer. previews = catalog.components[i].previews (cada item traz previewId, variant, state e html renderizado a partir do partial real). O viewer registra window.mountPreviewHook e o painel de componentes chama uma vez por componente.",
+    "source": "components/catalog.json#components[].previews",
+    "status": "documented — montagem no viewer.html é follow-up (arquitetura de painéis, todo 21)"
+  },
+  "components": [
+    {
+      "id": "button",
+      "name": "button",
+      "file": "button.html",
+      "realComponent": "Button",
+      "slots": [
+        "label"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "tone": [
+          "primary",
+          "secondary",
+          "ghost",
+          "danger"
+        ],
+        "state": [
+          "default",
+          "hover",
+          "active",
+          "disabled"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "primary",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-accent",
+        "color-bg",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size"
+      ],
+      "docs": {
+        "description": "Botão de ação clicável.",
+        "usage": "Ação principal (primary), secundária, fantasma (ghost) ou destrutiva (danger) de uma tela."
+      },
+      "source": {
+        "partial": "components/button.html",
+        "partialSha256": "7e778009ccbb954edcc94cdaaee5550cd0054d333140e96d9e91393842bc1e38"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "primary",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"sm\" data-tone=\"primary\" data-state=\"default\" class=\"rounded-md font-body bg-accent text-bg p-1 text-body\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "primary",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "size=lg",
+          "variant": {
+            "size": "lg",
+            "tone": "primary",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"lg\" data-tone=\"primary\" data-state=\"default\" class=\"rounded-md font-body bg-accent text-bg p-3 text-heading\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "tone=primary",
+          "variant": {
+            "size": "md",
+            "tone": "primary",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "tone=secondary",
+          "variant": {
+            "size": "md",
+            "tone": "secondary",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"secondary\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "tone=ghost",
+          "variant": {
+            "size": "md",
+            "tone": "ghost",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"ghost\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body text-accent border-accent\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "tone=danger",
+          "variant": {
+            "size": "md",
+            "tone": "danger",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"danger\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-text text-bg\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "primary",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "primary",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "primary",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "primary",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "primary",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "primary",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<button type=\"button\" data-component=\"button\" data-size=\"md\" data-tone=\"primary\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\"><!-- slot:label -->Ação<!-- /slot:label --></button>\n"
+        }
+      ]
+    },
+    {
+      "id": "card",
+      "name": "card",
+      "file": "card.html",
+      "realComponent": "Card",
+      "slots": [
+        "title",
+        "body"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md"
+        ],
+        "tone": [
+          "default",
+          "elevated"
+        ],
+        "state": [
+          "default",
+          "interactive"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "default",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size"
+      ],
+      "docs": {
+        "description": "Contêiner de conteúdo agrupado.",
+        "usage": "Agrupa título e corpo em um bloco; use elevated para destacar o cartão na hierarquia."
+      },
+      "source": {
+        "partial": "components/card.html",
+        "partialSha256": "65cd57af2141ff75c18169e9921bcb11946c3c14254ffff5fec0a88120b39f1a"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"card\" data-size=\"sm\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-1 text-body\">\n  <!-- slot:title -->Título<!-- /slot:title -->\n  <!-- slot:body -->Conteúdo<!-- /slot:body -->\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"card\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <!-- slot:title -->Título<!-- /slot:title -->\n  <!-- slot:body -->Conteúdo<!-- /slot:body -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"card\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <!-- slot:title -->Título<!-- /slot:title -->\n  <!-- slot:body -->Conteúdo<!-- /slot:body -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=elevated",
+          "variant": {
+            "size": "md",
+            "tone": "elevated",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"card\" data-size=\"md\" data-tone=\"elevated\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\">\n  <!-- slot:title -->Título<!-- /slot:title -->\n  <!-- slot:body -->Conteúdo<!-- /slot:body -->\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"card\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <!-- slot:title -->Título<!-- /slot:title -->\n  <!-- slot:body -->Conteúdo<!-- /slot:body -->\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"card\" data-size=\"md\" data-tone=\"default\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <!-- slot:title -->Título<!-- /slot:title -->\n  <!-- slot:body -->Conteúdo<!-- /slot:body -->\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"card\" data-size=\"md\" data-tone=\"default\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <!-- slot:title -->Título<!-- /slot:title -->\n  <!-- slot:body -->Conteúdo<!-- /slot:body -->\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"card\" data-size=\"md\" data-tone=\"default\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <!-- slot:title -->Título<!-- /slot:title -->\n  <!-- slot:body -->Conteúdo<!-- /slot:body -->\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"card\" data-size=\"md\" data-tone=\"default\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <!-- slot:title -->Título<!-- /slot:title -->\n  <!-- slot:body -->Conteúdo<!-- /slot:body -->\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"card\" data-size=\"md\" data-tone=\"default\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <!-- slot:title -->Título<!-- /slot:title -->\n  <!-- slot:body -->Conteúdo<!-- /slot:body -->\n</div>\n"
+        },
+        {
+          "previewId": "state=interactive",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "interactive"
+          },
+          "state": "interactive",
+          "html": "<div data-component=\"card\" data-size=\"md\" data-tone=\"default\" data-state=\"interactive\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <!-- slot:title -->Título<!-- /slot:title -->\n  <!-- slot:body -->Conteúdo<!-- /slot:body -->\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "modal",
+      "name": "modal",
+      "file": "modal.html",
+      "realComponent": "Modal",
+      "slots": [
+        "header",
+        "body",
+        "footer"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "tone": [
+          "default",
+          "danger"
+        ],
+        "state": [
+          "default"
+        ],
+        "device": [
+          "mobile",
+          "desktop"
+        ]
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "default",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size",
+        "typography-heading-font-size",
+        "typography-heading-font-weight"
+      ],
+      "docs": {
+        "description": "Diálogo modal sobreposto à tela.",
+        "usage": "Confirmações e formulários curtos; sempre com fechamento explícito (data-close e ESC) e foco inicial no botão de fechar."
+      },
+      "source": {
+        "partial": "components/modal.html",
+        "partialSha256": "ee0ba21aa93fe86812f9d126bf2333ad2f1cb6e851e6de5a81af159831427d1b"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"modal\" data-size=\"sm\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-1 text-body\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "size=lg",
+          "variant": {
+            "size": "lg",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"modal\" data-size=\"lg\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-3 text-heading\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "tone=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "tone=danger",
+          "variant": {
+            "size": "md",
+            "tone": "danger",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"danger\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-text text-bg\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "device=mobile",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default",
+            "device": "mobile"
+          },
+          "state": "default",
+          "html": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\" data-device=\"mobile\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "device=desktop",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default",
+            "device": "desktop"
+          },
+          "state": "default",
+          "html": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\" data-device=\"desktop\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"modal\" data-size=\"md\" data-tone=\"default\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-titulo\">\n  <h2 id=\"modal-titulo\" class=\"m-0 modal-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"modal-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"modal-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"modal-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "drawer",
+      "name": "drawer",
+      "file": "drawer.html",
+      "realComponent": "Drawer",
+      "slots": [
+        "header",
+        "body",
+        "footer"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "tone": [
+          "default"
+        ],
+        "state": [
+          "default"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "default",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size",
+        "typography-heading-font-size",
+        "typography-heading-font-weight"
+      ],
+      "docs": {
+        "description": "Painel lateral deslizante.",
+        "usage": "Navegação secundária ou formulários laterais; fecha com data-close e ESC como o modal."
+      },
+      "source": {
+        "partial": "components/drawer.html",
+        "partialSha256": "b35d77facd173d9fd2c9234d512801e4714e5467d040429410670e6c37971246"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"drawer\" data-size=\"sm\" data-tone=\"default\" data-state=\"default\" class=\"font-body bg-surface text-text p-1 text-body\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo\">\n  <h2 id=\"drawer-titulo\" class=\"m-0 drawer-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"drawer-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"drawer-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"drawer-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"drawer\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo\">\n  <h2 id=\"drawer-titulo\" class=\"m-0 drawer-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"drawer-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"drawer-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"drawer-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "size=lg",
+          "variant": {
+            "size": "lg",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"drawer\" data-size=\"lg\" data-tone=\"default\" data-state=\"default\" class=\"font-body bg-surface text-text p-3 text-heading\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo\">\n  <h2 id=\"drawer-titulo\" class=\"m-0 drawer-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"drawer-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"drawer-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"drawer-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "tone=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"drawer\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo\">\n  <h2 id=\"drawer-titulo\" class=\"m-0 drawer-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"drawer-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"drawer-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"drawer-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"drawer\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo\">\n  <h2 id=\"drawer-titulo\" class=\"m-0 drawer-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"drawer-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"drawer-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"drawer-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"drawer\" data-size=\"md\" data-tone=\"default\" data-state=\"hover\" class=\"font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo\">\n  <h2 id=\"drawer-titulo\" class=\"m-0 drawer-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"drawer-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"drawer-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"drawer-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"drawer\" data-size=\"md\" data-tone=\"default\" data-state=\"focus\" class=\"font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo\">\n  <h2 id=\"drawer-titulo\" class=\"m-0 drawer-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"drawer-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"drawer-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"drawer-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"drawer\" data-size=\"md\" data-tone=\"default\" data-state=\"active\" class=\"font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo\">\n  <h2 id=\"drawer-titulo\" class=\"m-0 drawer-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"drawer-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"drawer-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"drawer-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"drawer\" data-size=\"md\" data-tone=\"default\" data-state=\"disabled\" class=\"font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo\">\n  <h2 id=\"drawer-titulo\" class=\"m-0 drawer-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"drawer-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"drawer-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"drawer-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"drawer\" data-size=\"md\" data-tone=\"default\" data-state=\"loading\" class=\"font-body p-2 text-body bg-surface text-text\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drawer-titulo\">\n  <h2 id=\"drawer-titulo\" class=\"m-0 drawer-titulo text-heading font-bold\"><!-- slot:header -->Título<!-- /slot:header --></h2>\n  <div class=\"drawer-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"drawer-rodape mt-2\"><!-- slot:footer --><button type=\"button\" class=\"drawer-fechar\" data-autofocus data-close>Fechar</button><!-- /slot:footer --></div>\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "field",
+      "name": "field",
+      "file": "field.html",
+      "realComponent": "Field",
+      "slots": [
+        "label",
+        "input",
+        "hint"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md"
+        ],
+        "tone": [
+          "default",
+          "error",
+          "success"
+        ],
+        "state": [
+          "default",
+          "filled",
+          "focus",
+          "disabled"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "default",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-border",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size"
+      ],
+      "docs": {
+        "description": "Campo de formulário com rótulo, entrada e ajuda.",
+        "usage": "Entrada de dados com estados filled/error/success; hint sempre presente quando há validação."
+      },
+      "source": {
+        "partial": "components/field.html",
+        "partialSha256": "0cccbeb37eb10567c73a636d5022bc50fcf0038525e9db06727986687502a487"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"field\" data-size=\"sm\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-1 text-body\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"field\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        },
+        {
+          "previewId": "tone=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"field\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        },
+        {
+          "previewId": "tone=error",
+          "variant": {
+            "size": "md",
+            "tone": "error",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"field\" data-size=\"md\" data-tone=\"error\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-text text-bg\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        },
+        {
+          "previewId": "tone=success",
+          "variant": {
+            "size": "md",
+            "tone": "success",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"field\" data-size=\"md\" data-tone=\"success\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"field\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"field\" data-size=\"md\" data-tone=\"default\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"field\" data-size=\"md\" data-tone=\"default\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"field\" data-size=\"md\" data-tone=\"default\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"field\" data-size=\"md\" data-tone=\"default\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"field\" data-size=\"md\" data-tone=\"default\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=filled",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "filled"
+          },
+          "state": "filled",
+          "html": "<div data-component=\"field\" data-size=\"md\" data-tone=\"default\" data-state=\"filled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <label class=\"gap-2\"><!-- slot:label -->Rótulo<!-- /slot:label -->\n    <!-- slot:input --><input class=\"w-full p-2 rounded-md border-border bg-surface text-text font-body text-body\" type=\"text\"><!-- /slot:input -->\n  </label>\n  <div class=\"field-ajuda mt-2\"><!-- slot:hint -->Ajuda<!-- /slot:hint --></div>\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "bubble",
+      "name": "bubble",
+      "file": "bubble.html",
+      "realComponent": "Bubble",
+      "slots": [
+        "content",
+        "meta"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md"
+        ],
+        "tone": [
+          "in",
+          "out"
+        ],
+        "state": [
+          "default"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "in",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size",
+        "typography-body-line-height"
+      ],
+      "docs": {
+        "description": "Balão de mensagem de conversa.",
+        "usage": "Mensagens de chat; tone in (recebida) e tone out (enviada)."
+      },
+      "source": {
+        "partial": "components/bubble.html",
+        "partialSha256": "aa44b324c98ba34e560e22bbc86b32ec57ebde10fb075d872f04ac90574164e0"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "in",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"bubble\" data-size=\"sm\" data-tone=\"in\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-1 text-body\">\n  <p class=\"m-0 leading-body\"><!-- slot:content -->Mensagem<!-- /slot:content --></p>\n  <div class=\"bubble-meta mt-2\"><!-- slot:meta -->12:00<!-- /slot:meta --></div>\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "in",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"bubble\" data-size=\"md\" data-tone=\"in\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <p class=\"m-0 leading-body\"><!-- slot:content -->Mensagem<!-- /slot:content --></p>\n  <div class=\"bubble-meta mt-2\"><!-- slot:meta -->12:00<!-- /slot:meta --></div>\n</div>\n"
+        },
+        {
+          "previewId": "tone=in",
+          "variant": {
+            "size": "md",
+            "tone": "in",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"bubble\" data-size=\"md\" data-tone=\"in\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <p class=\"m-0 leading-body\"><!-- slot:content -->Mensagem<!-- /slot:content --></p>\n  <div class=\"bubble-meta mt-2\"><!-- slot:meta -->12:00<!-- /slot:meta --></div>\n</div>\n"
+        },
+        {
+          "previewId": "tone=out",
+          "variant": {
+            "size": "md",
+            "tone": "out",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"bubble\" data-size=\"md\" data-tone=\"out\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\">\n  <p class=\"m-0 leading-body\"><!-- slot:content -->Mensagem<!-- /slot:content --></p>\n  <div class=\"bubble-meta mt-2\"><!-- slot:meta -->12:00<!-- /slot:meta --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "in",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"bubble\" data-size=\"md\" data-tone=\"in\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <p class=\"m-0 leading-body\"><!-- slot:content -->Mensagem<!-- /slot:content --></p>\n  <div class=\"bubble-meta mt-2\"><!-- slot:meta -->12:00<!-- /slot:meta --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "in",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"bubble\" data-size=\"md\" data-tone=\"in\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <p class=\"m-0 leading-body\"><!-- slot:content -->Mensagem<!-- /slot:content --></p>\n  <div class=\"bubble-meta mt-2\"><!-- slot:meta -->12:00<!-- /slot:meta --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "in",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"bubble\" data-size=\"md\" data-tone=\"in\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <p class=\"m-0 leading-body\"><!-- slot:content -->Mensagem<!-- /slot:content --></p>\n  <div class=\"bubble-meta mt-2\"><!-- slot:meta -->12:00<!-- /slot:meta --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "in",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"bubble\" data-size=\"md\" data-tone=\"in\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <p class=\"m-0 leading-body\"><!-- slot:content -->Mensagem<!-- /slot:content --></p>\n  <div class=\"bubble-meta mt-2\"><!-- slot:meta -->12:00<!-- /slot:meta --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "in",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"bubble\" data-size=\"md\" data-tone=\"in\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <p class=\"m-0 leading-body\"><!-- slot:content -->Mensagem<!-- /slot:content --></p>\n  <div class=\"bubble-meta mt-2\"><!-- slot:meta -->12:00<!-- /slot:meta --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "in",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"bubble\" data-size=\"md\" data-tone=\"in\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <p class=\"m-0 leading-body\"><!-- slot:content -->Mensagem<!-- /slot:content --></p>\n  <div class=\"bubble-meta mt-2\"><!-- slot:meta -->12:00<!-- /slot:meta --></div>\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "menu-row",
+      "name": "menu-row",
+      "file": "menu-row.html",
+      "realComponent": "MenuRow",
+      "slots": [
+        "icon",
+        "label",
+        "shortcut"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md"
+        ],
+        "tone": [
+          "default",
+          "danger"
+        ],
+        "state": [
+          "default",
+          "active",
+          "disabled"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "default",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size"
+      ],
+      "docs": {
+        "description": "Item de menu.",
+        "usage": "Linhas de menu contextual; active marca o item atual e disabled bloqueia a ação."
+      },
+      "source": {
+        "partial": "components/menu-row.html",
+        "partialSha256": "48669ffd004ffef6301e5e707b00f1300ca12cd3766a840ab0ae00656648f779"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"menu-row\" data-size=\"sm\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-1 text-body\" role=\"menuitem\">\n  <span class=\"menu-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <!-- slot:label -->Ação<!-- /slot:label -->\n  <span class=\"menu-atalho\"><!-- slot:shortcut -->K<!-- /slot:shortcut --></span>\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"menu-row\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"menuitem\">\n  <span class=\"menu-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <!-- slot:label -->Ação<!-- /slot:label -->\n  <span class=\"menu-atalho\"><!-- slot:shortcut -->K<!-- /slot:shortcut --></span>\n</div>\n"
+        },
+        {
+          "previewId": "tone=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"menu-row\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"menuitem\">\n  <span class=\"menu-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <!-- slot:label -->Ação<!-- /slot:label -->\n  <span class=\"menu-atalho\"><!-- slot:shortcut -->K<!-- /slot:shortcut --></span>\n</div>\n"
+        },
+        {
+          "previewId": "tone=danger",
+          "variant": {
+            "size": "md",
+            "tone": "danger",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"menu-row\" data-size=\"md\" data-tone=\"danger\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-text text-bg\" role=\"menuitem\">\n  <span class=\"menu-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <!-- slot:label -->Ação<!-- /slot:label -->\n  <span class=\"menu-atalho\"><!-- slot:shortcut -->K<!-- /slot:shortcut --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"menu-row\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"menuitem\">\n  <span class=\"menu-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <!-- slot:label -->Ação<!-- /slot:label -->\n  <span class=\"menu-atalho\"><!-- slot:shortcut -->K<!-- /slot:shortcut --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"menu-row\" data-size=\"md\" data-tone=\"default\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"menuitem\">\n  <span class=\"menu-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <!-- slot:label -->Ação<!-- /slot:label -->\n  <span class=\"menu-atalho\"><!-- slot:shortcut -->K<!-- /slot:shortcut --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"menu-row\" data-size=\"md\" data-tone=\"default\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"menuitem\">\n  <span class=\"menu-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <!-- slot:label -->Ação<!-- /slot:label -->\n  <span class=\"menu-atalho\"><!-- slot:shortcut -->K<!-- /slot:shortcut --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"menu-row\" data-size=\"md\" data-tone=\"default\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"menuitem\">\n  <span class=\"menu-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <!-- slot:label -->Ação<!-- /slot:label -->\n  <span class=\"menu-atalho\"><!-- slot:shortcut -->K<!-- /slot:shortcut --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"menu-row\" data-size=\"md\" data-tone=\"default\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"menuitem\">\n  <span class=\"menu-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <!-- slot:label -->Ação<!-- /slot:label -->\n  <span class=\"menu-atalho\"><!-- slot:shortcut -->K<!-- /slot:shortcut --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"menu-row\" data-size=\"md\" data-tone=\"default\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\" role=\"menuitem\">\n  <span class=\"menu-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <!-- slot:label -->Ação<!-- /slot:label -->\n  <span class=\"menu-atalho\"><!-- slot:shortcut -->K<!-- /slot:shortcut --></span>\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "media-card",
+      "name": "media-card",
+      "file": "media-card.html",
+      "realComponent": "MediaCard",
+      "slots": [
+        "media",
+        "title",
+        "body",
+        "actions"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md"
+        ],
+        "tone": [
+          "default"
+        ],
+        "state": [
+          "default"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "default",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "border-radius-sm",
+        "color-bg",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "dimension-space-4",
+        "typography-body-font-family",
+        "typography-body-font-size",
+        "typography-heading-font-weight"
+      ],
+      "docs": {
+        "description": "Cartão de mídia com capa.",
+        "usage": "Conteúdo com imagem de capa, título, corpo e ações."
+      },
+      "source": {
+        "partial": "components/media-card.html",
+        "partialSha256": "72cb53181671e07fea339156350d4000a07c0d43aff8eb61831505e491f6b249"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"media-card\" data-size=\"sm\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-1 text-body\">\n  <div class=\"media-card-capa min-h-4 bg-bg rounded-sm\"><!-- slot:media --><img alt=\"Capa\"><!-- /slot:media --></div>\n  <h3 class=\"m-0 media-card-titulo text-body font-bold\"><!-- slot:title -->Título<!-- /slot:title --></h3>\n  <div class=\"media-card-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"media-card-acoes mt-2\"><!-- slot:actions -->Ações<!-- /slot:actions --></div>\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"media-card\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"media-card-capa min-h-4 bg-bg rounded-sm\"><!-- slot:media --><img alt=\"Capa\"><!-- /slot:media --></div>\n  <h3 class=\"m-0 media-card-titulo text-body font-bold\"><!-- slot:title -->Título<!-- /slot:title --></h3>\n  <div class=\"media-card-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"media-card-acoes mt-2\"><!-- slot:actions -->Ações<!-- /slot:actions --></div>\n</div>\n"
+        },
+        {
+          "previewId": "tone=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"media-card\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"media-card-capa min-h-4 bg-bg rounded-sm\"><!-- slot:media --><img alt=\"Capa\"><!-- /slot:media --></div>\n  <h3 class=\"m-0 media-card-titulo text-body font-bold\"><!-- slot:title -->Título<!-- /slot:title --></h3>\n  <div class=\"media-card-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"media-card-acoes mt-2\"><!-- slot:actions -->Ações<!-- /slot:actions --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"media-card\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"media-card-capa min-h-4 bg-bg rounded-sm\"><!-- slot:media --><img alt=\"Capa\"><!-- /slot:media --></div>\n  <h3 class=\"m-0 media-card-titulo text-body font-bold\"><!-- slot:title -->Título<!-- /slot:title --></h3>\n  <div class=\"media-card-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"media-card-acoes mt-2\"><!-- slot:actions -->Ações<!-- /slot:actions --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"media-card\" data-size=\"md\" data-tone=\"default\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"media-card-capa min-h-4 bg-bg rounded-sm\"><!-- slot:media --><img alt=\"Capa\"><!-- /slot:media --></div>\n  <h3 class=\"m-0 media-card-titulo text-body font-bold\"><!-- slot:title -->Título<!-- /slot:title --></h3>\n  <div class=\"media-card-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"media-card-acoes mt-2\"><!-- slot:actions -->Ações<!-- /slot:actions --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"media-card\" data-size=\"md\" data-tone=\"default\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"media-card-capa min-h-4 bg-bg rounded-sm\"><!-- slot:media --><img alt=\"Capa\"><!-- /slot:media --></div>\n  <h3 class=\"m-0 media-card-titulo text-body font-bold\"><!-- slot:title -->Título<!-- /slot:title --></h3>\n  <div class=\"media-card-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"media-card-acoes mt-2\"><!-- slot:actions -->Ações<!-- /slot:actions --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"media-card\" data-size=\"md\" data-tone=\"default\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"media-card-capa min-h-4 bg-bg rounded-sm\"><!-- slot:media --><img alt=\"Capa\"><!-- /slot:media --></div>\n  <h3 class=\"m-0 media-card-titulo text-body font-bold\"><!-- slot:title -->Título<!-- /slot:title --></h3>\n  <div class=\"media-card-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"media-card-acoes mt-2\"><!-- slot:actions -->Ações<!-- /slot:actions --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"media-card\" data-size=\"md\" data-tone=\"default\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"media-card-capa min-h-4 bg-bg rounded-sm\"><!-- slot:media --><img alt=\"Capa\"><!-- /slot:media --></div>\n  <h3 class=\"m-0 media-card-titulo text-body font-bold\"><!-- slot:title -->Título<!-- /slot:title --></h3>\n  <div class=\"media-card-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"media-card-acoes mt-2\"><!-- slot:actions -->Ações<!-- /slot:actions --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"media-card\" data-size=\"md\" data-tone=\"default\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"media-card-capa min-h-4 bg-bg rounded-sm\"><!-- slot:media --><img alt=\"Capa\"><!-- /slot:media --></div>\n  <h3 class=\"m-0 media-card-titulo text-body font-bold\"><!-- slot:title -->Título<!-- /slot:title --></h3>\n  <div class=\"media-card-corpo mt-2\"><!-- slot:body -->Conteúdo<!-- /slot:body --></div>\n  <div class=\"media-card-acoes mt-2\"><!-- slot:actions -->Ações<!-- /slot:actions --></div>\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "toast",
+      "name": "toast",
+      "file": "toast.html",
+      "realComponent": "Toast",
+      "slots": [
+        "icon",
+        "message",
+        "action"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md"
+        ],
+        "tone": [
+          "success",
+          "error",
+          "info"
+        ],
+        "state": [
+          "default"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "info",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-border",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size",
+        "typography-body-line-height"
+      ],
+      "docs": {
+        "description": "Notificação efêmera.",
+        "usage": "Feedback de ações concluídas; anuncia via aria-live (mock-live)."
+      },
+      "source": {
+        "partial": "components/toast.html",
+        "partialSha256": "c77e90b5b111f550057e1f34aedf00f8ed8f6af34e3dd0a8f5007c68bdcda1da"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "info",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"toast\" data-size=\"sm\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text border-border p-1 text-body\">\n  <span class=\"toast-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"toast-mensagem m-0 leading-body\" data-live=\"mock-live\" aria-live=\"polite\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"toast-desfazer\">Desfazer</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"toast-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"toast-mensagem m-0 leading-body\" data-live=\"mock-live\" aria-live=\"polite\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"toast-desfazer\">Desfazer</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=success",
+          "variant": {
+            "size": "md",
+            "tone": "success",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"success\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\">\n  <span class=\"toast-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"toast-mensagem m-0 leading-body\" data-live=\"mock-live\" aria-live=\"polite\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"toast-desfazer\">Desfazer</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=error",
+          "variant": {
+            "size": "md",
+            "tone": "error",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"error\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-text text-bg\">\n  <span class=\"toast-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"toast-mensagem m-0 leading-body\" data-live=\"mock-live\" aria-live=\"polite\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"toast-desfazer\">Desfazer</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=info",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"toast-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"toast-mensagem m-0 leading-body\" data-live=\"mock-live\" aria-live=\"polite\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"toast-desfazer\">Desfazer</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"toast-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"toast-mensagem m-0 leading-body\" data-live=\"mock-live\" aria-live=\"polite\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"toast-desfazer\">Desfazer</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"info\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"toast-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"toast-mensagem m-0 leading-body\" data-live=\"mock-live\" aria-live=\"polite\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"toast-desfazer\">Desfazer</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"info\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"toast-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"toast-mensagem m-0 leading-body\" data-live=\"mock-live\" aria-live=\"polite\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"toast-desfazer\">Desfazer</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"info\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"toast-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"toast-mensagem m-0 leading-body\" data-live=\"mock-live\" aria-live=\"polite\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"toast-desfazer\">Desfazer</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"info\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"toast-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"toast-mensagem m-0 leading-body\" data-live=\"mock-live\" aria-live=\"polite\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"toast-desfazer\">Desfazer</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"toast\" data-size=\"md\" data-tone=\"info\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"toast-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"toast-mensagem m-0 leading-body\" data-live=\"mock-live\" aria-live=\"polite\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"toast-desfazer\">Desfazer</button><!-- /slot:action -->\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "pill",
+      "name": "pill",
+      "file": "pill.html",
+      "realComponent": "Pill",
+      "slots": [
+        "label"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md"
+        ],
+        "tone": [
+          "neutral",
+          "info",
+          "success",
+          "warning",
+          "danger"
+        ],
+        "state": [
+          "default"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "neutral",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size"
+      ],
+      "docs": {
+        "description": "Rótulo compacto de status.",
+        "usage": "Categorias e status; tons semânticos (neutral/info/success/warning/danger)."
+      },
+      "source": {
+        "partial": "components/pill.html",
+        "partialSha256": "738ed9498a8f12ba708188e38651a5f64262a78cd2fab9be6365b7f30f059a3c"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "neutral",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"pill\" data-size=\"sm\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-1 text-body\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "tone=neutral",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "tone=info",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "tone=success",
+          "variant": {
+            "size": "md",
+            "tone": "success",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"success\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "tone=warning",
+          "variant": {
+            "size": "md",
+            "tone": "warning",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"warning\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body text-accent border-accent\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "tone=danger",
+          "variant": {
+            "size": "md",
+            "tone": "danger",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"danger\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-text text-bg\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"neutral\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"neutral\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"neutral\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"neutral\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"pill\" data-size=\"md\" data-tone=\"neutral\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"pill-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "avatar",
+      "name": "avatar",
+      "file": "avatar.html",
+      "realComponent": "Avatar",
+      "slots": [
+        "image",
+        "initials"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "tone": [
+          "default"
+        ],
+        "state": [
+          "default",
+          "online",
+          "offline"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "default",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size"
+      ],
+      "docs": {
+        "description": "Avatar de usuário.",
+        "usage": "Imagem ou iniciais do usuário; estados online/offline."
+      },
+      "source": {
+        "partial": "components/avatar.html",
+        "partialSha256": "39f6dce1603c07482db2df027b62e69441f61a3b465ad13d3eb62f22c20526ca"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"avatar\" data-size=\"sm\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-1 text-body\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        },
+        {
+          "previewId": "size=lg",
+          "variant": {
+            "size": "lg",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"avatar\" data-size=\"lg\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-3 text-heading\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        },
+        {
+          "previewId": "tone=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=online",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "online"
+          },
+          "state": "online",
+          "html": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"online\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=offline",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "offline"
+          },
+          "state": "offline",
+          "html": "<div data-component=\"avatar\" data-size=\"md\" data-tone=\"default\" data-state=\"offline\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"avatar-imagem\"><!-- slot:image --><img alt=\"Avatar\"><!-- /slot:image --></div>\n  <div class=\"avatar-iniciais\"><!-- slot:initials -->AB<!-- /slot:initials --></div>\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "banner",
+      "name": "banner",
+      "file": "banner.html",
+      "realComponent": "Banner",
+      "slots": [
+        "icon",
+        "message",
+        "action"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md"
+        ],
+        "tone": [
+          "info",
+          "warning",
+          "danger",
+          "success"
+        ],
+        "state": [
+          "default"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "info",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-border",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size",
+        "typography-body-line-height"
+      ],
+      "docs": {
+        "description": "Faixa de aviso persistente.",
+        "usage": "Alertas no topo da tela; tons info/warning/danger/success."
+      },
+      "source": {
+        "partial": "components/banner.html",
+        "partialSha256": "7403d6a6afcbd7008d1e6f66439ed567905c0447b5a3c439053f2f37cb6ec2e3"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "info",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"banner\" data-size=\"sm\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text border-border p-1 text-body\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=info",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=warning",
+          "variant": {
+            "size": "md",
+            "tone": "warning",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"warning\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body text-accent border-accent\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=danger",
+          "variant": {
+            "size": "md",
+            "tone": "danger",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"danger\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-text text-bg\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=success",
+          "variant": {
+            "size": "md",
+            "tone": "success",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"success\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"info\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"info\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"info\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"info\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"banner\" data-size=\"md\" data-tone=\"info\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"banner-icone\"><!-- slot:icon -->•<!-- /slot:icon --></span>\n  <p class=\"banner-mensagem m-0 leading-body\"><!-- slot:message -->Mensagem<!-- /slot:message --></p>\n  <!-- slot:action --><button type=\"button\" class=\"banner-botao\">Ação</button><!-- /slot:action -->\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "tabs",
+      "name": "tabs",
+      "file": "tabs.html",
+      "realComponent": "Tabs",
+      "slots": [
+        "tabs",
+        "panel"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md"
+        ],
+        "tone": [
+          "default"
+        ],
+        "state": [
+          "default"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "default",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size"
+      ],
+      "docs": {
+        "description": "Navegação por abas.",
+        "usage": "Alternância entre painéis relacionados; exatamente uma aba selecionada por vez."
+      },
+      "source": {
+        "partial": "components/tabs.html",
+        "partialSha256": "fe3ac1a19797564d5f5068aca1ef4ab547b3522b2aaba19dedce3ef9a4147147"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"tabs\" data-size=\"sm\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-1 text-body\">\n  <div class=\"tabs-lista\" role=\"tablist\"><!-- slot:tabs --><button type=\"button\" class=\"tabs-aba\" role=\"tab\" aria-selected=\"true\">Aba 1</button><!-- /slot:tabs --></div>\n  <div class=\"tabs-painel mt-2\" role=\"tabpanel\"><!-- slot:panel -->Conteúdo<!-- /slot:panel --></div>\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"tabs\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"tabs-lista\" role=\"tablist\"><!-- slot:tabs --><button type=\"button\" class=\"tabs-aba\" role=\"tab\" aria-selected=\"true\">Aba 1</button><!-- /slot:tabs --></div>\n  <div class=\"tabs-painel mt-2\" role=\"tabpanel\"><!-- slot:panel -->Conteúdo<!-- /slot:panel --></div>\n</div>\n"
+        },
+        {
+          "previewId": "tone=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"tabs\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"tabs-lista\" role=\"tablist\"><!-- slot:tabs --><button type=\"button\" class=\"tabs-aba\" role=\"tab\" aria-selected=\"true\">Aba 1</button><!-- /slot:tabs --></div>\n  <div class=\"tabs-painel mt-2\" role=\"tabpanel\"><!-- slot:panel -->Conteúdo<!-- /slot:panel --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"tabs\" data-size=\"md\" data-tone=\"default\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"tabs-lista\" role=\"tablist\"><!-- slot:tabs --><button type=\"button\" class=\"tabs-aba\" role=\"tab\" aria-selected=\"true\">Aba 1</button><!-- /slot:tabs --></div>\n  <div class=\"tabs-painel mt-2\" role=\"tabpanel\"><!-- slot:panel -->Conteúdo<!-- /slot:panel --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"tabs\" data-size=\"md\" data-tone=\"default\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"tabs-lista\" role=\"tablist\"><!-- slot:tabs --><button type=\"button\" class=\"tabs-aba\" role=\"tab\" aria-selected=\"true\">Aba 1</button><!-- /slot:tabs --></div>\n  <div class=\"tabs-painel mt-2\" role=\"tabpanel\"><!-- slot:panel -->Conteúdo<!-- /slot:panel --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"tabs\" data-size=\"md\" data-tone=\"default\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"tabs-lista\" role=\"tablist\"><!-- slot:tabs --><button type=\"button\" class=\"tabs-aba\" role=\"tab\" aria-selected=\"true\">Aba 1</button><!-- /slot:tabs --></div>\n  <div class=\"tabs-painel mt-2\" role=\"tabpanel\"><!-- slot:panel -->Conteúdo<!-- /slot:panel --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"tabs\" data-size=\"md\" data-tone=\"default\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"tabs-lista\" role=\"tablist\"><!-- slot:tabs --><button type=\"button\" class=\"tabs-aba\" role=\"tab\" aria-selected=\"true\">Aba 1</button><!-- /slot:tabs --></div>\n  <div class=\"tabs-painel mt-2\" role=\"tabpanel\"><!-- slot:panel -->Conteúdo<!-- /slot:panel --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"tabs\" data-size=\"md\" data-tone=\"default\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"tabs-lista\" role=\"tablist\"><!-- slot:tabs --><button type=\"button\" class=\"tabs-aba\" role=\"tab\" aria-selected=\"true\">Aba 1</button><!-- /slot:tabs --></div>\n  <div class=\"tabs-painel mt-2\" role=\"tabpanel\"><!-- slot:panel -->Conteúdo<!-- /slot:panel --></div>\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "default",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"tabs\" data-size=\"md\" data-tone=\"default\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <div class=\"tabs-lista\" role=\"tablist\"><!-- slot:tabs --><button type=\"button\" class=\"tabs-aba\" role=\"tab\" aria-selected=\"true\">Aba 1</button><!-- /slot:tabs --></div>\n  <div class=\"tabs-painel mt-2\" role=\"tabpanel\"><!-- slot:panel -->Conteúdo<!-- /slot:panel --></div>\n</div>\n"
+        }
+      ]
+    },
+    {
+      "id": "chip",
+      "name": "chip",
+      "file": "chip.html",
+      "realComponent": "Chip",
+      "slots": [
+        "label",
+        "remove"
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md"
+        ],
+        "tone": [
+          "neutral",
+          "info",
+          "success",
+          "warning",
+          "danger"
+        ],
+        "state": [
+          "default",
+          "selected",
+          "disabled"
+        ],
+        "device": []
+      },
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "active",
+        "disabled",
+        "loading"
+      ],
+      "props": {
+        "markerArgs": {
+          "size": "md",
+          "tone": "neutral",
+          "state": "default"
+        }
+      },
+      "tokensUsed": [
+        "border-radius-md",
+        "color-surface",
+        "color-text",
+        "dimension-space-2",
+        "typography-body-font-family",
+        "typography-body-font-size"
+      ],
+      "docs": {
+        "description": "Ciqueta com remoção opcional.",
+        "usage": "Filtros e seleções múltiplas; selected marca a escolha e disabled bloqueia."
+      },
+      "source": {
+        "partial": "components/chip.html",
+        "partialSha256": "311a7ff2f1f947fe665622b8d3a98598048db3e70e15cc9a229f7c774b920151"
+      },
+      "previews": [
+        {
+          "previewId": "size=sm",
+          "variant": {
+            "size": "sm",
+            "tone": "neutral",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"chip\" data-size=\"sm\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body bg-surface text-text p-1 text-body\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "size=md",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=neutral",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=info",
+          "variant": {
+            "size": "md",
+            "tone": "info",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"info\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text border-border\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=success",
+          "variant": {
+            "size": "md",
+            "tone": "success",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"success\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-accent text-bg\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=warning",
+          "variant": {
+            "size": "md",
+            "tone": "warning",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"warning\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body text-accent border-accent\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "tone=danger",
+          "variant": {
+            "size": "md",
+            "tone": "danger",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"danger\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-text text-bg\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "state=default",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "default"
+          },
+          "state": "default",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"neutral\" data-state=\"default\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "state=hover",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "hover"
+          },
+          "state": "hover",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"neutral\" data-state=\"hover\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "state=focus",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "focus"
+          },
+          "state": "focus",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"neutral\" data-state=\"focus\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "state=active",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "active"
+          },
+          "state": "active",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"neutral\" data-state=\"active\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "state=disabled",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "disabled"
+          },
+          "state": "disabled",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"neutral\" data-state=\"disabled\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "state=loading",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "loading"
+          },
+          "state": "loading",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"neutral\" data-state=\"loading\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        },
+        {
+          "previewId": "state=selected",
+          "variant": {
+            "size": "md",
+            "tone": "neutral",
+            "state": "selected"
+          },
+          "state": "selected",
+          "html": "<div data-component=\"chip\" data-size=\"md\" data-tone=\"neutral\" data-state=\"selected\" class=\"rounded-md font-body p-2 text-body bg-surface text-text\">\n  <span class=\"chip-rotulo\"><!-- slot:label -->Rótulo<!-- /slot:label --></span>\n  <!-- slot:remove --><button type=\"button\" class=\"chip-remover\">Remover</button><!-- /slot:remove -->\n</div>\n"
+        }
+      ]
+    }
+  ]
+}
