@@ -1692,6 +1692,7 @@ const server = createServer(async (req, res) => {
   // basic hardening on EVERY response (api, static, errors)
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.setHeader('Referrer-Policy', 'no-referrer')
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'self'")
   let pathname
   try {
     pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname)
