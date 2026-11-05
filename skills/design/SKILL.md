@@ -5,6 +5,18 @@ description: Design screen mockups, UI prototypes, wireframes and landing pages 
 
 # Design canvas
 
+## Exploração comparável (três direções)
+Quando o brief pedir exploração, gere exatamente três pastas em
+`design/explorations/<NN>/`, cada uma com `direction.json` declarando `brief`,
+`reference`, `palette`, `typePair`, `layout`, `density` e uma tela piloto HTML.
+As direções devem divergir em pelo menos dois eixos entre `palette`, `typePair` e
+`density` (não são variações cosméticas). Valide deterministicamente com:
+`node skills/design/scripts/direction-check.mjs skills/design/assets/example/explorations`.
+O check nomeia a direção duplicada e falha para JSON corrompido ou brief ausente.
+Registre a escolha final como DEC usando `scripts/decisions.mjs add`; a tela
+escolhida deve apontar para o mesmo brief. No viewer, use o modo 3-up para
+comparar as telas lado a lado antes de aceitar.
+
 You design screens as real HTML files inside the project and show them in the
 local design viewer. The user sees every screen side by side, switches device
 size and light/dark theme, exports PNG and comments on a screen; comments come

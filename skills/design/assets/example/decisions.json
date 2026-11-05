@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "decisions": [
+    {
+      "id": "DEC-001",
+      "category": "exploration",
+      "decision": "Escolher direção 01 editorial",
+      "reason": "A direção editorial melhor equilibra o brief e a legibilidade.",
+      "status": "active",
+      "scope": "explorations/01",
+      "screens": [
+        "explorations/01/pilot.html"
+      ],
+      "createdAt": "2026-11-05",
+      "supersedes": null
+    }
+  ]
+}

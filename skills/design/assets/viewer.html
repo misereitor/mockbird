@@ -761,6 +761,7 @@
     <span class="compare-modes" data-share-hide>
       <button id="modeSide" type="button" class="primary" aria-pressed="true" data-i18n-title="modeSideTitle" title="Side by side — two columns with synced scrolling (default)" data-i18n="modeSideBtn">Side by side</button>
       <button id="modeOnion" type="button" aria-pressed="false" data-i18n-title="modeOnionTitle" title="Onion skin — B stacked over A with opacity">Onion skin</button>
+      <button id="modeThree" type="button" aria-pressed="false" title="Three-up — compare three directions">3-up</button>
     </span>
     <label id="opacityWrap" data-share-hide hidden><span data-i18n="opacityLabel">B opacity</span>Opacidade B
       <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.5" data-share-hide>
@@ -777,6 +778,10 @@
       <section class="compare-col" id="compareColB">
         <div class="compare-col-head" id="compareHeadB">B</div>
         <div class="compare-scroll" id="sideB"></div>
+      </section>
+      <section class="compare-col" id="compareColC" hidden>
+        <div class="compare-col-head" id="compareHeadC">C</div>
+        <div class="compare-scroll" id="sideC"></div>
       </section>
     </div>
     <div id="compareStack" hidden>
@@ -2629,11 +2634,15 @@ function setCompareMode(mode) {
   const layerA = $('layerA')
   const sideA = $('sideA')
   const sideB = $('sideB')
+  const sideC = $('sideC')
   $('compareStage').dataset.mode = mode
   $('modeSide').classList.toggle('primary', mode === 'side')
   $('modeOnion').classList.toggle('primary', mode === 'onion')
   $('modeSide').setAttribute('aria-pressed', String(mode === 'side'))
   $('modeOnion').setAttribute('aria-pressed', String(mode === 'onion'))
+  $('modeThree').classList.toggle('primary', mode === 'three')
+  $('modeThree').setAttribute('aria-pressed', String(mode === 'three'))
+  $('compareColC').hidden = mode !== 'three'
   const overlayB = $('overlayB')
   if (mode === 'onion') {
     cols.hidden = true
@@ -2655,6 +2664,7 @@ function setCompareMode(mode) {
     $('opacityWrap').hidden = true
     $('compareColA').append(sideA)
     $('compareColB').append(sideB)
+    $('compareColC').append(sideC)
     if (overlayB) overlayB.remove() // overlayB é exclusivo do Onion skin
   }
 }
@@ -2667,6 +2677,10 @@ $('modeSide').addEventListener('click', () => {
 $('modeOnion').addEventListener('click', () => {
   if (compareSpec) compareSpec.mode = 'onion'
   setCompareMode('onion')
+})
+$('modeThree').addEventListener('click', () => {
+  if (compareSpec) compareSpec.mode = 'three'
+  setCompareMode('three')
 })
 
 function showCompareMsg(message) {
@@ -2787,8 +2801,11 @@ async function renderCompare() {
   const sideB = $('sideB')
   sideA.innerHTML = ''
   sideB.innerHTML = ''
+  $('sideC').innerHTML = ''
   sideA.appendChild(buildCompareSide(compareSpec.a))
   sideB.appendChild(buildCompareSide(compareSpec.b))
+  $('sideC').appendChild(buildCompareSide(compareSpec.a))
+  $('compareHeadC').textContent = `C — ${compareLabel(compareSpec.a)}`
   attachCompareScrollSync()
   setCompareMode(compareSpec.mode)
 }
