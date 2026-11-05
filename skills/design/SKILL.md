@@ -748,3 +748,9 @@ os estados encontrados/faltantes, as fricções e o timing.
    seletor malformado); `5` `playwright-core` ausente. Os artefatos em
    `design/.visual/ux/` são transitórios (evidência de simulação — não se
    commita).
+
+## Progressive references and schemas
+Load long guidance only when the task needs it: `skills/design/reference/workflows.md`.
+The schemas are contracts, not prose: `skills/design/assets/critic-report.schema.json`,
+`skills/design/assets/design-brief.schema.json`, `skills/design/assets/design-decisions.schema.json`,
+`design/approvals.json`, and `design/components/catalog.json`.
