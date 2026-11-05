@@ -11,6 +11,16 @@ test('scrypt parameters and per-user salts', () => {
   assert.equal(scryptSync('strong-password', a, 64, { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }).length, 64)
 })
 test('password policy rejects weak or short values', () => { assert.ok('long-password-1'.length >= 12); assert.ok('short'.length < 12) })
+test('admin bootstrap stores a scrypt hash and rejects missing password', async () => {
+  const { createAdmin, load, verifyPassword } = await import('../scripts/users.mjs')
+  const data = mkdtempSync(join(tmpdir(), 'mockbird-bootstrap-'))
+  assert.throws(() => createAdmin(data, 'admin@example.test'), /weak-password/)
+  const user = createAdmin(data, 'admin@example.test', 'bootstrap-password-12')
+  assert.match(user.passwordHash, /^scrypt\$/)
+  assert.notEqual(user.passwordHash, 'bootstrap-password-12')
+  assert.equal(verifyPassword('bootstrap-password-12', load(data).users[0].passwordHash), true)
+  rmSync(data, { recursive: true, force: true })
+})
 
 test('HTTP login lockout, CSRF and logout invalidation', async () => {
   const data = mkdtempSync(join(tmpdir(), 'mockbird-auth-'))

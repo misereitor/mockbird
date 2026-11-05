@@ -12,7 +12,9 @@ node install.mjs --dir .mockbird-install
 
 ```bash
 node skills/design/assets/serve.mjs --service --data ./data 8765 --no-open
-node skills/design/assets/serve.mjs --service --data ./data --create-admin admin@example.test
+MOCKBIRD_ADMIN_PASSWORD='uma-senha-local-com-12-ou-mais' node skills/design/assets/serve.mjs --service --data ./data --create-admin admin@example.test
+
+O bootstrap exige uma senha com pelo menos 12 caracteres; ela é usada somente no processo e gravada apenas como hash scrypt. Nunca coloque a senha no arquivo de dados ou no repositório.
 ```
 
 O comando cria `data/users.json` sem senha. Convide o usuário e deixe que ele
