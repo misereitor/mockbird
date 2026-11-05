@@ -1687,7 +1687,7 @@ const server = createServer(async (req, res) => {
       const body = await readBody(req); let parsed; try { parsed = JSON.parse(body.text || '') } catch { return fail(res, 400, 'invalid') }
       const key = `${req.socket.remoteAddress}|${String(parsed.user || parsed.email || '').toLowerCase()}`; const attempt = loginFailures.get(key) || { count: 0, until: 0 }
       if (attempt.until > Date.now()) return fail(res, 429, 'locked')
-      if (parsed.password !== 'mockbird-development-password') { attempt.count += 1; if (attempt.count >= 5) attempt.until = Date.now() + 60_000; loginFailures.set(key, attempt); return fail(res, attempt.until ? 429 : 401, attempt.until ? 'locked' : 'invalid-credentials') }
+      if (parsed.password !== 'mockbird-development-password') { attempt.count += 1; if (attempt.count >= 6) attempt.until = Date.now() + 60_000; loginFailures.set(key, attempt); return fail(res, attempt.until ? 429 : 401, attempt.until ? 'locked' : 'invalid-credentials') }
       loginFailures.delete(key); const id = randomBytes(24).toString('hex'); const now = Date.now(); const csrf = randomBytes(24).toString('hex'); sessions.set(id, { used: now, expires: now + 7 * 86400000, csrf })
       res.setHeader('set-cookie', [`mockbird_session=${signedSession(id)}; HttpOnly; SameSite=Strict; Path=/`, `mockbird_csrf=${csrf}; SameSite=Strict; Path=/`]); return sendJson(res, 200, { authenticated: true, csrfToken: csrf })
     }
@@ -1697,6 +1697,8 @@ const server = createServer(async (req, res) => {
     }
     if (service && pathname === '/api/logout' && req.method === 'POST') {
       const session = sessionFrom(req)
+      const csrfCookie = String(req.headers.cookie || '').split(';').map((x) => x.trim()).find((x) => x.startsWith('mockbird_csrf='))?.slice('mockbird_csrf='.length)
+      if (!session || req.headers['x-csrf-token'] !== session.csrf || csrfCookie !== session.csrf) return fail(res, 403, 'csrf-required')
       if (session) {
         const raw = String(req.headers.cookie || '').split(';').map((x) => x.trim()).find((x) => x.startsWith('mockbird_session='))?.slice('mockbird_session='.length)
         const id = raw?.split('.')[0]
