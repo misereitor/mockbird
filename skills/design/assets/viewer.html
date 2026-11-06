@@ -38,6 +38,8 @@
   }
   #crumbs { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
   #crumbs strong { font-size: 16px; }
+  #crumbs .brand-mark { color: var(--ui-accent); }
+  .crumb-sep { color: var(--ui-muted); font-size: 14px; margin: 0 2px; }
   #crumbs span { color: var(--ui-muted); font-size: 12px; }
   #controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   #controls label { display: flex; align-items: center; gap: 6px; color: var(--ui-muted); font-size: 12px; }
@@ -540,7 +542,7 @@
 <body>
 
 <header id="bar" hidden>
-  <div id="crumbs"><strong id="canvasTitle"></strong><span id="canvasPath"></span></div>
+  <div id="crumbs"><strong class="brand-mark">Mockbird</strong><span class="crumb-sep">&#8250;</span><strong id="canvasTitle"></strong><span id="canvasPath"></span></div>
   <div id="controls">
     <label id="canvasLabel" hidden>Canvas
       <select id="canvasSelect"></select>
@@ -610,7 +612,7 @@
 </main>
 
 <section id="selector" hidden>
-  <h1>Design canvas</h1>
+  <h1>Mockbird</h1>
   <p data-i18n-html="selectorIntro">Pick a canvas to preview. They live in folders with a <code>canvas.json</code> next to this viewer.</p>
   <ul id="canvasList"></ul>
   <form id="manualForm">
@@ -760,7 +762,7 @@
 </div>
 
 <div id="toast"></div>
-<div id="versionTag">v1.1.0</div>
+<div id="versionTag">v1.1.2</div>
 
 <div id="compareView" data-mode="side" data-share-hide hidden>
   <div id="compareTop">
@@ -1616,6 +1618,7 @@ async function loadCanvas() {
   state.problems = result.problems
   state.screens = result.screens
   $('canvasTitle').textContent = result.title || state.canvas
+  applyAppTitle() // w24: a aba acompanha "Tela · Mockbird"
   $('canvasPath').textContent = `design/${state.canvas}`
   await loadScenarioSelect()
   await loadCanvasSelect()
@@ -4042,6 +4045,7 @@ function openPresentation(screen) {
   frame.style.height = `${height}px`
   frame.src = screenUrl(screen)
   $('present').hidden = false
+  applyAppTitle() // w24: na apresentacao a aba vira so "Mockbird"
   fitPresentation()
   try {
     const request = document.documentElement.requestFullscreen?.()
@@ -4052,6 +4056,7 @@ function openPresentation(screen) {
 function closePresentation() {
   if (!presentOpen()) return
   $('present').hidden = true
+  applyAppTitle() // volta o titulo "Tela · Mockbird"
   $('presentFrame').src = 'about:blank' // para o mock - nada roda apos a vista
   if (document.fullscreenElement) {
     try {
@@ -5288,6 +5293,21 @@ async function boot() {
   fitSoon()
   restoreFlowState() // w10: reload/F5 mantém o modo fluxo e a tela atual
   pollFiles() // baseline agora - mudancas nos primeiros 2.5s nao passam batidas
+}
+
+/** w24: o nome do sistema e MOCKBIRD - na aba do navegador, no cabecalho e
+ *  na apresentacao (onde a aba vira so o nome, como o software de verdade). */
+const APP_NAME = 'Mockbird'
+
+function applyAppTitle() {
+  const canvasTitle = $('canvasTitle')?.textContent?.trim() ?? ''
+  if (presentOpen()) {
+    document.title = APP_NAME
+  } else if (canvasTitle) {
+    document.title = `${canvasTitle} · ${APP_NAME}`
+  } else {
+    document.title = APP_NAME
+  }
 }
 
 /** Canvas discovery: design/index.json first, then a directory listing. */

@@ -242,6 +242,17 @@ Historical changelog (up to v1.0.26) continues below.
 
 ## Changelog
 
+- **The system's name is Mockbird (v1.1.2)**: the viewer is now branded
+  **Mockbird** — the name shows in the header (accent wordmark), the browser
+  tab (`Canvas · Mockbird`) and the picker page; in **presentation mode** the
+  tab becomes just **Mockbird**, like the real software. This replaces the
+  `index.json` `"title"` experiment from v1.1.1 (removed — the name is the
+  product's, not per-project).
+- **The system now has a name (v1.1.1)**: `design/index.json` accepts
+  `"title"` — the system/brand name — and it shows in the **browser tab**
+  (`Canvas · System`), the header breadcrumb and the picker page. In
+  **presentation mode** the tab becomes just the system name, like the real
+  software. No title = the old generic label, nothing breaks.
 - **Responsive under `--share` + the canvas actually switches (v1.0.26)**: two
   fixes from the owner. (1) The responsive size control was hidden under
   `--share` as if resizing were writing — it now stays available as a

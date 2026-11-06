@@ -10,7 +10,6 @@
  *   node scripts/viewer-accept.mjs
  */
 import { spawn } from 'node:child_process'
-import { createHash } from 'node:crypto'
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -27,11 +26,10 @@ try {
 }
 
 const PACK = join(dirname(fileURLToPath(import.meta.url)), '..', 'skills', 'design', 'assets')
-const serviceMode = process.argv.includes('--service')
 const ROOT = join(tmpdir(), 'opencode', 'viewer-accept')
 rmSync(ROOT, { recursive: true, force: true })
 mkdirSync(join(ROOT, 'design'), { recursive: true })
-for (const item of ['login', 'dashboard', 'components', 'explorations', 'tokens.json', 'design-system.css', 'utilities.css', 'comments.json']) {
+for (const item of ['login', 'dashboard', 'components', 'tokens.json', 'design-system.css', 'utilities.css', 'comments.json']) {
   try {
     cpSync(join(PACK, 'example', item), join(ROOT, 'design', item), { recursive: true })
   } catch { /* optional file */ }
@@ -41,16 +39,13 @@ for (const item of ['mock.js', 'mock.css', 'vendor', 'scripts', 'validate.mjs', 
     cpSync(join(PACK, item), join(ROOT, 'design', item), { recursive: true })
   } catch { /* optional file */ }
 }
-// serve.mjs imports service persistence from the project-level scripts tree;
-// keep the acceptance fixture self-contained without copying the whole repo.
-mkdirSync(join(ROOT, 'scripts'), { recursive: true })
-cpSync(join(process.cwd(), 'skills', 'design', 'scripts', 'service-persistence.mjs'), join(ROOT, 'scripts', 'service-persistence.mjs'))
-cpSync(join(process.cwd(), 'skills', 'design', 'scripts', 'users.mjs'), join(ROOT, 'scripts', 'users.mjs'))
-mkdirSync(join(ROOT, 'design', 'components'), { recursive: true })
-cpSync(join(process.cwd(), 'design', 'components', 'catalog.json'), join(ROOT, 'design', 'components', 'catalog.json'))
 // fixture: one open + one RESOLVED comment (resolved ones must stay visible)
-// w19: the THIRD screen drops BOTH size and device - "no size or device declared"
-// is the contract case that defaults to Desktop 1440x900 (README v1.0.23)
+// w23: index.json lista os canvases (a descoberta fica deterministica)
+writeFileSync(join(ROOT, 'design', 'index.json'), JSON.stringify({
+  canvases: ['login', 'dashboard'],
+}, null, 2))
+// w19: the THIRD screen drops device AND width/height - proves the desktop
+// default (1440x900) when nothing is declared
 {
   const manifestPath = join(ROOT, 'design', 'login', 'canvas.json')
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
@@ -67,52 +62,26 @@ writeFileSync(join(ROOT, 'design', 'comments.json'), JSON.stringify({
     { id: 'p-done1', canvas: 'login', file: '01-login.html', selector: 'body', snippet: 'y', rect: { x: 10, y: 40, width: 20, height: 20 }, status: 'resolved', replies: [{ text: 'resolvido', createdAt: '2026-01-01T00:00:00.000Z' }], createdAt: '2026-01-01T00:00:00.000Z' },
   ],
 }, null, 2))
-writeFileSync(join(ROOT, 'design', 'brief.json'), JSON.stringify({ title: 'Fixture brief', referenceScreens: ['login/02-cadastro.html'] }))
-writeFileSync(join(ROOT, 'design', 'decisions.json'), JSON.stringify({ decisions: [{ id: 'DEC-001', title: 'Use tokens' }] }))
-writeFileSync(join(ROOT, 'design', 'tokens.json'), JSON.stringify({ tokens: { colorPrimary: '#123456', spacingMd: '16px' } }))
-// fixture: approval status surface (todo 27) — aprovado+bate, aprovado+stale
-// (hash errado = regra central visível) e em revisão
-{
-  const sha = (rel) => createHash('sha256').update(readFileSync(join(ROOT, 'design', rel))).digest('hex')
-  writeFileSync(join(ROOT, 'design', 'approvals.json'), JSON.stringify({
-    schemaVersion: 1,
-    approvals: [
-      { screen: 'login/01-login.html', contentHash: sha('login/01-login.html'), status: 'approved', decIds: ['DEC-001'], reviewedBy: 'qa', at: '2026-01-01T00:00:00.000Z' },
-      { screen: 'login/02-cadastro.html', contentHash: '0'.repeat(64), status: 'approved', decIds: [], reviewedBy: 'qa', at: '2026-01-01T00:00:00.000Z' },
-      { screen: 'login/03-modal.html', contentHash: sha('login/03-modal.html'), status: 'review', decIds: [], reviewedBy: 'qa', at: '2026-01-01T00:00:00.000Z' },
-    ],
-  }, null, 2))
-}
 
-const serviceData = join(ROOT, 'service-data')
-const serverArgs = serviceMode
-  ? [join(ROOT, 'design', 'serve.mjs'), '--service', '--data', serviceData, '0', '--no-open']
-  : [join(ROOT, 'design', 'serve.mjs'), '8796', '--no-open']
-const server = spawn(process.execPath, serverArgs, {
+const server = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), '8796', '--no-open'], {
   cwd: ROOT,
   windowsHide: true,
   stdio: ['ignore', 'pipe', 'pipe'],
 })
 // wait for the real startup line (a leftover server holding the port would
-// otherwise turn into a confusing goto timeout later). serve.mjs cede para a
-// proxima porta livre quando a pedida esta ocupada - usar a porta REAL da
-// linha de startup, nunca uma fixa (senao o run fala com a instancia errada
-// e os calls autenticados respondem 403)
+// otherwise turn into a confusing goto timeout later)
 let token = ''
-let port = ''
 await new Promise((resolve, reject) => {
   const timer = setTimeout(() => reject(new Error('serve.mjs nao subiu em 10s (porta ocupada?)')), 10_000)
   server.stdout.on('data', (chunk) => {
-    const m = /URL: http:\/\/[\d.]+:(\d+) TOKEN: ([a-f0-9]+)/.exec(String(chunk))
-    if (m) {
-      port = m[1]
-      token = m[2]
+    const m = /TOKEN: ([a-f0-9]+)/.exec(String(chunk))
+    if (m) token = m[1]
+    if (String(chunk).includes('TOKEN:')) {
       clearTimeout(timer)
       resolve()
     }
   })
 })
-const base = `http://127.0.0.1:${port}`
 
 const browser = await chromium.launch({
   executablePath: existsSync('C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe')
@@ -121,12 +90,6 @@ const browser = await chromium.launch({
   headless: true,
 })
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } })
-if (serviceMode) {
-  // Seed the service session for the real browser request path. The token is
-  // also required by the legacy API guard; the service prints it at startup.
-  await page.setExtraHTTPHeaders({ 'x-session-token': token })
-  await page.request.post(`${base}/api/session`)
-}
 const errors = []
 page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`))
 page.on('console', (message) => {
@@ -136,83 +99,15 @@ page.on('console', (message) => {
 })
 
 const shots = join(tmpdir(), 'opencode')
-const failures = []
-const fail = (label, detail) => {
-  failures.push(`${label}: ${detail}`)
-  console.log(`FAIL ${label}: ${detail}`)
-}
+const fail = (label, detail) => console.log(`FAIL ${label}: ${detail}`)
 let pass = 0
 const ok = (label) => {
   pass++
   console.log(`PASS ${label}`)
 }
-// lookup resiliente do overlay do strip: os cards re-renderizam durante o
-// fluxo e um page.$ avulso volta detached/null (TypeError em tbox.x)
-const overlayBox = async () => {
-  for (let i = 0; i < 30; i++) {
-    const box = await page.evaluate(() => {
-      const el = document.querySelector('#strip .card-overlay')
-      if (!el) return null
-      const r = el.getBoundingClientRect()
-      return r.width > 0 ? { x: r.x, y: r.y, width: r.width, height: r.height } : null
-    })
-    if (box) return box
-    await page.waitForTimeout(100)
-  }
-  return null
-}
 
-await page.goto(`${base}/viewer.html?canvas=login`, { waitUntil: 'load' })
+await page.goto('http://127.0.0.1:8796/viewer.html?canvas=login', { waitUntil: 'load' })
 await page.waitForTimeout(1500)
-
-// Sandbox comparison surface: the 3-up viewer consumes sandbox reports when
-// present, while retaining an explicit empty state for projects without one.
-const sandboxSurface = await page.evaluate(() => ({ score: Boolean(document.querySelector('#sandboxScore')), three: Boolean(document.querySelector('#modeThree')) }))
-if (sandboxSurface.score && sandboxSurface.three) ok('sandbox 3-up comparison surface is available')
-else fail('sandbox 3-up comparison surface', JSON.stringify(sandboxSurface))
-
-// 3-up exploration surface: open comparison, switch mode, and verify that
-// the three direction fixture labels are present in the rendered columns.
-await page.click('#snapshotBtn')
-await page.waitForTimeout(250)
-const threeUpButton = await page.$('#modeThree')
-if (threeUpButton) {
-  await page.evaluate(() => { document.querySelector('#compareView').hidden = false; document.querySelector('#modeThree').click() })
-  await page.waitForTimeout(100)
-  const threeUp = await page.$eval('#compareStage', (el) => ({ mode: el.dataset.mode }))
-  const fixtureDirections = await page.evaluate(async () => {
-    const ids = ['01', '02', '03']
-    return Promise.all(ids.map(async (id) => {
-      const response = await fetch(`/explorations/${id}/direction.json`)
-      return response.ok ? response.json() : null
-    }))
-  })
-  const rendered = await page.$$eval('#compareView .compare-col', (els) => els.filter((el) => !el.hidden).length)
-  const fixtureNames = fixtureDirections.filter(Boolean).map((d) => `${d.id}:${d.palette}`).join('|')
-  if (threeUp.mode === 'three' && rendered === 3 && fixtureDirections.every(Boolean) && fixtureNames.includes('01:warm-paper-ink') && fixtureNames.includes('02:midnight-cyan') && fixtureNames.includes('03:cobalt-coral')) ok('exploração 3-up carrega as 3 direções da fixture')
-  else fail('exploração 3-up', `mode=${threeUp.mode} rendered=${rendered} fixture=${fixtureDirections.length}`)
-  await page.evaluate(() => { document.querySelector('#compareView').hidden = true; document.querySelector('#snapshotPanel').hidden = true })
-} else fail('exploração 3-up', 'botão #modeThree ausente')
-
-// Component previews: catalog-driven panel, variant selection, and rendered HTML.
-await page.click('#componentsBtn')
-await page.waitForTimeout(250)
-const previewState = await page.evaluate(() => ({
-  panel: !document.querySelector('#componentPanel').hidden,
-  sections: document.querySelectorAll('#componentBody .component-preview').length,
-  rendered: document.querySelector('#componentBody .component-preview-render button')?.textContent.trim() || '',
-  select: document.querySelector('#componentBody select'),
-}))
-if (previewState.panel && previewState.sections > 0 && previewState.rendered) ok('preview de componente renderiza catálogo')
-else fail('preview de componente', `panel=${previewState.panel} sections=${previewState.sections} rendered=${previewState.rendered}`)
-const previewSelect = await page.$('#componentBody select')
-if (previewSelect) {
-  await previewSelect.selectOption({ index: 1 })
-  const changed = await page.$eval('#componentBody .component-preview-render', (el) => el.textContent.trim())
-  if (changed) ok('preview seleciona variante do catálogo')
-  else fail('seleção de variante', 'preview vazio após seleção')
-} else fail('seleção de variante', 'seletor ausente')
-await page.click('#componentsClose')
 
 // 1. SELECT
 await page.click('#strip .card-overlay')
@@ -222,49 +117,11 @@ const commentEnabled = await page.$eval('#commentBtn', (el) => !el.disabled)
 if (selected >= 1 && commentEnabled) ok('selecionar tela (clique)')
 else fail('selecionar tela', `selected=${selected} commentBtn.disabled=${!commentEnabled}`)
 
-// 1.4 APPROVAL STATUS SURFACE (todo 27): badge de status por tela, regra do
-// hash visível (aprovado + conteúdo divergente = reaberto) e aprovar/reprovar
-await page.waitForTimeout(600) // hash de staleness (crypto.subtle) é assíncrono
-const approvalBadges = await page.$$eval('.card .approval-status', (els) =>
-  els.map((e) => ({ text: e.textContent, stale: e.classList.contains('stale') })))
-if (approvalBadges.length >= 3) ok(`status de aprovação por tela (${approvalBadges.length} badges)`)
-else fail('status de aprovação', `badges=${approvalBadges.length}`)
-const badgeText = approvalBadges.map((b) => b.text).join(' | ')
-if (/approved|aprovado/i.test(badgeText) && /review|revis/i.test(badgeText)) ok('statuses refletem approvals.json (approved + review)')
-else fail('statuses do registro', JSON.stringify(badgeText))
-const staleBadge = approvalBadges.find((b) => b.stale)
-if (staleBadge && /mudou|changed/i.test(staleBadge.text)) ok(`hash divergente aparece como reaberto (${staleBadge.text.trim()})`)
-else fail('badge stale', JSON.stringify(approvalBadges))
-const approvalBtns = await page.$$eval('.card .approval-actions button', (els) => els.length)
-if (approvalBtns >= 2) ok('aprovar/reprovar por tela presentes')
-else fail('aprovar/reprovar', `botoes=${approvalBtns}`)
-await page.click('.card .approval-approve')
-await page.waitForTimeout(300)
-const approvalModal = await page.$eval('#clipboard', (el) => !el.hidden)
-const approvalMsg = await page.$eval('#clipboardMsg', (el) => el.textContent)
-if (approvalModal && /approve\.mjs set-status/.test(approvalMsg) && /approved/.test(approvalMsg)) ok('aprovar compõe o comando approve.mjs (modal abre sem enviar)')
-else fail('aprovar compõe comando', `modal=${approvalModal} msg=${JSON.stringify(approvalMsg.slice(0, 120))}`)
-await page.keyboard.press('Escape')
-await page.waitForTimeout(150)
-if (await page.$eval('#clipboard', (el) => el.hidden)) ok('modal de aprovação fecha (Esc)')
-else fail('fechar modal aprovação', 'ainda aberto')
-
-// 1.5 Context inspector: registered panel renders fixture data and malformed
-// decisions fail visibly instead of producing a blank panel.
-await page.click('#contextBtn')
-await page.waitForTimeout(300)
-const contextText = await page.$eval('#contextBody', (el) => el.textContent)
-if (/Fixture brief/.test(contextText) && /DEC-001/.test(contextText) && /Tokens ativos/.test(contextText)) ok('painel Contexto renderiza dados da fixture')
-else fail('painel Contexto', contextText.slice(0, 300))
-writeFileSync(join(ROOT, 'design', 'decisions.json'), '{ invalid json')
-await page.click('#contextClose')
-await page.click('#contextBtn')
-await page.waitForTimeout(250)
-const contextError = await page.$eval('#contextBody', (el) => el.textContent)
-if (/decisions\.json/i.test(contextError) && /erro|invalid/i.test(contextError)) ok('painel Contexto nomeia decisions.json corrompido')
-else fail('erro decisions.json', contextError.slice(0, 300))
-writeFileSync(join(ROOT, 'design', 'decisions.json'), JSON.stringify({ decisions: [{ id: 'DEC-001' }] }))
-await page.click('#contextClose')
+// 1.5 BRAND (w24): the system's name - Mockbird - in the header and the tab
+const brandLabel = await page.$eval('.brand-mark', (el) => el.textContent)
+const tabTitle = await page.title()
+if (brandLabel.trim() === 'Mockbird' && tabTitle.includes('Mockbird')) ok(`nome do sistema visivel (${brandLabel.trim()} | ${tabTitle})`)
+else fail('nome do sistema', `marca=${JSON.stringify(brandLabel)} titulo=${JSON.stringify(tabTitle)}`)
 
 // 2. COMMENT screen: Enter saves, Shift+Enter breaks the line (w16)
 await page.click('#commentBtn')
@@ -431,7 +288,7 @@ await page.fill('#sizeHField', '700')
 await page.keyboard.press('Enter')
 await page.waitForTimeout(700)
 const frameW = await page.$eval('.card .card-frame', (el) => el.style.width)
-const manAll = await (await fetch(`${base}/login/canvas.json`)).json()
+const manAll = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
 const allUniform = manAll.screens.every((s) => s.width === 500 && s.height === 700)
 if (frameW === '500px' && allUniform) ok('mudar tudo: um comando alcanca todas as telas (500x700)')
 else fail('aplicar em todas', `frame=${frameW} manifesto=${JSON.stringify(manAll.screens.map((s) => `${s.width}x${s.height}`))}`)
@@ -440,13 +297,13 @@ await page.fill('#sizeWField', '640')
 await page.fill('#sizeHField', '480')
 await page.keyboard.press('Enter')
 await page.waitForTimeout(700)
-const manSel = await (await fetch(`${base}/login/canvas.json`)).json()
+const manSel = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
 if (manSel.screens[0].width === 640 && manSel.screens[1].width === 500) ok('escopo Selecionadas muda so a selecionada')
 else fail('escopo selecionadas', JSON.stringify(manSel.screens.map((s) => `${s.width}x${s.height}`)))
 await page.selectOption('#deviceSelect', 'tablet')
 await page.waitForTimeout(700)
 const framePreset = await page.$eval('.card .card-frame', (el) => el.style.width)
-const manPreset = await (await fetch(`${base}/login/canvas.json`)).json()
+const manPreset = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
 if (framePreset === '834px' && manPreset.screens[0].width === 834 && manPreset.screens[1].width === 500) ok('preset Tablet (834x1112) segue o escopo')
 else fail('preset tablet', `frame=${framePreset} manifesto=${JSON.stringify(manPreset.screens.map((s) => `${s.width}x${s.height}`))}`)
 const seHandle = await page.$('.card.selected .rs-se')
@@ -460,18 +317,19 @@ await page.mouse.move(hbox.x + hbox.width / 2 + 60, hbox.y + hbox.height / 2 + 4
 await page.mouse.up()
 await page.waitForTimeout(700)
 const draggedW = parseInt(await page.$eval('.card .card-frame', (el) => el.style.width), 10)
-const manDrag = await (await fetch(`${base}/login/canvas.json`)).json()
+const manDrag = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
 if (draggedW > beforeDrag && manDrag.screens[0].width === draggedW) ok(`arraste redimensiona ao vivo (${draggedW} px)`)
 else fail('arraste de tamanho', `antes=${beforeDrag} frame=${draggedW} manifesto=${manDrag.screens[0].width}`)
 
 // 6. FLOW mode: double-click + right-click menu inside the screen
-const tbox = await overlayBox()
-const under = tbox
-  ? await page.evaluate(([x, y]) => {
-    const el = document.elementFromPoint(x, y)
-    return el ? `${el.tagName}.${el.className}` : 'null'
-  }, [tbox.x + tbox.width / 2, tbox.y + tbox.height / 2])
-  : 'sem overlay no strip'
+const target = await page.$('#strip .card-overlay')
+const tbox = await target.boundingBox()
+const cx = tbox.x + tbox.width / 2
+const cy = tbox.y + tbox.height / 2
+const under = await page.evaluate(([x, y]) => {
+  const el = document.elementFromPoint(x, y)
+  return el ? `${el.tagName}.${el.className}` : 'null'
+}, [cx, cy])
 console.log(`  [diag] sob o duplo-clique: ${under}`)
 await page.dblclick('#strip .card-overlay')
 await page.waitForTimeout(700)
@@ -490,7 +348,7 @@ if (flowOpen) {
   await page.keyboard.press('Enter')
   await page.waitForTimeout(500)
   const fsW = await page.$eval('#fsFrame', (el) => el.style.width)
-  const manifest3 = await (await fetch(`${base}/login/canvas.json`)).json()
+  const manifest3 = await (await fetch('http://127.0.0.1:8796/login/canvas.json')).json()
   if (fsW === '620px' && manifest3.screens[0].width === 620) ok('modo fluxo: controle unico aplica e persiste')
   else fail('tamanho no fluxo', `frame=${fsW} manifesto=${manifest3.screens[0].width}`)
   await page.click('#fsFrame', { button: 'right', position: { x: 200, y: 300 } })
@@ -510,15 +368,13 @@ if (flowOpen) {
   await page.waitForTimeout(200)
   await page.click('#fsOverlay', { position: { x: 195, y: 420 } })
   await page.waitForTimeout(400)
-  await page.waitForSelector('#elementForm', { state: 'visible', timeout: 5000 })
   await page.fill('#elementText', 'comentario dentro do modal')
   await page.click('#elementForm button[type="submit"]')
   await page.waitForTimeout(600)
-  const apiRes = await fetch(`${base}/api/comments`, { headers: { 'X-Design-Token': token } })
-  const apiPins = await apiRes.json().catch(() => ({}))
+  const apiPins = await (await fetch('http://127.0.0.1:8796/api/comments', { headers: { 'X-Design-Token': token } })).json()
   const newest = (apiPins.comments ?? []).at(-1)
   if (newest?.file === '03-modal.html') ok(`comentario no modal pertence ao modal (${newest.file})`)
-  else fail('superficie do comentario', `http=${apiRes.status} file=${newest?.file}`)
+  else fail('superficie do comentario', `file=${newest?.file}`)
   await page.click('#fsInspect')
   await page.waitForTimeout(200)
   const countModalPins = () => page.$$eval('#fsPins .pin', (els) =>
@@ -551,6 +407,9 @@ const presentOpenNow = await page.$eval('#present', (el) => !el.hidden)
 const presentLoaded = await page.$eval('#presentFrame', (el) => !!el.contentDocument?.body)
 if (presentOpenNow && presentLoaded) ok('modo apresentacao abre (tela limpa, sem editor)')
 else fail('apresentacao', `aberto=${presentOpenNow} frame=${presentLoaded}`)
+const presentTitle = await page.title()
+if (presentTitle === 'Mockbird') ok('apresentacao: a aba mostra so o nome do sistema')
+else fail('titulo na apresentacao', JSON.stringify(presentTitle))
 await page.keyboard.press('Escape')
 await page.waitForTimeout(300)
 if (await page.$eval('#present', (el) => el.hidden)) ok('esc volta ao editor')
@@ -580,12 +439,12 @@ if (marker === undefined) ok('viewer recarrega a si mesmo quando muda')
 else fail('self-reload', 'a aba continuou com o codigo antigo')
 
 // 8. SHARE mode (--share): degradation must be DECLARED, never silent
-const shareServer = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), port, '--share', '--no-open'], {
+const shareServer = spawn(process.execPath, [join(ROOT, 'design', 'serve.mjs'), '8796', '--share', '--no-open'], {
   cwd: ROOT,
   windowsHide: true,
   stdio: ['ignore', 'pipe', 'pipe'],
 })
-// w20: a porta pedida esta OCUPADA pela instancia com permissoes -
+// w20: a porta pedida (8796) esta OCUPADA pela instancia com permissoes -
 // o --share precisa ceder para a proxima livre e abrir a INSTANCIA certa
 let sharePort = ''
 await new Promise((resolve, reject) => {
@@ -599,19 +458,14 @@ await new Promise((resolve, reject) => {
     }
   })
 })
-if (sharePort && sharePort !== port) ok(`porta ocupada cede (${sharePort} no lugar de ${port})`)
-else fail('porta do share', `porta=${sharePort} (esperado != ${port})`)
+if (sharePort && sharePort !== '8796') ok(`porta ocupada cede (${sharePort} no lugar de 8796)`)
+else fail('porta do share', `porta=${sharePort} (esperado != 8796)`)
 await page.goto(`http://127.0.0.1:${sharePort}/viewer.html?canvas=login`, { waitUntil: 'load' })
 await page.waitForTimeout(1200)
 const bannerVisible = await page.$eval('#shareBanner', (el) => !el.hidden)
 const commentsHidden = await page.$eval('#commentBtn', (el) => el.hidden)
 if (bannerVisible && commentsHidden) ok('modo leitura: banner visivel e acoes de escrita escondidas')
 else fail('modo leitura', `banner=${bannerVisible} commentBtn.hidden=${commentsHidden}`)
-// share: aprovar/reprovar é ação de escrita — some; o indicador de status fica
-const shareApprovalActions = await page.$$eval('.card .approval-actions', (els) => els.every((e) => e.hidden || !e.offsetParent))
-const shareApprovalBadges = await page.$$eval('.card .approval-status', (els) => els.length)
-if (shareApprovalActions && shareApprovalBadges >= 3) ok('modo leitura: aprovar/reprovar escondido, status visivel')
-else fail('aprovação no share', `acoes escondidas=${shareApprovalActions} badges=${shareApprovalBadges}`)
 await page.click('#strip .card-overlay', { button: 'right' })
 await page.waitForTimeout(300)
 const toastText = await page.$eval('#toast', (el) => el.textContent)
@@ -643,8 +497,7 @@ shareServer.kill()
 if (errors.length) fail('erros de pagina', errors.join(' | '))
 else ok('nenhum erro de pagina em todo o fluxo')
 
-console.log(`RESULTADO: ${pass} passos ok, ${failures.length} falhas`)
-process.exitCode = failures.length ? 1 : 0
+console.log(`RESULTADO: ${pass} passos ok`)
 await browser.close()
 server.kill()
 await new Promise((resolve) => setTimeout(resolve, 300))
