@@ -11,10 +11,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const workflow = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8')
 
 test('CI matrix has every OS/node cell and exclusive browser conditions', () => {
-  assert.match(workflow, /os:\s*\[ubuntu-latest, windows-latest\]/)
+  assert.match(workflow, /os:\s*\[ubuntu-22\.04, windows-latest\]/)
   assert.match(workflow, /node:\s*\[18, 20, 22, 24\]/)
-  assert.match(workflow, /if: matrix\.os == 'ubuntu-latest' && matrix\.node >= 20[\s\S]*run: npm run ci\b/)
-  assert.match(workflow, /if: matrix\.os != 'ubuntu-latest' \|\| matrix\.node < 20[\s\S]*run: npm run ci:base\b/)
+  assert.match(workflow, /if: matrix\.os == 'ubuntu-22\.04' && matrix\.node >= 20[\s\S]*run: npm run ci\b/)
+  assert.match(workflow, /if: matrix\.os != 'ubuntu-22\.04' \|\| matrix\.node < 20[\s\S]*run: npm run ci:base\b/)
   assert.doesNotMatch(workflow, /if: matrix\.os == 'windows-latest'[\s\S]*playwright-core install/)
 })
 

@@ -10,7 +10,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # Baselines PNG foram congeladas no Ubuntu 22.04; drift de freetype/hinting em imagens novas quebra smoke:screen (>0.02). Recapturar via smoke.mjs --update-snapshots quando o label for aposentado.
+        os: [ubuntu-22.04, windows-latest]
         node: [18, 20, 22, 24]
     runs-on: ${{ matrix.os }}
     name: node ${{ matrix.node }} / ${{ matrix.os }}
@@ -28,14 +29,14 @@ jobs:
       # precisa do chromium provisionado ANTES dos checks visuais. Falha de
       # download/dependencia FALHA o job (nunca mascarada com `|| true`).
       - name: Provision Playwright chromium (ADR-0007)
-        if: matrix.os == 'ubuntu-latest' && matrix.node >= 20
+        if: matrix.os == 'ubuntu-22.04' && matrix.node >= 20
         run: npx playwright-core install --with-deps chromium
 
       # ADR-0007: cadeia completa (10 checks, 3 visuais: smoke:screen,
       # test:ui, visual:gate) somente em celulas com suporte a navegador e
-      # baselines de snapshot validos: ubuntu-latest x node >= 20.
+      # baselines de snapshot validos: ubuntu-22.04 x node >= 20.
       - name: npm run ci (checks visuais inclusos — ADR-0007)
-        if: matrix.os == 'ubuntu-latest' && matrix.node >= 20
+        if: matrix.os == 'ubuntu-22.04' && matrix.node >= 20
         run: npm run ci
 
       # ADR-0007 — exclusoes EXPLICITAS da matriz (nunca `|| true`):
@@ -45,7 +46,7 @@ jobs:
       # Celulas excluidas rodam npm run ci:base (mesma cadeia menos
       # smoke:screen e test:ui; visual:gate continua).
       - name: npm run ci:base (celula excluida dos checks de navegador — ADR-0007)
-        if: matrix.os != 'ubuntu-latest' || matrix.node < 20
+        if: matrix.os != 'ubuntu-22.04' || matrix.node < 20
         run: npm run ci:base
 
       - name: Install into a fresh folder (skills + licenses)
