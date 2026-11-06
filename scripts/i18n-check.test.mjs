@@ -2,10 +2,12 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { extractI18N, parseStaticObject } from './i18n-check.mjs'
 
-const viewerPath = join(import.meta.dirname, '../skills/design/assets/viewer.html')
+const here = dirname(fileURLToPath(import.meta.url))
+const viewerPath = join(here, '../skills/design/assets/viewer.html')
 function checkerWith(mutator) {
   const original = readFileSync(viewerPath, 'utf8')
   try { writeFileSync(viewerPath, mutator(original)); return spawnSync(process.execPath, ['scripts/i18n-check.mjs'], { encoding: 'utf8' }) } finally { writeFileSync(viewerPath, original) }
@@ -43,7 +45,7 @@ test('checker reports EN/PT placeholder mismatches through its real validation p
 })
 
 test('rejected executable payload cannot create a side-effect marker', () => {
-  const marker = join(import.meta.dirname, 'i18n-sideeffect-marker.txt')
+  const marker = join(here, 'i18n-sideeffect-marker.txt')
   try {
     if (existsSync(marker)) unlinkSync(marker)
     const result = spawnSync(process.execPath, ['--input-type=module', '-e', `import { parseStaticObject } from './scripts/i18n-check.mjs'; parseStaticObject("{x: require('node:fs').writeFileSync('${marker}', 'pwned')}")`], { encoding: 'utf8' })
