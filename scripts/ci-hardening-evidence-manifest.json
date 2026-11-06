@@ -1,0 +1,10 @@
+{
+  "rows": [
+    { "task": "task-1", "evidencePath": "/opt/mockbird/.omo/evidence/task-1-mockbird-ci-hardening.md", "requiredFields": ["command", "exit code", "artifact path", "failure probe"] },
+    { "task": "task-2", "evidencePath": "/opt/mockbird/.omo/evidence/task-2-mockbird-ci-hardening.md", "requiredFields": ["command", "exit code", "artifact path", "failure probe"] },
+    { "task": "task-3", "evidencePath": "/opt/mockbird/.omo/evidence/task-3-mockbird-ci-hardening.md", "requiredFields": ["command", "exit code", "artifact path", "failure probe"] },
+    { "task": "task-4", "evidencePath": "/opt/mockbird/.omo/evidence/task-4-mockbird-ci-hardening.md", "requiredFields": ["command", "exit code", "artifact path", "failure probe"] },
+    { "task": "task-5", "evidencePath": "/opt/mockbird/.omo/evidence/task-5-mockbird-ci-hardening.md", "requiredFields": ["command", "exit code", "artifact path", "failure probe"] },
+    { "task": "task-6", "evidencePath": "/opt/mockbird/.omo/evidence/task-6-mockbird-ci-hardening.md", "requiredFields": ["command", "exit code", "artifact path", "failure probe"] }
+  ]
+}
