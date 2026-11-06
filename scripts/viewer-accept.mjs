@@ -41,6 +41,11 @@ for (const item of ['mock.js', 'mock.css', 'vendor', 'scripts', 'validate.mjs', 
     cpSync(join(PACK, item), join(ROOT, 'design', item), { recursive: true })
   } catch { /* optional file */ }
 }
+// serve.mjs imports service persistence from the project-level scripts tree;
+// keep the acceptance fixture self-contained without copying the whole repo.
+mkdirSync(join(ROOT, 'scripts'), { recursive: true })
+cpSync(join(process.cwd(), 'skills', 'design', 'scripts', 'service-persistence.mjs'), join(ROOT, 'scripts', 'service-persistence.mjs'))
+cpSync(join(process.cwd(), 'skills', 'design', 'scripts', 'users.mjs'), join(ROOT, 'scripts', 'users.mjs'))
 mkdirSync(join(ROOT, 'design', 'components'), { recursive: true })
 cpSync(join(process.cwd(), 'design', 'components', 'catalog.json'), join(ROOT, 'design', 'components', 'catalog.json'))
 // fixture: one open + one RESOLVED comment (resolved ones must stay visible)

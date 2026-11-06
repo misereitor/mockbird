@@ -236,7 +236,7 @@ function mountDesign() {
   cpSync(join(SCRIPTS, 'validate.mjs'), join(DESIGN, 'validate.mjs'))
   // toolchainScripts of the mounted config resolve relative to design/ -> TMP/scripts/
   mkdirSync(join(TMP, 'scripts'), { recursive: true })
-  for (const file of ['validate.mjs', 'sync-components.mjs', 'marker-parser.mjs', 'gen-tokens.mjs', 'export-tokens.mjs']) {
+  for (const file of ['validate.mjs', 'sync-components.mjs', 'marker-parser.mjs', 'gen-tokens.mjs', 'export-tokens.mjs', 'service-persistence.mjs', 'users.mjs']) {
     cpSync(join(SCRIPTS, file), join(TMP, 'scripts', file))
   }
   mkdirSync(join(DESIGN, 'snapshots'), { recursive: true })
