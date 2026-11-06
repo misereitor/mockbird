@@ -242,6 +242,10 @@ Historical changelog (up to v1.0.26) continues below.
 
 ## Changelog
 
+Version authority: the root `mockbird` package version controls the viewer,
+sync stamp, and release tag. The private `opencode-mockbird` plugin has its own
+independent version in `plugin/package.json`; the two versions are not unified.
+
 - **The system's name is Mockbird (v1.1.2)**: the viewer is now branded
   **Mockbird** — the name shows in the header (accent wordmark), the browser
   tab (`Canvas · Mockbird`) and the picker page; in **presentation mode** the

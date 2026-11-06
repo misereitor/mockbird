@@ -69,6 +69,10 @@ The CI runs exactly these on Linux/Windows × Node 18/20/22/24.
 
 ## Versioning
 
+The root `mockbird` version is the authority for the viewer, sync stamp, and
+release tag. The private `opencode-mockbird` plugin is versioned independently
+in `plugin/package.json`; do not unify the two version numbers.
+
 Keep it quiet. The project is in its **1.0.x** era: bump the **patch** digit
 (`1.0.7` → `1.0.8`) for fixes and incremental improvements — including small
 features. Bump the minor digit only when the project genuinely steps up.
