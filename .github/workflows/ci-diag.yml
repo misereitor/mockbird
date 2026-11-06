@@ -193,10 +193,12 @@ jobs:
         run: npx playwright-core install --with-deps chromium
       - name: Run chained browser lane
         run: |
+          set -o pipefail
           ec=0
           npm run ci 2>&1 | tee /tmp/chain.log || ec=$?
           if [ $ec -ne 0 ]; then
             echo "::error title=chain npm run ci failed::$(tail -2500 /tmp/chain.log | tr '\n' '\v' | sed 's/%/%25/g; s/\r/%0D/g')"
             echo "::error title=chain failing stage marker::$(grep -E '^> mockbird@' /tmp/chain.log | tail -3 | tr '\n' '\v')"
+            echo "::error title=chain error lines::$(grep -nE 'ERR!|Error|error|FAIL|failed|EADDR|ECONN' /tmp/chain.log | head -40 | tr '\n' '\v' | sed 's/%/%25/g; s/\r/%0D/g')"
           fi
           exit $ec
