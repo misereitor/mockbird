@@ -202,3 +202,88 @@ jobs:
             echo "::error title=chain error lines::$(grep -nE 'ERR!|Error|error|FAIL|failed|EADDR|ECONN' /tmp/chain.log | head -40 | tr '\n' '\v' | sed 's/%/%25/g; s/\r/%0D/g')"
           fi
           exit $ec
+
+  baseline-probe:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - name: Record runner fonts
+        run: |
+          echo "::notice title=GH fonts::system-ui=$(fc-match -f '%{family}' system-ui) sans=$(fc-match -f '%{family}' sans-serif) families=$(fc-list : family | sort -u | wc -l)"
+          fc-list : family | sort -u > /tmp/fonts.txt
+      - name: Compare GH baselines
+        run: |
+          ec=0
+          npm run smoke:screen 2>&1 | tee /tmp/smoke.log || ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "::error title=probe smoke compare::$(grep -E 'smoke: (FAIL|ok)' /tmp/smoke.log | head -10 | tr '\n' '\v' | sed 's/%/%25/g')"
+          fi
+          exit $ec
+      - name: Regenerate probe baselines
+        run: |
+          npm run smoke:screen -- --update-snapshots
+          echo "::notice title=regenerated baselines::$(git status --short -- skills/design/assets/example/snapshots/ | tr '\n' '\v' | sed 's/%/%25/g')"
+      - name: Map baseline pixel differences
+        run: |
+          node --input-type=module <<'NODE'
+          import { execSync } from 'node:child_process'
+          import { readFileSync } from 'node:fs'
+          import { decodePng } from './skills/design/scripts/lib/image-diff.mjs'
+          const files = execSync('git diff --name-only -- skills/design/assets/example/snapshots/*.png', { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
+          for (const file of files) {
+            const oldBytes = Buffer.from(execSync(`git show HEAD:${file}`))
+            const newBytes = readFileSync(file)
+            const oldPng = decodePng(oldBytes)
+            const newPng = decodePng(newBytes)
+            const name = file.split('/').pop()
+            if (oldPng.width !== newPng.width || oldPng.height !== newPng.height) {
+              console.log(`::notice title=diffmap ${name}::dimensions=${oldPng.width}x${oldPng.height}->${newPng.width}x${newPng.height}`)
+              continue
+            }
+            let differing = 0; let x0 = newPng.width; let y0 = newPng.height; let x1 = -1; let y1 = -1
+            for (let y = 0; y < newPng.height; y++) for (let x = 0; x < newPng.width; x++) {
+              const i = (y * newPng.width + x) * newPng.channels
+              let differs = false
+              for (let c = 0; c < Math.min(3, newPng.channels); c++) if (Math.abs(oldPng.pixels[i + c] - newPng.pixels[i + c]) > 8) differs = true
+              if (differs) { differing++; x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y) }
+            }
+            console.log(`::notice title=diffmap ${name}::differing=${differing} bbox=${differing ? `${x0},${y0}-${x1},${y1}` : 'none'}`)
+          }
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gh-baselines
+          path: |
+            skills/design/assets/example/snapshots/
+            /tmp/fonts.txt
+
+  os-probe-2204:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - name: Record 22.04 fonts
+        run: echo "::notice title=22.04 fonts::system-ui=$(fc-match -f '%{family}' system-ui) sans=$(fc-match -f '%{family}' sans-serif) families=$(fc-list : family | sort -u | wc -l)"
+      - name: Compare 22.04 baselines
+        run: |
+          ec=0
+          npm run smoke:screen 2>&1 | tee /tmp/smoke2204.log || ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "::error title=22.04 smoke compare::$(grep -E 'smoke: (FAIL|ok)' /tmp/smoke2204.log | head -10 | tr '\n' '\v' | sed 's/%/%25/g')"
+          fi
+          exit $ec
