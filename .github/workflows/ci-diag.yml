@@ -278,7 +278,9 @@ jobs:
       - run: npm ci
       - run: npx playwright-core install --with-deps chromium
       - name: Record 22.04 fonts
-        run: echo "::notice title=22.04 fonts::system-ui=$(fc-match -f '%{family}' system-ui) sans=$(fc-match -f '%{family}' sans-serif) families=$(fc-list : family | sort -u | wc -l)"
+        run: |
+          echo "::notice title=22.04 fonts::system-ui=$(fc-match -f '%{family}' system-ui) sans=$(fc-match -f '%{family}' sans-serif) families=$(fc-list : family | sort -u | wc -l)"
+          fc-list : family | sort -u > /tmp/fonts2204.txt
       - name: Compare 22.04 baselines
         run: |
           ec=0
