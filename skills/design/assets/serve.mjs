@@ -164,13 +164,13 @@ function validPassword(password) { return typeof password === 'string' && passwo
 async function hashPassword(password) {
   if (!validPassword(password)) throw new Error('weak-password')
   const salt = randomBytes(16)
-  const derived = await scrypt(password, salt, 64, { N: AUTH_N, r: AUTH_R, p: AUTH_P })
+  const derived = await scrypt(password, salt, 64, { N: AUTH_N, r: AUTH_R, p: AUTH_P, maxmem: 128 * 1024 * 1024 })
   return `scrypt$N=${AUTH_N},r=${AUTH_R},p=${AUTH_P}$${salt.toString('base64url')}$${Buffer.from(derived).toString('base64url')}`
 }
 async function verifyPassword(password, encoded) {
   const match = /^scrypt\$N=(\d+),r=(\d+),p=(\d+)\$([^$]+)\$([^$]+)$/.exec(String(encoded || ''))
   if (!match) return false
-  const derived = await scrypt(password, Buffer.from(match[4], 'base64url'), 64, { N: Number(match[1]), r: Number(match[2]), p: Number(match[3]) })
+  const derived = await scrypt(password, Buffer.from(match[4], 'base64url'), 64, { N: Number(match[1]), r: Number(match[2]), p: Number(match[3]), maxmem: 128 * 1024 * 1024 })
   const expected = Buffer.from(match[5], 'base64url')
   return expected.length === derived.length && timingSafeEqual(expected, derived)
 }
