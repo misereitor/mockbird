@@ -36,7 +36,10 @@ for (const item of ['login', 'dashboard', 'components', 'tokens.json', 'design-s
 }
 for (const item of ['mock.js', 'mock.css', 'vendor', 'scripts', 'validate.mjs', 'viewer.html', 'docs.html', 'serve.mjs']) {
   try {
-    cpSync(join(PACK, item), join(ROOT, 'design', item), { recursive: true })
+    const source = item === 'scripts'
+      ? join(PACK, '..', 'scripts')
+      : join(PACK, item)
+    cpSync(source, join(ROOT, item === 'scripts' ? item : `design/${item}`), { recursive: true })
   } catch { /* optional file */ }
 }
 // fixture: one open + one RESOLVED comment (resolved ones must stay visible)

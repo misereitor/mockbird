@@ -49,4 +49,4 @@ jobs:
         run: npm run ci:base
 
       - name: Install into a fresh folder (skills + licenses)
-        run: node install.mjs --dir "${{ runner.temp }}/mockbird-install"
+        run: node scripts/ci-contract.test.mjs --fresh-install
