@@ -1,5 +1,7 @@
 .omo/
 plugin/node_modules/
 node_modules/
+# Visual orchestrator output is generated; tracked PNG freezes remain outside .visual.
+**/.visual/
 # derived interchange export (export-tokens.mjs contract: never versioned here)
 skills/design/assets/example/tokens.w3c.json
