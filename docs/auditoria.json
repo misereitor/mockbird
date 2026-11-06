@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "audit": "auditoria-tecnica-mockbird",
-  "gitSHA": "361e77f3a16de6c1a3b26d9db23e4c86bae58504",
+  "gitSHA": "31f3b806100be290bdba44822f8461d61cd234ec",
   "generatedAt": "2026-11-05T23:15:44.271Z",
   "roots": [
     "plugin",
@@ -37,8 +37,8 @@
     "classRule": "existe = capacidade implementada e coerente com o código; parcial = existe mas escopo/validação/fiação incompletos (nota diz o quê); refatorar = existe mas contém contradição, drift ou caminho inválido que exige reescrita; construir = capacidade inexistente citada pelo arquivo (reservado a placeholders; capacidades a construir estão no documento narrativo)."
   },
   "totals": {
-    "filesInFind": 753,
-    "fileEntries": 299,
+    "filesInFind": 754,
+    "fileEntries": 300,
     "fixtureGroupEntries": 33,
     "fixtureMembers": 428,
     "exclusions": 16
@@ -360,7 +360,7 @@
         }
       ],
       "note": "aceitação em navegador real do viewer (playwright-core): seleção, comentário, menu, box select, modo fluxo, self-reload; roda manualmente (npm run test:ui), fora do CI",
-      "lines": 647
+      "lines": 653
     },
     {
       "path": "scripts/i18n-check.mjs",
@@ -458,7 +458,7 @@
         }
       ],
       "note": "servidor zero-dep do design/ (1505 ln): viewer + API de comentários/snapshots/revert com token, --share read-only; coberto pela security-suite (ci.yml:37)",
-      "lines": 1942
+      "lines": 1947
     },
     {
       "path": "skills/design/assets/docs.html",
@@ -2726,7 +2726,7 @@
         }
       ],
       "note": "adicionado na atualização incremental da auditoria",
-      "lines": 29
+      "lines": 39
     },
     {
       "path": "skills/design/assets/critic-report.schema.json",
@@ -3468,7 +3468,7 @@
         }
       ],
       "note": "adicionado na atualização incremental da auditoria",
-      "lines": 26
+      "lines": 30
     },
     {
       "path": "skills/design/scripts/done-check.test.mjs",
@@ -4000,7 +4000,7 @@
         }
       ],
       "note": "adicionado na atualização incremental da auditoria",
-      "lines": 10
+      "lines": 12
     },
     {
       "path": "skills/design/scripts/users.test.mjs",
@@ -4168,7 +4168,7 @@
         }
       ],
       "note": "adicionado na atualização incremental da auditoria",
-      "lines": 370
+      "lines": 374
     },
     {
       "path": "skills/design/scripts/visual-score.mjs",
@@ -4266,7 +4266,7 @@
         }
       ],
       "note": "adicionado na atualização incremental da auditoria",
-      "lines": 83
+      "lines": 85
     },
     {
       "path": "docs/service-deploy.md",
@@ -4295,6 +4295,20 @@
       ],
       "note": "adicionado na atualização incremental da auditoria",
       "lines": 9
+    },
+    {
+      "path": "skills/design/assets/example/tokens.w3c.json",
+      "layer": "Core",
+      "subsystem": 3,
+      "class": "existe",
+      "evidence": [
+        {
+          "ref": "skills/design/assets/example/tokens.w3c.json:1",
+          "text": "{"
+        }
+      ],
+      "note": "export W3C dos tokens do exemplo",
+      "lines": 462
     }
   ],
   "fixtureGroups": [

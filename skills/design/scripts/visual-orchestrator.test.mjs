@@ -80,7 +80,11 @@ function readReport(target = RUN_TARGET) {
  * entre execuções não é não-determinismo do relatório).
  */
 function normalized(report) {
-  return { ...report, timestamp: '<normalized>', gitSHA: '<normalized>' }
+  const copy = structuredClone(report)
+  copy.timestamp = '<normalized>'
+  copy.gitSHA = '<normalized>'
+  for (const screen of copy.screens ?? []) if (screen.perf?.metrics) screen.perf.metrics.renderMs = '<normalized>'
+  return copy
 }
 
 const RUN_TARGET = fixtureTarget() // séries relatório único + determinismo
@@ -164,16 +168,16 @@ test('relatório único: forma do contrato, 1 entrada por tela, gitSHA/contentHa
   assert.equal(report.screens.length, 1)
   const [screen] = report.screens
   assert.equal(screen.screen, 'tela/01-tela.html')
-  assert.deepEqual(Object.keys(screen).sort(), ['a11y', 'capture', 'critic', 'diff', 'score', 'screen'])
+  assert.deepEqual(Object.keys(screen).sort(), ['a11y', 'capture', 'critic', 'diff', 'i18n-stress', 'perf', 'score', 'screen'])
 
   // capture: identificação + contentHash = sha256 do HTML da tela (§5.6)
   assert.equal(screen.capture.canvas, 'tela')
   assert.equal(screen.capture.device, 'mobile')
   assert.equal(screen.capture.width, 390)
   assert.equal(screen.capture.contentHash, createHash('sha256').update(readFileSync(SCREEN)).digest('hex'))
-  assert.equal(screen.capture.images, 35) // matriz congelada 5 viewports × 7 estados
+  assert.equal(screen.capture.images, 40) // matriz congelada 5 viewports × 8 estados (inclui long-text)
   assert.equal(screen.capture.viewports.length, 5)
-  assert.equal(screen.capture.states.length, 7)
+  assert.equal(screen.capture.states.length, 8)
 
   // seções com evidência
   assert.deepEqual(Object.keys(screen.diff).sort(), ['aboveThreshold', 'compared', 'pairs', 'withoutBaseline'])

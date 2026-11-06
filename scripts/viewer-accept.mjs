@@ -510,6 +510,7 @@ if (flowOpen) {
   await page.waitForTimeout(200)
   await page.click('#fsOverlay', { position: { x: 195, y: 420 } })
   await page.waitForTimeout(400)
+  await page.waitForSelector('#elementForm', { state: 'visible', timeout: 5000 })
   await page.fill('#elementText', 'comentario dentro do modal')
   await page.click('#elementForm button[type="submit"]')
   await page.waitForTimeout(600)
