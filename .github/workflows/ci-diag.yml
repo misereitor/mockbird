@@ -179,3 +179,24 @@ jobs:
           node-version: 18
       - run: npm ci
       - run: node scripts/ci-contract.test.mjs --fresh-install
+
+  chain-repro:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies (playwright-core, sem browsers empacotados)
+        run: npm ci
+      - name: Provision Playwright chromium (ADR-0007)
+        run: npx playwright-core install --with-deps chromium
+      - name: Run chained browser lane
+        run: |
+          ec=0
+          npm run ci 2>&1 | tee /tmp/chain.log || ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "::error title=chain npm run ci failed::$(tail -2500 /tmp/chain.log | tr '\n' '\v' | sed 's/%/%25/g; s/\r/%0D/g')"
+            echo "::error title=chain failing stage marker::$(grep -E '^> mockbird@' /tmp/chain.log | tail -3 | tr '\n' '\v')"
+          fi
+          exit $ec
