@@ -1,0 +1,12 @@
+{
+  "root": "..",
+  "owners": {
+    "Design Engine": ["plugin/core.mjs"],
+    "Design System Engine": ["skills/design/scripts/gen-tokens.mjs"],
+    "Validation Engine": ["skills/design/scripts/validate.mjs"],
+    "Visual QA Engine": ["skills/design/scripts/visual-critic.mjs"],
+    "Review Engine": ["skills/design/scripts/visual-orchestrator.mjs"],
+    "Integration Engine": ["scripts/mock-check.mjs"]
+  },
+  "allowedEdges": []
+}
