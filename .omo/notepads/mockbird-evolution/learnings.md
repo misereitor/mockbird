@@ -100,3 +100,23 @@ Revert returned 500 because its mounted validation pipeline omitted `--mark-stal
 - F3 repair: done-check now safely handles nested screen IDs; approval downgrade and focused tests pass. Service bootstrap login remains blocked by create-admin producing null password hash; no false approval claimed.
 
 - F3 service repair: --create-admin now requires a 12+ character password via --admin-password or MOCKBIRD_ADMIN_PASSWORD and stores only scrypt hash; auth bootstrap test and real HTTP login pass.
+
+- F3 complete attempt: fresh project served successfully and CI stayed green, but duplicate-canvas fixture blocked final done artifact; parity and full independent role/backup matrix still lack inspected proof.
+
+- Last F3 run: corrected nested fixture layout and confirmed fresh serving; done-check still produced done:false because temp report SHA was unknown/stale, parity and complete role/backup matrix remain unproven.
+
+- Final F3 attempt: docs export plus done-check now produced done:true; service matrix exposed missing /api/admin/disable route and parity still lacks live approved HTTP artifact.
+
+- Service/parity repair: admin disable route now guarded/persistent with last-admin protection; parity live-URL coverage 4/4 green.
+
+- F3 last service run: admin disable and disabled-login passed; commenter/editor writes hit csrf-required in the harness and audit-log.json was absent after restore, so matrix remains rejected.
+
+- F3 final run found bootstrap hash-format mismatch with service async verifier; aligned users bootstrap/activation to parameterized scrypt format. CI rerun was blocked by viewer startup timeout; matrix requires rerun.
+
+- Viewer startup repair: fixture roots now include service-persistence and users dependencies required by serve.mjs; normal and service viewer acceptance 57/57, security 19/19, CI green.
+
+- Final F3 probe found and fixed scrypt memory-limit HTTP 500 via explicit maxmem; login now returns 200/CSRF, but matrix probe still failed resolving activated user ID before complete assertions.
+
+- F3 corrected-root matrix passed: commenter/editor comments 200 with author metadata, cross-author 403, viewer role-forbidden, disable/user-disabled, 7 valid audit events, backup/restore hashes equal.
+
+- F4 rerun approved: orchestrator 8/8, viewer kit/service 57/57, security 19/19, CI and all three doc checks green; IS-1..IS-8 mapped and approved.
