@@ -1,4 +1,4 @@
-# TEMPORARY: per-stage CI diagnostics for root-cause discovery — REMOVE after the ubuntu browser-lane failure stage is identified
+# TEMPORARY: per-stage CI diagnostics for root-cause discovery — REMOVE after full green
 name: CI diagnostics
 
 on:
@@ -16,35 +16,174 @@ jobs:
       - run: npm ci
       - run: npx playwright-core install --with-deps chromium
       - name: "stage: skills:check"
-        run: npm run skills:check
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run skills:check 2>&1 | tee /tmp/stage-skills-check.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "skills:check" >> /tmp/failed-stages.txt
+            echo "::error title=stage skills:check failed::$(tr '\n' ' ' < /tmp/stage-skills-check.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: compat"
-        run: npm run compat
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run compat 2>&1 | tee /tmp/stage-compat.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "compat" >> /tmp/failed-stages.txt
+            echo "::error title=stage compat failed::$(tr '\n' ' ' < /tmp/stage-compat.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: golden:check"
-        run: npm run golden:check
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run golden:check 2>&1 | tee /tmp/stage-golden-check.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "golden:check" >> /tmp/failed-stages.txt
+            echo "::error title=stage golden:check failed::$(tr '\n' ' ' < /tmp/stage-golden-check.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: llm:offline"
-        run: npm run llm:offline
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run llm:offline 2>&1 | tee /tmp/stage-llm-offline.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "llm:offline" >> /tmp/failed-stages.txt
+            echo "::error title=stage llm:offline failed::$(tr '\n' ' ' < /tmp/stage-llm-offline.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: secret-scan"
-        run: npm run secret-scan
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run secret-scan 2>&1 | tee /tmp/stage-secret-scan.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "secret-scan" >> /tmp/failed-stages.txt
+            echo "::error title=stage secret-scan failed::$(tr '\n' ' ' < /tmp/stage-secret-scan.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: test"
-        run: npm test
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee /tmp/stage-test.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "test" >> /tmp/failed-stages.txt
+            echo "::error title=stage test failed::$(tr '\n' ' ' < /tmp/stage-test.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: test:mock"
-        run: npm run test:mock
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run test:mock 2>&1 | tee /tmp/stage-test-mock.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "test:mock" >> /tmp/failed-stages.txt
+            echo "::error title=stage test:mock failed::$(tr '\n' ' ' < /tmp/stage-test-mock.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: smoke:plugin"
-        run: npm run smoke:plugin
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run smoke:plugin 2>&1 | tee /tmp/stage-smoke-plugin.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "smoke:plugin" >> /tmp/failed-stages.txt
+            echo "::error title=stage smoke:plugin failed::$(tr '\n' ' ' < /tmp/stage-smoke-plugin.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: smoke:screen"
-        run: npm run smoke:screen
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run smoke:screen 2>&1 | tee /tmp/stage-smoke-screen.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "smoke:screen" >> /tmp/failed-stages.txt
+            echo "::error title=stage smoke:screen failed::$(tr '\n' ' ' < /tmp/stage-smoke-screen.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: test:ui"
-        run: npm run test:ui
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run test:ui 2>&1 | tee /tmp/stage-test-ui.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "test:ui" >> /tmp/failed-stages.txt
+            echo "::error title=stage test:ui failed::$(tr '\n' ' ' < /tmp/stage-test-ui.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: visual:gate"
-        run: npm run visual:gate
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run visual:gate 2>&1 | tee /tmp/stage-visual-gate.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "visual:gate" >> /tmp/failed-stages.txt
+            echo "::error title=stage visual:gate failed::$(tr '\n' ' ' < /tmp/stage-visual-gate.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: validate"
-        run: npm run validate
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run validate 2>&1 | tee /tmp/stage-validate.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "validate" >> /tmp/failed-stages.txt
+            echo "::error title=stage validate failed::$(tr '\n' ' ' < /tmp/stage-validate.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: qa"
-        run: npm run qa
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run qa 2>&1 | tee /tmp/stage-qa.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "qa" >> /tmp/failed-stages.txt
+            echo "::error title=stage qa failed::$(tr '\n' ' ' < /tmp/stage-qa.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: security"
-        run: npm run security
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run security 2>&1 | tee /tmp/stage-security.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "security" >> /tmp/failed-stages.txt
+            echo "::error title=stage security failed::$(tr '\n' ' ' < /tmp/stage-security.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
       - name: "stage: check:i18n"
-        run: npm run check:i18n
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run check:i18n 2>&1 | tee /tmp/stage-check-i18n.log
+          ec=$?
+          if [ $ec -ne 0 ]; then
+            echo "check:i18n" >> /tmp/failed-stages.txt
+            echo "::error title=stage check:i18n failed::$(tr '\n' ' ' < /tmp/stage-check-i18n.log | sed 's/%/%25/g' | tail -c 1200)"
+          fi
+          exit $ec
+      - name: "gate - all stages green?"
+        run: |
+          if [ -s /tmp/failed-stages.txt ]; then echo "failing stages:"; sort -u /tmp/failed-stages.txt; exit 1; fi
+          echo "all stages green"
 
   freshinstall18:
     runs-on: ubuntu-latest
