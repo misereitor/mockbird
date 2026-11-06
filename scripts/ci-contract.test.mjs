@@ -2,11 +2,12 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 import { MIRROR, SEED, syncProject } from '../plugin/core.mjs'
 
-const root = resolve(import.meta.dirname, '..')
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const workflow = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8')
 
 test('CI matrix has every OS/node cell and exclusive browser conditions', () => {

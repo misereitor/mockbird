@@ -1,0 +1,57 @@
+# TEMPORARY: per-stage CI diagnostics for root-cause discovery — REMOVE after the ubuntu browser-lane failure stage is identified
+name: CI diagnostics
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - name: "stage: skills:check"
+        run: npm run skills:check
+      - name: "stage: compat"
+        run: npm run compat
+      - name: "stage: golden:check"
+        run: npm run golden:check
+      - name: "stage: llm:offline"
+        run: npm run llm:offline
+      - name: "stage: secret-scan"
+        run: npm run secret-scan
+      - name: "stage: test"
+        run: npm test
+      - name: "stage: test:mock"
+        run: npm run test:mock
+      - name: "stage: smoke:plugin"
+        run: npm run smoke:plugin
+      - name: "stage: smoke:screen"
+        run: npm run smoke:screen
+      - name: "stage: test:ui"
+        run: npm run test:ui
+      - name: "stage: visual:gate"
+        run: npm run visual:gate
+      - name: "stage: validate"
+        run: npm run validate
+      - name: "stage: qa"
+        run: npm run qa
+      - name: "stage: security"
+        run: npm run security
+      - name: "stage: check:i18n"
+        run: npm run check:i18n
+
+  freshinstall18:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: node scripts/ci-contract.test.mjs --fresh-install
